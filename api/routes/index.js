@@ -1,0 +1,42 @@
+const express = require("express");
+
+// Import all routing files
+const authRoutes = require("./authRoutes");
+const assignmentRoutes = require("./assignmentRoutes");
+const studentRoutes = require("./studentRoutes");
+const questionnaireRoutes = require("./questionnaireRoutes");
+const statsRoutes = require("./statsRoutes");
+const allocationRoutes = require("./allocationRoutes");
+const teamRoutes = require("./teamRoutes");
+const meetingRoutes = require("./meetingRoutes");
+const checkinRoutes = require("./checkinRoutes");
+const testDataRoutes = require("./testDataRoutes");
+
+const router = express.Router();
+
+// Register all imported routes
+router.use("/auth", authRoutes);
+router.use("/assignment", assignmentRoutes);
+router.use("/student", studentRoutes);
+router.use("/questionnaire", questionnaireRoutes);
+router.use("/stats", statsRoutes);
+router.use("/allocation", allocationRoutes);
+router.use("/team", teamRoutes);
+router.use("/checkin", checkinRoutes);
+router.use("/meeting", meetingRoutes);
+router.use("/test", testDataRoutes);
+
+// Heartbeat endpoint to check session status
+router.get("/heartbeat", (req, res) => {
+  res.json({ online: true, loggedIn: req.session.email != null });
+});
+
+// Add catch-all for unhandled errors in routes
+router.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({
+    message: "An unknown error occurred. Please try again!",
+  })
+});
+
+module.exports = router;

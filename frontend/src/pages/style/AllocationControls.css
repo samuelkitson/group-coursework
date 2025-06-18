@@ -1,0 +1,7 @@
+.form-check-input:not(:checked)[type=radio] + label.form-check-label {
+  color: #777777;
+}
+
+div.icon-button {
+  cursor: pointer;
+}

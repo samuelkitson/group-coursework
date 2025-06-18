@@ -1,0 +1,12 @@
+// Redefine colours
+$primary: #005C84;
+$secondary: #6C757D;
+// $danger: #E73037;
+// $warning: #FCBC00;
+// $success: #1E8765;
+$info: #74C9E5;
+$light: #F8F9FA;
+$dark: #002E3B;
+
+// Then import Bootstrap
+@import 'bootstrap/scss/bootstrap';

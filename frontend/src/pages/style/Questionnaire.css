@@ -1,0 +1,11 @@
+input[type="range"]::-webkit-slider-thumb {
+  background: #0952c0;
+}
+
+input[type="range"]::-moz-range-thumb {
+  background: #0952c0;
+}
+
+input[type="range"]::-ms-thumb {
+  background: #0952c0;
+}

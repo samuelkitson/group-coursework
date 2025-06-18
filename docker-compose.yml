@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build:
+      dockerfile: frontend.Dockerfile
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost/api
+      - VITE_SERVER_HOST=0.0.0.0
+      - WATCHPACK_POLLING=true
+
+  api:
+    build:
+      dockerfile: api.Dockerfile
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=omfuXShRdBW0Q1WBqx
+      - DB_NAME=groupsappdb
+      - MONGO_HOST=mongo
+      - MONGO_USER=root
+      - MONGO_PASSWORD=5RjAwkpnU01LrC31s1
+      - SESSION_SECRET
+    depends_on:
+      mongo:
+        condition: service_started
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx-dev.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - api
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 5RjAwkpnU01LrC31s1
+      MONGO_INITDB_DATABASE: groupsappdb
+    volumes:
+      - ./api/usertesting-mongo-init.js:/docker-entrypoint-initdb.d/usertesting-mongo-init.js:ro
