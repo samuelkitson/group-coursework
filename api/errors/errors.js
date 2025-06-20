@@ -22,6 +22,12 @@ class AssignmentNotFoundError extends CustomError {
   }
 }
 
+class AssignmentInvalidStateError extends CustomError {
+  constructor(message = "That action is not available for an assignment in this state.") {
+    super(message, 400);
+  }
+}
+
 class IncorrectRoleError extends CustomError {
   constructor(message = "Sorry, your account is not allowed to do that.") {
     super(message, 403, "INCORRECT-ROLE")
@@ -34,4 +40,10 @@ class SessionInvalidError extends CustomError {
   }
 }
 
-module.exports = { CustomError, AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError };
+module.exports = {
+  CustomError,
+  AssignmentNotFoundError,
+  AssignmentInvalidStateError,
+  IncorrectRoleError,
+  SessionInvalidError,
+};
