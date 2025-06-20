@@ -28,6 +28,12 @@ class AssignmentInvalidStateError extends CustomError {
   }
 }
 
+class ConfigurationError extends CustomError {
+  constructor(message = "An internal configuration error occurred. Please try again and then contact support if it persists.") {
+    super(message, 500);
+  }
+}
+
 class IncorrectRoleError extends CustomError {
   constructor(message = "Sorry, your account is not allowed to do that.") {
     super(message, 403, "INCORRECT-ROLE")
@@ -50,6 +56,7 @@ module.exports = {
   CustomError,
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
+  ConfigurationError,
   IncorrectRoleError,
   InvalidParametersError,
   SessionInvalidError,
