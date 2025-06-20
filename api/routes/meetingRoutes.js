@@ -6,5 +6,5 @@ const { requireLoggedIn } = require("../utility/auth");
 const router = express.Router();
 
 router.get("/", requireLoggedIn(), asyncHandler(meetingC.getMeetingsForTeam));
-router.post("/", requireLoggedIn("student"), asyncHandler(meetingC.recordNewMeeting));
+router.post("/", requireLoggedIn(), asyncHandler(meetingC.recordNewMeeting));
 module.exports = router;
