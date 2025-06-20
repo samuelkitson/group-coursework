@@ -3,37 +3,22 @@ const userModel = require("../models/user");
 const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
+const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
+const { GenericNotFoundError } = require("../errors/errors");
 
 /*
   For a given assignment, return a breakdown of the skills ratings for each
   required skill.
 */
 exports.skillsBreakdown = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.query.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
   // Fetch data about assignment, skills and students
   const assignment = await assignmentModel
     .findById(req.query.assignment)
     .lean();
-  if (!assignment)
-    return res.status(404).json({ message: "Assignment not found." });
   const requiredSkills = assignment.skills;
   if (!requiredSkills || requiredSkills.length == 0)
-    return res
-      .status(404)
-      .json({ message: "You must set up some required skills first." });
+    throw new GenericNotFoundError("You need to set up some required skills for this assignment first.")
   const studentIds = assignment.students.map((s) => new Types.ObjectId(s));
   const students = await userModel
     .find({ _id: { $in: studentIds } })
@@ -58,28 +43,13 @@ exports.skillsBreakdown = async (req, res) => {
 };
 
 exports.teamSkillsBreakdown = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.team))
-      return res.status(400).json({ message: "Invalid team ID." });
+  await checkTeamRole(req.query.team, req.session.userId, "member/supervisor/lecturer");
   const team = await teamModel.findById(req.query.team).populate("members", "skills").lean();
-  if (req.session.role === "student") {
-    if (
-      !(await teamModel.isUserOnTeam(
-        req.query.team,
-        req.session.userId,
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The team is unknown or you are not registered as a student on it.",
-      });
-    }
-  } else {
-    if (!team) return res.status(404).json({ message: "The team was not found.", });
-  }
   // Get the required skills for this module
   const assignment = await assignmentModel.findById(team.assignment).select("skills").lean();
   const user = team?.members.find(s => s._id.equals(req.session.userId));
-  if (!assignment) return res.status(404).json({ message: "The assignment was not found.", });
+  if (!assignment)
+    return GenericNotFoundError("The assignment couldn't be found. Try logging out and back in again.");
   // Get the team skills
   const skillScores = [];
   for (const reqSkill of (assignment?.skills ?? [])) {
@@ -98,23 +68,7 @@ exports.teamSkillsBreakdown = async (req, res) => {
 };
 
 exports.teamMeetingsBreakdown = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (req.session.role === "student") {
-    if (
-      !(await teamModel.isUserOnTeam(
-        req.query.team,
-        req.session.userId,
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The team is unknown or you are not registered as a student on it.",
-      });
-    }
-  } else {
-    if (!team) return res.status(404).json({ message: "The team was not found.", });
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "member/supervisor/lecturer");
   // Get the teams for this assignment
   const teamMeetings = await meetingModel.find({ team: new Types.ObjectId(req.query.team) })
     .sort({ dateTime: -1 })

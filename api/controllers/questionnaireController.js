@@ -1,26 +1,15 @@
 const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const { Types } = require("mongoose");
+const { checkAssignmentRole } = require("../utility/auth");
+const { InvalidParametersError } = require("../errors/errors");
 
 /*
   For students, get the questionnaire for them to complete for a given
   assignment. Must provide the assignment ID in the query parameters.
 */
 exports.getAllocationQuestionnaire = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.query.assignment,
-      req.session.userId,
-      "student",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkAssignmentRole(req.query.assignment, req.session.userId, "student");
   const assignment = await assignmentModel
     .findById(req.query.assignment)
     .lean();
@@ -44,7 +33,7 @@ exports.getAllocationQuestionnaire = async (req, res) => {
 exports.updateUserSkills = async (req, res) => {
   const updatedSkills = req.body.skills;
   if (!updatedSkills || typeof updatedSkills !== "object")
-    return res.status(400).json({ message: "Invalid skills update." });
+    throw new InvalidParametersError("Invalid skills update. Please try again.")
   // Get the user's object from the DB
   const user = await userModel.findById(req.session.userId);
   if (!user.skills) user.skills = {};

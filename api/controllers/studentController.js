@@ -6,7 +6,8 @@ const { Types } = require("mongoose");
 const userModel = require("../models/user");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
-const { generateHash } = require("../utility/auth");
+const { generateHash, checkAssignmentRole } = require("../utility/auth");
+const { InvalidParametersError, CustomError, InvalidObjectIdError } = require("../errors/errors");
 
 /*
   Allows staff to upload a CSV of student data from which to create new users.
@@ -16,26 +17,14 @@ const { generateHash } = require("../utility/auth");
   the assignment if necessary). 
 */
 exports.upload = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ message: "No CSV file uploaded." });
-  }
+  if (!req.file)
+    return InvalidParametersError("You need to upload a valid CSV file of student data first.");
 
   const studentsList = [];
   var targetAssignment = req.body.assignment;
   if (targetAssignment != null && targetAssignment !== "") {
     // If target assignment is defined, check it actually exists and this user is a lecturer on it
-    if (
-      !(await assignmentModel.isUserOnAssignment(
-        targetAssignment,
-        req.session.userId,
-        "lecturer",
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The assignment is unknown or you are not registered as a lecturer on it.",
-      });
-    }
+    await checkAssignmentRole(targetAssignment, req.session.userId, "lecturer");
   } else {
     targetAssignment = null;
   }
@@ -53,7 +42,7 @@ exports.upload = async (req, res) => {
         for (const row of studentsList) {
           if (!row.email || !row.displayName) {
             // Row contains invalid or missing data, cancel operation
-            throw new Error("Invalid row data (missing either email or name)");
+            throw new InvalidParametersError("Invalid row data (missing either email or name)");
           }
           // Extract all the fields other than _id and performance data
           let studentDataFields = {};
@@ -95,7 +84,7 @@ exports.upload = async (req, res) => {
       } catch (error) {
         // Something failed - probably malformed CSV - so abort
         console.error("Error importing student CSV: " + error.message);
-        res.status(400).json({ message: error.message });
+        throw new CustomError("An error occurred processing your CSV. Please check the format and try agai.");
       } finally {
         // Delete the temporary CSV file
         fs.unlink(req.file.path, () => {});
@@ -104,23 +93,10 @@ exports.upload = async (req, res) => {
 };
 
 exports.removeFromAssignment = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
   // Get and check permissions on the assignment object
   if (!Types.ObjectId.isValid(req.body.student))
-    return res.status(400).json({ message: "Invalid student ID." });
-  if (!Types.ObjectId.isValid(req.body.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.body.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+    throw new InvalidObjectIdError("The provided student ID is invalid.");
   // Get assignment object
   await assignmentModel.removeStudent(req.body.assignment, req.body.student);
   // Also remove the student from their teams if applicable
@@ -133,11 +109,11 @@ exports.removeFromAssignment = async (req, res) => {
 
 exports.setPairingExclusions = async (req, res) => {
   if (!Types.ObjectId.isValid(req.body.student))
-    return res.status(400).json({ message: "Invalid student ID." });
+    throw new InvalidObjectIdError("The provided student ID is invalid.");
   if (!req.body.others || !Array.isArray(req.body.others))
-    return res.status(400).json({ message: "You must provide a valid list of other student IDs." });
+    throw new InvalidParametersError("You must provide a valid list of other student IDs.");
   if (req.body.others.includes(req.body.student)) {
-    return res.status(400).json({ message: "You can't add a student to their own exclusions list." });
+    throw new InvalidParametersError("You can't add a student to their own exclusions list.");
   }
   // Get current exclusions for the student so they can be removed
   const student = await userModel.findById(req.body.student);
@@ -150,7 +126,7 @@ exports.setPairingExclusions = async (req, res) => {
       { $pull: { noPair: studentId } },
     );
     if (!updated) {
-      return res.status(404).json({message: `Couldn't find student with ID ${otherStudent}.`});
+      throw new InvalidObjectIdError("One or more of the students in the exclusion list couldn't be found. Please reload and try again.");
     }
   });
   // Add new exclusions

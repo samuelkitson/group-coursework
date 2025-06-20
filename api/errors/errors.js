@@ -37,6 +37,12 @@ class ConfigurationError extends CustomError {
   }
 }
 
+class GenericNotFoundError extends CustomError {
+  constructor(message = "Not found. Please try again.") {
+    super(message, 404);
+  }
+}
+
 class IncorrectRoleError extends CustomError {
   constructor(message = "Sorry, your account is not allowed to do that.") {
     super(message, 403, "INCORRECT-ROLE")
@@ -66,6 +72,7 @@ module.exports = {
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
   ConfigurationError,
+  GenericNotFoundError,
   IncorrectRoleError,
   InvalidObjectIdError,
   InvalidParametersError,
