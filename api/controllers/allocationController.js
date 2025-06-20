@@ -3,6 +3,8 @@ const { criteriaOptions, criteriaOptionsMap, dealbreakerOptions, dealbreakerOpti
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
+const { checkAssignmentRole } = require("../utility/auth");
+const { AssignmentInvalidStateError } = require("../errors/errors");
 
 const findTeamMates = async (studentIds, includePast=false) => {
   const result = {};
@@ -26,21 +28,7 @@ const findTeamMates = async (studentIds, includePast=false) => {
 };
 
 exports.getAllocationOptions = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const assignment = await assignmentModel.findById(req.params.assignment).select("skills");
   temporaryCriteriaOptions = criteriaOptions;
   return res.json({
@@ -51,21 +39,7 @@ exports.getAllocationOptions = async (req, res) => {
 };
 
 exports.getAllocationSetup = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const assignment = await assignmentModel.findById(req.params.assignment).select("allocationCriteria allocationDealbreakers groupSize surplusLargerGroups").lean();
   fullCriteria = assignment.allocationCriteria?.map(criterion => {
     const fullCriterion = criteriaOptionsMap.get(criterion.tag);
@@ -90,40 +64,23 @@ exports.getAllocationSetup = async (req, res) => {
 };
 
 exports.setAllocationSetup = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const updatedGroupSize = req.body.groupSize;
   if (!updatedGroupSize || !Number.isInteger(updatedGroupSize))
-    return res.status(400).json({ message: "You must provide a valid target group size." });
+    throw new InvalidParametersError("You must provide a valid target group size.");
   const updatedSurplusLarger = req.body.surplusLargerGroups;
   if (updatedSurplusLarger === undefined || typeof updatedSurplusLarger != "boolean")
-    return res.status(400).json({ message: "You must specify whether to make surplus groups larger or smaller." });
+    throw new InvalidParametersError("You must specify whether to make surplus groups larger or smaller.");
   const updatedCriteria = req.body.criteria;
   if (!updatedCriteria || !Array.isArray(updatedCriteria))
-    return res.status(400).json({ message: "You must provide a valid list of allocation criteria." });
+    throw new InvalidParametersError("You must provide a valid list of allocation criteria.");
   const updatedDealbreakers = req.body.dealbreakers;
   if (!updatedDealbreakers || !Array.isArray(updatedDealbreakers))
-    return res.status(400).json({ message: "You must provide a valid list of allocation dealbreakers." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+    throw new InvalidParametersError("You must provide a valid list of allocation dealbreakers.");
   // Check that assignment is in a valid state
   const assignment = await assignmentModel.findById(req.params.assignment);
   if (assignment.state !== "allocation") {
-    return res.status(403).json({
-      message:
-        "The assignment must be in the 'allocation' state to adjust the allocation setup.",
-    });
+    throw new AssignmentInvalidStateError("The assignment must be in the 'allocation' state to adjust the allocation setup.");
   }
   assignment.groupSize = updatedGroupSize;
   assignment.surplusLargerGroups = updatedSurplusLarger;
@@ -134,21 +91,7 @@ exports.setAllocationSetup = async (req, res) => {
 };
 
 exports.runAllocation = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const studentsList = await assignmentModel.findById(req.params.assignment).select("students").populate("students", "-passwordHash").lean();
   const studentsListStringIds = studentsList.students.map(s => ({
     ...s,
@@ -190,21 +133,7 @@ exports.runAllocation = async (req, res) => {
 };
 
 exports.confirmAllocation = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Get the assignment details and check that all students have been included
   const assignment = await assignmentModel.findById(req.params.assignment);
   const groups = req.body.allocation;

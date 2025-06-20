@@ -5,9 +5,9 @@ const { requireLoggedIn } = require("../utility/auth");
 
 const router = express.Router();
 
-router.get("/:assignment/options", requireLoggedIn("lecturer"), asyncHandler(allocationC.getAllocationOptions));
-router.get("/:assignment/setup", requireLoggedIn("lecturer"), asyncHandler(allocationC.getAllocationSetup));
-router.put("/:assignment/setup", requireLoggedIn("lecturer"), asyncHandler(allocationC.setAllocationSetup));
-router.post("/:assignment/run", requireLoggedIn("lecturer"), asyncHandler(allocationC.runAllocation));
-router.post("/:assignment", requireLoggedIn("lecturer"), asyncHandler(allocationC.confirmAllocation));
+router.get("/:assignment/options", requireLoggedIn(), asyncHandler(allocationC.getAllocationOptions));
+router.get("/:assignment/setup", requireLoggedIn(), asyncHandler(allocationC.getAllocationSetup));
+router.put("/:assignment/setup", requireLoggedIn(), asyncHandler(allocationC.setAllocationSetup));
+router.post("/:assignment/run", requireLoggedIn(), asyncHandler(allocationC.runAllocation));
+router.post("/:assignment", requireLoggedIn(), asyncHandler(allocationC.confirmAllocation));
 module.exports = router;
