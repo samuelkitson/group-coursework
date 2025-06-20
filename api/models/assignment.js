@@ -150,4 +150,7 @@ assignmentSchema.statics.allExistingSkills = async function () {
   ]);
 };
 
+assignmentSchema.index({ _id: 1, students: 1 });
+assignmentSchema.index({ _id: 1, lecturers: 1 });
+
 module.exports = model("assignment", assignmentSchema);
