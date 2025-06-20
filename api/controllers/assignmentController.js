@@ -1,5 +1,6 @@
 const assignmentModel = require("../models/assignment");
 const { Types } = require("mongoose");
+const { checkAssignmentRole } = require("../utility/auth");
 
 exports.createAssignment = async (req, res) => {
   if (!req.body.name)
@@ -90,20 +91,7 @@ exports.getAllVisible = async (req, res) => {
 };
 
 exports.getEnrolledStudents = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const studentsList = await assignmentModel.getStudents(req.params.assignment);
   return res.json(studentsList?.students);
 };
