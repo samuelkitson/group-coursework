@@ -8,6 +8,7 @@ const { PORT, COOKIE_NAME, SESSION_SECRET } = require("./config/constants");
 const routes = require("./routes");
 const { requireLoggedIn } = require("./utility/auth");
 const { mongoUri } = require("./config/db");
+const { errorHandler } = require("./errors/errorMiddleware");
 
 const app = express();
 
@@ -46,5 +47,7 @@ if (require.main === module) {
     console.log(`Group courseworks API started on port ${PORT}`);
   });
 }
+
+app.use(errorHandler);
 
 module.exports = app;
