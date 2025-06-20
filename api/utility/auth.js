@@ -3,7 +3,7 @@ const { Types } = require("mongoose");
 const { BCRYPT_ROUNDS } = require("../config/constants");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
-const { AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError, ConfigurationError } = require("../errors/errors");
+const { AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
 
 // Middleware to check if user is authenticated
 exports.requireLoggedIn = (permittedRole = null) => {
@@ -58,7 +58,7 @@ exports.checkAssignmentRole = async (assignmentId, userId, role = null) => {
 exports.checkTeamRole = async (teamId, userId, accessLevel = "member") => {
   // Check whether the team ID is a valid ObjectId.
   if (!Types.ObjectId.isValid(teamId)) {
-    throw new AssignmentNotFoundError("The provided assignment ID is invalid.");
+    throw new InvalidObjectIdError("The provided team ID is invalid.");
   }
   // Check whether the user ID is a valid ObjectId.
   if (!Types.ObjectId.isValid(userId)) {

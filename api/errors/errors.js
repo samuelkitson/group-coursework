@@ -43,6 +43,12 @@ class IncorrectRoleError extends CustomError {
   }
 }
 
+class InvalidObjectIdError extends CustomError {
+  constructor(message = "The provided ID is invalid. Please check your request and try again.") {
+    super(message, 400)
+  }
+}
+
 class InvalidParametersError extends CustomError {
   constructor(message = "The data you provided was not valid. Please try again.") {
     super(message, 400)
@@ -61,6 +67,7 @@ module.exports = {
   AssignmentInvalidStateError,
   ConfigurationError,
   IncorrectRoleError,
+  InvalidObjectIdError,
   InvalidParametersError,
   SessionInvalidError,
 };
