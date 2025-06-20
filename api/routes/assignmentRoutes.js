@@ -9,7 +9,7 @@ router.post("/", requireLoggedIn("lecturer"), asyncHandler(assignmentC.createAss
 router.get("/all", requireLoggedIn(), asyncHandler(assignmentC.getAllVisible));
 router.delete("/:assignment", requireLoggedIn("lecturer"), asyncHandler(assignmentC.deleteAssignment));
 router.patch("/:assignment", requireLoggedIn("lecturer"), asyncHandler(assignmentC.updateAssignmentInfo));
-router.get("/:assignment/students", asyncHandler(assignmentC.getEnrolledStudents));
+router.get("/:assignment/students", requireLoggedIn(), asyncHandler(assignmentC.getEnrolledStudents));
 router.get("/:assignment/skills", requireLoggedIn("lecturer"), asyncHandler(assignmentC.getSkills));
 router.patch("/:assignment/skills", requireLoggedIn("lecturer"), asyncHandler(assignmentC.setSkills));
 router.patch(
