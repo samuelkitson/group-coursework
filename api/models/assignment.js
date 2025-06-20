@@ -41,8 +41,9 @@ const assignmentSchema = new Schema(
       ],
       default: "pre-allocation",
     },
-    lecturers: [{ type: "ObjectId", ref: "user" }],
-    students: [{ type: "ObjectId", ref: "user" }],
+    lecturers: [{ type: "ObjectId", ref: "user", index: true}],
+    students: [{ type: "ObjectId", ref: "user", index: true }],
+    supervisors: [{ type: "ObjectId", ref: "user", index: true }],
     skills: [skillSchema],
     allocationCriteria: [criterionSchema],
     allocationDealbreakers: [dealbreakerSchema],
@@ -82,13 +83,33 @@ assignmentSchema.statics.findByLecturer = async function (
   ).populate("lecturers", "displayName email");
 };
 
+/**
+ * Check whether a user with a given ID is registered on a specific assignment.
+ * This method allows you to check whether a user has a specific role on an
+ * assignment by providing the role parameter, or whether they have any role on
+ * it by setting role to null.
+ * @param {ObjectId} assignmentId the ID of the assignment.
+ * @param {ObjectId} userId the ID of the user.
+ * @param {string|null} role "student", "lecturer", "supervisor" or null.
+ * @returns {boolean} true if the details were verified.
+ */
 assignmentSchema.statics.isUserOnAssignment = async function (
   assignmentId,
   userId,
-  role = "student",
+  role = null,
 ) {
   const searchQuery = { _id: assignmentId };
-  searchQuery[role + "s"] = { $in: [new Types.ObjectId(userId)] };
+  if (role === null) {
+    // Check whether this user has any role on this assignment.
+    searchQuery.$or = [
+      { lecturers: { $in: [new Types.ObjectId(userId)] } },
+      { students: { $in: [new Types.ObjectId(userId)] } },
+      { supervisors: { $in: [new Types.ObjectId(userId)] } }
+    ];
+  } else {
+    // Check whether this usre has the specified role on this assignment.
+    searchQuery[role + "s"] = { $in: [new Types.ObjectId(userId)] };
+  }
   return this.exists(searchQuery);
 };
 
@@ -149,8 +170,5 @@ assignmentSchema.statics.allExistingSkills = async function () {
     },
   ]);
 };
-
-assignmentSchema.index({ _id: 1, students: 1 });
-assignmentSchema.index({ _id: 1, lecturers: 1 });
 
 module.exports = model("assignment", assignmentSchema);
