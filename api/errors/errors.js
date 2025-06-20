@@ -17,7 +17,7 @@ class CustomError extends Error {
 }
 
 class AssignmentNotFoundError extends CustomError {
-  constructor(message = "That assignment could not be found, or you're not allowed to view it.") {
+  constructor(message = "That assignment could not be found, or you're not allowed to perform that action.") {
     super(message, 404);
   }
 }
