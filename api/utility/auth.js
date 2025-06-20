@@ -1,4 +1,4 @@
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const { BCRYPT_ROUNDS } = require("../config/constants");
 
 // Middleware to check if user is authenticated

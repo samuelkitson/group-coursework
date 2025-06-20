@@ -4,13 +4,14 @@
   "description": "Backend API for the application",
   "main": "app.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node app.js",
+    "dev": "node app.js",
     "test": "jest"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
     "connect-mongodb-session": "^5.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
