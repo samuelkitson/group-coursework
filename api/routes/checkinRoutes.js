@@ -6,6 +6,6 @@ const { requireLoggedIn } = require("../utility/auth");
 const router = express.Router();
 
 router.get("/", requireLoggedIn(), asyncHandler(checkinC.getCheckinStateStudent));
-router.post("/", requireLoggedIn("student"), asyncHandler(checkinC.submitCheckIn));
-router.get("/history", requireLoggedIn("lecturer"), asyncHandler(checkinC.getCheckInHistory));
+router.post("/", requireLoggedIn(), asyncHandler(checkinC.submitCheckIn));
+router.get("/history", requireLoggedIn(), asyncHandler(checkinC.getCheckInHistory));
 module.exports = router;

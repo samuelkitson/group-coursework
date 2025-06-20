@@ -19,20 +19,7 @@ exports.getCheckinStateStudent = async (req, res) => {
 };
 
 exports.submitCheckIn = async (req, res) => {
-  // Check if the user is on the given team
-  if (!Types.ObjectId.isValid(req.body.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (
-    !(await teamModel.isUserOnTeam(
-      req.body.team,
-      req.session.userId,
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The team is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkTeamRole(req.body.team, req.session.userId, "member");
   const effortPoints = req.body.effortPoints;
   if (!effortPoints || typeof effortPoints !== "object")
     return res.status(400).json({ message: "Invalid effort points allocation." });
@@ -73,21 +60,7 @@ exports.submitCheckIn = async (req, res) => {
 };
 
 exports.getCheckInHistory = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (req.session.role === "student") {
-    if (
-      !(await teamModel.isUserOnTeam(
-        req.query.team,
-        req.session.userId,
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The team is unknown or you are not registered as a student on it.",
-      });
-    }
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
   // As a helper, also get the user ID => display name mapping
   const team = await teamModel
     .findById(req.query.team)
