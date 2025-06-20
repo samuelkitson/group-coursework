@@ -1,37 +1,7 @@
 services:
-  frontend:
-    build:
-      dockerfile: frontend.Dockerfile
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_URL=http://localhost/api
-      - VITE_SERVER_HOST=0.0.0.0
-      - WATCHPACK_POLLING=true
-
-  api:
-    build:
-      dockerfile: api.Dockerfile
-    volumes:
-      - ./api:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=omfuXShRdBW0Q1WBqx
-      - DB_NAME=groupsappdb
-      - MONGO_HOST=mongo
-      - MONGO_USER=root
-      - MONGO_PASSWORD=5RjAwkpnU01LrC31s1
-      - SESSION_SECRET
-    depends_on:
-      mongo:
-        condition: service_started
-
   nginx:
     image: nginx:alpine
+    restart: unless-stopped
     ports:
       - "80:80"
     volumes:
@@ -39,13 +9,68 @@ services:
     depends_on:
       - frontend
       - api
+    networks:
+      - app_network
 
   mongo:
     image: mongo
-    restart: always
+    restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: 5RjAwkpnU01LrC31s1
-      MONGO_INITDB_DATABASE: groupsappdb
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    ports:
+      - "27017:27017"
     volumes:
+      - mongodb_data:/data/db
       - ./api/usertesting-mongo-init.js:/docker-entrypoint-initdb.d/usertesting-mongo-init.js:ro
+    networks:
+      - app_network
+
+  api:
+    build:
+      context: /api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: ${API_PORT}
+      MONGO_URI: ${MONGO_URI}
+      SESSION_SECRET: ${SESSION_SECRET}
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    expose:
+      - "${API_PORT}"
+    depends_on:
+      mongo:
+        condition: service_started
+    networks:
+      - app_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    expose:
+      - "${FRONTEND_PORT}"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost/api
+      - VITE_SERVER_HOST=0.0.0.0
+      - WATCHPACK_POLLING=true
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - app_network
+
+volumes:
+  mongodb_data:
+
+networks:
+  app_network:
+    driver: bridge
