@@ -34,6 +34,12 @@ class IncorrectRoleError extends CustomError {
   }
 }
 
+class InvalidParametersError extends CustomError {
+  constructor(message = "The data you provided was not valid. Please try again.") {
+    super(message, 400)
+  }
+}
+
 class SessionInvalidError extends CustomError {
   constructor(message = "Your session has expired. Please log in again.") {
     super(message, 401, "SESSION-INVALID");
@@ -45,5 +51,6 @@ module.exports = {
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
   IncorrectRoleError,
+  InvalidParametersError,
   SessionInvalidError,
 };
