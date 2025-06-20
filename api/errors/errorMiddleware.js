@@ -6,7 +6,7 @@ const errors = require("./errors");
 // default to error 500.
 exports.errorHandler = (err, req, res, next) => {
   if (err instanceof errors.CustomError) {
-    return res.status(err.status).json({ message: err.message });
+    return res.status(err.status).json({ message: err.message, code: err.code });
   }
 
   res.status(500);

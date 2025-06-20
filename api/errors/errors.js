@@ -1,10 +1,13 @@
 class CustomError extends Error {
-  constructor(message, status) {
+  constructor(message, status, code = undefined) {
     super(message);
     this.name = this.constructor.name;
 
     // HTTP error code - default to 500 Internal Server Error.
     this.status = status || 500;
+
+    // Custom error ID code for the frontend to intercept and handle.
+    this.code = code;
 
     // Capture the stack trace.
     if (Error.captureStackTrace) {
@@ -19,4 +22,16 @@ class AssignmentNotFoundError extends CustomError {
   }
 }
 
-module.exports = { CustomError, AssignmentNotFoundError };
+class IncorrectRoleError extends CustomError {
+  constructor(message = "Sorry, your account is not allowed to do that.") {
+    super(message, 403, "INCORRECT-ROLE")
+  }
+}
+
+class SessionInvalidError extends CustomError {
+  constructor(message = "Your session has expired. Please log in again.") {
+    super(message, 401, "SESSION-INVALID");
+  }
+}
+
+module.exports = { CustomError, AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError };
