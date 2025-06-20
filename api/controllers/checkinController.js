@@ -2,22 +2,10 @@ const { Types } = require("mongoose");
 const checkinModel = require("../models/checkin");
 const teamModel = require("../models/team");
 const { checkinStatistics } = require("../utility/maths");
+const { checkTeamRole } = require("../utility/auth");
 
 exports.getCheckinStateStudent = async (req, res) => {
-  // Check if the user is on the given team
-  if (!Types.ObjectId.isValid(req.query.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (
-    !(await teamModel.isUserOnTeam(
-      req.query.team,
-      req.session.userId,
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The team is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "member");
   // Check for active check-in, or create one if it doesn't exit
   let activeCheckIn = await checkinModel.findActiveForTeam(req.query.team);
   if (activeCheckIn == null) {

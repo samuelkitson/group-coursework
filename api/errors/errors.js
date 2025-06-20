@@ -29,7 +29,10 @@ class AssignmentInvalidStateError extends CustomError {
 }
 
 class ConfigurationError extends CustomError {
-  constructor(message = "An internal configuration error occurred. Please try again and then contact support if it persists.") {
+  constructor(details = null, message = "An internal configuration error occurred. Please try again and then contact support if it persists.") {
+    if (details) {
+      console.error(`Configuration error: ${details}`);
+    }
     super(message, 500);
   }
 }
