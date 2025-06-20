@@ -2,23 +2,15 @@ const bcrypt = require("bcryptjs");
 const { Types } = require("mongoose");
 const { BCRYPT_ROUNDS } = require("../config/constants");
 const assignmentModel = require("../models/assignment");
-const { AssignmentNotFoundError } = require("../errors/errors");
+const { AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError } = require("../errors/errors");
 
 // Middleware to check if user is authenticated
 exports.requireLoggedIn = (permittedRole = null) => {
   return (req, res, next) => {
     if (!req.session.userId) {
-      return res.status(401).json({
-        code: "SESSION-INVALID",
-        message: "You need to be logged in to do that.",
-      });
+      throw new SessionInvalidError();
     } else if (permittedRole && req.session.role != permittedRole) {
-      return res.status(403).json({
-        code: "INCORRECT-ROLE",
-        message: `You must be a ${permittedRole} to do that.`,
-        userRole: req.session.role,
-        requiredRole: permittedRole,
-      });
+      throw new IncorrectRoleError();
     } else {
       next();
     }
