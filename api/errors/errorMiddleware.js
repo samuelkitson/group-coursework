@@ -11,6 +11,7 @@ exports.errorHandler = (err, req, res, next) => {
 
   res.status(500);
   console.error(`Unhandled error occurred: ${err.message}`);
+  console.error(err.stack);
   res.json({
     message: "Sorry, an unknown error occurred. Please try again.",
     details: err.message,

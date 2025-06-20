@@ -31,12 +31,4 @@ router.get("/heartbeat", (req, res) => {
   res.json({ online: true, loggedIn: req.session.email != null });
 });
 
-// Add catch-all for unhandled errors in routes
-router.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({
-    message: "An unknown error occurred. Please try again!",
-  })
-});
-
 module.exports = router;
