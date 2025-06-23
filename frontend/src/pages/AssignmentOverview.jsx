@@ -23,7 +23,6 @@ function AssignmentOverview() {
     state.getSelectedAssignment(),
   );
   const userRole = useAuthStore((state) => state.user?.role);
-  const [studentsList, setStudentsList] = useState([]);
 
   const stateHelpText = () => {
     if (userRole == "student") {
@@ -68,20 +67,6 @@ function AssignmentOverview() {
   const goToQuestionnaire = () => {
     navigate("/assignment/questionnaire");
   };
-
-  useEffect(() => {
-    if (userRole == "lecturer") {
-      setStudentsList([]);
-      api
-        .get(`/api/assignment/${selectedAssignment._id}/students`)
-        .then((resp) => {
-          return resp.data;
-        })
-        .then((data) => {
-          setStudentsList(data);
-        });
-    }
-  }, [selectedAssignment]);
 
   return (
     <>
