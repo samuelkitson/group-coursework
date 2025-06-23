@@ -36,7 +36,7 @@ exports.recordNewMeeting = async (req, res) => {
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
   const membersAbsent = (req.body.attendance?.["absent"] ?? []).flat().map(id => id.toString());
   const membersAccountedFor = membersInAttendance.concat(membersApologies, membersAbsent);
-  if (membersAccountedFor.length != teamMembers.length || !membersAccountedFor.every(id => teamMembers.includes(id))) {
+  if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
     return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
   }
   // Build new meeting object

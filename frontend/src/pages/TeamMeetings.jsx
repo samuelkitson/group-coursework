@@ -110,7 +110,7 @@ function TeamMeetings() {
         </Col>
       </Row>
 
-      <NewMeetingModal showModal={showModal} onHide={() => setShowModal(false)} teamMembers={selectedTeam.members} previousActions={getLatestActions()} onSubmit={submitMeetingRecord} />
+      <NewMeetingModal showModal={showModal} onHide={() => setShowModal(false)} teamMembers={selectedTeam.members} supervisors={selectedTeam.supervisors} previousActions={getLatestActions()} onSubmit={submitMeetingRecord} />
     </>
   );
 }
