@@ -25,6 +25,7 @@ import TeamMeetings from "./pages/TeamMeetings";
 import AssignmentTeams from "./pages/AssignmentTeams";
 import Profile from "./pages/Profile";
 import ResumeLogin from "./pages/ResumeLogin";
+import AssignmentSupervisors from "./pages/AssignmentSupervisors";
 
 function App() {
   return (
@@ -44,6 +45,9 @@ function App() {
               </Route>
               <Route path="/assignment/students" element={<AssignmentRoute />}>
                 <Route index element={<AssignmentStudents />} />
+              </Route>
+              <Route path="/assignment/supervisors" element={<AssignmentRoute />}>
+                <Route index element={<AssignmentSupervisors />} />
               </Route>
               <Route path="/assignment/configure" element={<AssignmentRoute />}>
                 <Route index element={<ConfigureAssignment />} />

@@ -6,6 +6,7 @@ import {
   CardChecklist,
   Tools,
   PersonCheck,
+  Eyeglasses,
 } from "react-bootstrap-icons";
 
 export const pageMap = [
@@ -18,6 +19,12 @@ export const pageMap = [
   { label: "Configure",
     icon: Tools,
     link: "/assignment/configure",
+    rolesVisible: ["lecturer"],
+    statesVisible: ["pre-allocation", "allocation-questions", "allocation", "live", "closed"]
+  },
+  { label: "Supervisors",
+    icon: Eyeglasses,
+    link: "/assignment/supervisors",
     rolesVisible: ["lecturer"],
     statesVisible: ["pre-allocation", "allocation-questions", "allocation", "live", "closed"]
   },
