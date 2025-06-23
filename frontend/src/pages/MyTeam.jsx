@@ -13,6 +13,7 @@ function MyTeam() {
 
   const [teamNumber, setTeamNumber] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [teamSupervisors, setTeamSupervisors] = useState([]);
 
   const teamEmailLink = () => {
     const otherEmails = teamMembers.map(s => s.email).filter(e => e && e != user.email).join(";");
@@ -42,6 +43,7 @@ function MyTeam() {
         const teamMembersTemp = teamData?.members;
         teamMembersTemp.sort((a, b) => (a.email === user.email ? -1 : b.email === user.email ? 1 : 0));
         setTeamMembers(teamMembersTemp ?? []);
+        setTeamSupervisors(teamData?.supervisors ?? []);
       });
   };
 
@@ -100,6 +102,46 @@ function MyTeam() {
           </Col>
         ))}
       </Row>
+
+      {teamSupervisors.length > 0 && 
+        <>
+          <h3 className="mt-4">Your supervisor{teamSupervisors.length > 1 && "s"}</h3>
+          <p className="text-muted">
+            Supervisors meet with their teams regularly and help to make sure
+            they're making good progress. They can see your meeting logs and
+            data about how you're working as a team.
+          </p>
+          <Row xs={1} sm={2} lg={3} className="g-3">
+          {teamSupervisors.map((supervisor, index) => (
+            <Col key={index}>
+              <Card className="shadow-sm h-100">
+                <Card.Body>
+                  <div className="d-flex just-content-between">
+                    <Card.Title className="mb-2">{supervisor.displayName}</Card.Title>
+                    <a
+                      href={`mailto:${supervisor.email}`}
+                      className="icon-button ms-auto d-flex align-items-center">
+                      <OverlayTrigger overlay={<Tooltip>{supervisor.email}</Tooltip>}>
+                        <Envelope size={24} />
+                      </OverlayTrigger>
+                    </a>
+                  </div>
+                  {supervisor.intro ? 
+                    <Card.Text>{supervisor?.intro ?? ""}</Card.Text>
+                  :
+                    <Card.Text className="text-muted">{supervisor.bio || "Hi! I haven't added a bio yet."}</Card.Text>
+                  }
+                  <div className="d-flex align-items-center text-muted">
+                    <PersonVideo3 className="me-2"/>
+                    { meetingPreferenceString(supervisor.meetingPref) }
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        </>
+      }
     </>
   );
 }

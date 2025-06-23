@@ -48,13 +48,13 @@ export const pageMap = [
   { label: "My Team",
     icon: People,
     link: "/assignment/team",
-    rolesVisible: ["student", "supervisor"],
+    rolesVisible: ["student"],
     statesVisible: ["live", "closed"]
   },
   { label: "Meetings",
     icon: PersonVideo3,
     link: "/assignment/meetings",
-    rolesVisible: ["student", "supervisor"],
+    rolesVisible: ["student"],
     statesVisible: ["live", "closed"]
   },
   { label: "Check-In",

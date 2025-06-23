@@ -6,7 +6,7 @@ import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Button, Card, Col, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
-import { ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, ExclamationTriangle, ExclamationTriangleFill, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, InfoCircleFill, InfoLg } from "react-bootstrap-icons";
+import { ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, InfoCircleFill, InfoLg } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
 
@@ -186,7 +186,12 @@ function AssignmentTeams() {
       <Row className="mb-3 mb-md-0">
         <Col md={9}>
           <h1>All teams</h1>
-          <p className="text-muted">Here you can see an overview of the teams for {selectedAssignment.name}.</p>
+          <p className="text-muted">
+            Here you can see an overview of the teams for {selectedAssignment.name}.
+            {selectedAssignment?.supervisors?.length > 0 &&
+            <><br />Supervisors are indicated using the <Eyeglasses /> symbol.</>
+            }
+          </p>
         </Col>
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
           <div className="d-grid gap-2">
@@ -247,6 +252,11 @@ function AssignmentTeams() {
                           { warningFlags(student) }
                         </>
                         }
+                      </div>))}
+                    </ul>
+                    <ul className="list-unstyled mb-0">
+                      {(group?.supervisors ?? []).map((supervisor, i) => ( <div className="d-flex align-items-center text-muted">
+                        <li key={supervisor._id}><Eyeglasses /> {supervisor.displayName}</li>
                       </div>))}
                     </ul>
                   </Col>
