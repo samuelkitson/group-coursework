@@ -14,7 +14,7 @@ router.post(
 );
 router.patch(
   "/unenrol",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn(),
   asyncHandler(studentC.removeFromAssignment),
 );
 router.put(

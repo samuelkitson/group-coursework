@@ -41,8 +41,9 @@ const assignmentSchema = new Schema(
       ],
       default: "pre-allocation",
     },
-    lecturers: [{ type: "ObjectId", ref: "user" }],
-    students: [{ type: "ObjectId", ref: "user" }],
+    lecturers: [{ type: "ObjectId", ref: "user", index: true}],
+    students: [{ type: "ObjectId", ref: "user", index: true }],
+    supervisors: [{ type: "ObjectId", ref: "user", index: true }],
     skills: [skillSchema],
     allocationCriteria: [criterionSchema],
     allocationDealbreakers: [dealbreakerSchema],
@@ -51,6 +52,39 @@ const assignmentSchema = new Schema(
   },
   { timestamps: true },
 );
+
+assignmentSchema.statics.getAssignmentsByUser = async function (userId, allFields) {
+  const projection = allFields
+    ? {}
+    : { _id: 1, name: 1, description: 1, state: 1, supervisors: 1, students: 1, lecturers: 1 };
+  const userObjectId = new Types.ObjectId(userId);
+  // Check for the student role first
+  const assignmentsStudents = await this.find(
+    {
+      students: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  let assignments = assignmentsStudents.map(a => ({...a, role: "student", students: undefined, supervisors: undefined}));
+  // Check for the supervisor role next
+  const assignmentsSupervisors = await this.find(
+    {
+      supervisors: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  assignments = assignments.concat(assignmentsSupervisors.map(a => ({...a, role: "supervisor", students: undefined, supervisors: undefined})));
+  // Check for the lecturer role last
+  const assignmentsLecturers = await this.find(
+    {
+      lecturers: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  assignments = assignments.concat(assignmentsLecturers.map(a => ({...a, role: "lecturer"})));
+  // Return the combined list
+  return assignments;
+};
 
 assignmentSchema.statics.findByStudent = async function (
   studentId,
@@ -82,13 +116,48 @@ assignmentSchema.statics.findByLecturer = async function (
   ).populate("lecturers", "displayName email");
 };
 
+assignmentSchema.statics.findBySupervisor = async function (
+  supervisorId,
+  allFields = false,
+) {
+  const projection = allFields
+    ? {}
+    : { _id: 1, name: 1, description: 1, state: 1, lecturers: 1 };
+  return this.find(
+    {
+      supervisors: { $in: [new Types.ObjectId(supervisorId)] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email");
+};
+
+/**
+ * Check whether a user with a given ID is registered on a specific assignment.
+ * This method allows you to check whether a user has a specific role on an
+ * assignment by providing the role parameter, or whether they have any role on
+ * it by setting role to null.
+ * @param {ObjectId} assignmentId the ID of the assignment.
+ * @param {ObjectId} userId the ID of the user.
+ * @param {string|null} role "student", "lecturer", "supervisor" or null.
+ * @returns {boolean} true if the details were verified.
+ */
 assignmentSchema.statics.isUserOnAssignment = async function (
   assignmentId,
   userId,
-  role = "student",
+  role = null,
 ) {
   const searchQuery = { _id: assignmentId };
-  searchQuery[role + "s"] = { $in: [new Types.ObjectId(userId)] };
+  if (role === null) {
+    // Check whether this user has any role on this assignment.
+    searchQuery.$or = [
+      { lecturers: { $in: [new Types.ObjectId(userId)] } },
+      { students: { $in: [new Types.ObjectId(userId)] } },
+      { supervisors: { $in: [new Types.ObjectId(userId)] } }
+    ];
+  } else {
+    // Check whether this usre has the specified role on this assignment.
+    searchQuery[role + "s"] = { $in: [new Types.ObjectId(userId)] };
+  }
   return this.exists(searchQuery);
 };
 
@@ -149,8 +218,5 @@ assignmentSchema.statics.allExistingSkills = async function () {
     },
   ]);
 };
-
-assignmentSchema.index({ _id: 1, students: 1 });
-assignmentSchema.index({ _id: 1, lecturers: 1 });
 
 module.exports = model("assignment", assignmentSchema);

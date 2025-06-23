@@ -2,22 +2,11 @@ const { Types } = require("mongoose");
 const checkinModel = require("../models/checkin");
 const teamModel = require("../models/team");
 const { checkinStatistics } = require("../utility/maths");
+const { checkTeamRole } = require("../utility/auth");
+const { InvalidParametersError } = require("../errors/errors");
 
 exports.getCheckinStateStudent = async (req, res) => {
-  // Check if the user is on the given team
-  if (!Types.ObjectId.isValid(req.query.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (
-    !(await teamModel.isUserOnTeam(
-      req.query.team,
-      req.session.userId,
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The team is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "member");
   // Check for active check-in, or create one if it doesn't exit
   let activeCheckIn = await checkinModel.findActiveForTeam(req.query.team);
   if (activeCheckIn == null) {
@@ -31,23 +20,10 @@ exports.getCheckinStateStudent = async (req, res) => {
 };
 
 exports.submitCheckIn = async (req, res) => {
-  // Check if the user is on the given team
-  if (!Types.ObjectId.isValid(req.body.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (
-    !(await teamModel.isUserOnTeam(
-      req.body.team,
-      req.session.userId,
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The team is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkTeamRole(req.body.team, req.session.userId, "member");
   const effortPoints = req.body.effortPoints;
   if (!effortPoints || typeof effortPoints !== "object")
-    return res.status(400).json({ message: "Invalid effort points allocation." });
+    throw new InvalidParametersError("Invalid effort points allocation.");
   // Check for active check-in, or create one if it doesn't exit
   let activeCheckIn = await checkinModel.findActiveForTeam(req.body.team);
   if (activeCheckIn == null) {
@@ -55,28 +31,24 @@ exports.submitCheckIn = async (req, res) => {
   }
   if (activeCheckIn.effortPoints == null) activeCheckIn.effortPoints = {};
   const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
-  if (alreadyCompleted) {
-    return res.status(400).json({message: "You've already completed this week's check-in."});
-  }
+  if (alreadyCompleted)
+    throw new InvalidParametersError("You've already completed this week's check-in.");
   // Check that everyone has been accounted for in the effort points
   const teamInfo = await teamModel.findById(req.body.team).select("members").lean();
   const teamMembers = teamInfo.members.map(id => id.toString());
   const membersRated = Object.keys(effortPoints).map(id => id.toString());
-  if (membersRated.length != teamMembers.length || !membersRated.every(id => teamMembers.includes(id))) {
-    return res.status(400).json({ message: "You need to allocate some effort points to each team member." });
-  }
+  if (membersRated.length != teamMembers.length || !membersRated.every(id => teamMembers.includes(id)))
+    throw new InvalidParametersError("You need to allocate some effort points to each team member.");
   // Check whether the points are balanced and add up correctly
   const totalPoints = effortPoints.length * 7;
   let pointsSum = 0;
   Object.values(effortPoints).forEach(points => {
-    if (points < 1 || points > 7) {
-      return res.status(400).json({ message: "Effort points invalid." });
-    }
+    if (points < 1 || points > 7)
+      throw new InvalidParametersError("Effort points can only be between 1 and 7 inclusive.")
     pointsSum += points;
   });
-  if (!totalPoints === pointsSum) {
-    return res.status(400).json({ message: "The effort points you have allocated are not balanced properly." });
-  }
+  if (!totalPoints === pointsSum)
+    throw new InvalidParametersError("The effort points you have submitted are not balanced evenly.")
   // All ok, update the record
   activeCheckIn["effortPoints"][req.session.userId] = effortPoints;
   activeCheckIn.markModified("effortPoints");
@@ -85,21 +57,7 @@ exports.submitCheckIn = async (req, res) => {
 };
 
 exports.getCheckInHistory = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (req.session.role === "student") {
-    if (
-      !(await teamModel.isUserOnTeam(
-        req.query.team,
-        req.session.userId,
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The team is unknown or you are not registered as a student on it.",
-      });
-    }
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
   // As a helper, also get the user ID => display name mapping
   const team = await teamModel
     .findById(req.query.team)

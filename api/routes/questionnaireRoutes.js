@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get(
   "/skills",
-  requireLoggedIn("student"),
+  requireLoggedIn(),
   asyncHandler(questionnaireC.getAllocationQuestionnaire),
 );
 router.patch(

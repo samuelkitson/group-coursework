@@ -1,11 +1,13 @@
 const assignmentModel = require("../models/assignment");
 const { Types } = require("mongoose");
+const { checkAssignmentRole } = require("../utility/auth");
+const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
 
 exports.createAssignment = async (req, res) => {
   if (!req.body.name)
-    return res.status(400).json({ message: "You must provide an assignment name." });
+    throw new InvalidParametersError("You must provide an assignment name.");
   if (!req.body.description)
-    return res.status(400).json({ message: "You must provide an assignment description." });
+    throw new InvalidParametersError("You must provide an assignment description.");
   const newAssignment = await assignmentModel.create({
     name: req.body.name,
     description: req.body.description,
@@ -18,43 +20,17 @@ exports.createAssignment = async (req, res) => {
 
 // Only allowed in pre-allocation state
 exports.deleteAssignment = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
-  await assignmentModel.deleteOne({_id: new Types.ObjectId(req.params.assignment)});
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  await assignmentModel.deleteOne({_id: new Types.ObjectId(req.params.assignment), state: "pre-allocation"});
   return res.json({message: "Assignment deleted successfully"});
 };
 
 exports.updateAssignmentInfo = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   if (!req.body.name)
-    return res.status(400).json({ message: "You must provide an assignment name." });
+    throw new InvalidParametersError("You must provide an assignment name.");
   if (!req.body.description)
-    return res.status(400).json({ message: "You must provide an assignment description." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+    throw new InvalidParametersError("You must provide an assignment description.");
   await assignmentModel.findOneAndUpdate(
     {
       _id: req.params.assignment,
@@ -69,80 +45,37 @@ exports.updateAssignmentInfo = async (req, res) => {
 
 exports.getAllVisible = async (req, res) => {
   // Check whether to use student or lecturer filtering
-  if (req.session.role == "student") {
-    const dbAssignments = await assignmentModel.findByStudent(
+  if (req.session.role == "student" || req.session.role == "supervisor") {
+    const dbAssignments = await assignmentModel.getAssignmentsByUser(
       req.session.userId,
       false,
     );
     return res.json(dbAssignments);
   } else if (req.session.role == "lecturer") {
-    const dbAssignments = await assignmentModel.findByLecturer(
+    const dbAssignments = await assignmentModel.getAssignmentsByUser(
       req.session.userId,
       true,
     );
     return res.json(dbAssignments);
   } else {
-    res.status(403).json({
-      message:
-        "Your account role is invalid. Please log out and back in again.",
-    });
+    throw new IncorrectRoleError();
   }
 };
 
 exports.getEnrolledStudents = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const studentsList = await assignmentModel.getStudents(req.params.assignment);
   return res.json(studentsList?.students);
 };
 
 exports.getSkills = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const skills = await assignmentModel.findById(req.params.assignment).select("skills");
   return res.json(skills);
 };
 
 exports.setSkills = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Get and check the new skills provided
   const updatedSkills = req.body.skills;
   if (!updatedSkills || typeof updatedSkills !== "object")
@@ -160,21 +93,7 @@ exports.setSkills = async (req, res) => {
 };
 
 exports.setState = async (req, res) => {
-  // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.params.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.params.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Check the current state and whether this move is valid
   const assignment = await assignmentModel.findById(req.params.assignment);
   const existingState = assignment.state;

@@ -2,27 +2,11 @@ const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
+const { checkTeamRole } = require("../utility/auth");
 
 // Provide the team ID in query params
 exports.getMeetingsForTeam = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.query.team))
-      return res.status(400).json({ message: "Invalid team ID." });
-  if (req.session.role === "student") {
-    if (
-      !(await teamModel.isUserOnTeam(
-        req.query.team,
-        req.session.userId,
-      ))
-    ) {
-      return res.status(404).json({
-        message:
-          "The team is unknown or you are not registered as a student on it.",
-      });
-    }
-  } else {
-    const team = await teamModel.findById(req.query.team);
-    if (!team) return res.status(404).json({ message: "The team was not found.", });
-  }
+  await checkTeamRole(req.query.team, req.session.userId, "member/supervisor/lecturer");
   // Get meeting documents for the team
   const meetingHistory = await meetingModel.find({
     team: req.query.team,
@@ -32,19 +16,7 @@ exports.getMeetingsForTeam = async (req, res) => {
 };
 
 exports.recordNewMeeting = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.body.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  if (
-    !(await teamModel.isUserOnTeam(
-      req.body.team,
-      req.session.userId,
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The team is unknown or you are not registered as a student on it.",
-    });
-  }
+  await checkTeamRole(req.body.team, req.session.userId, "member");
   // Get the team details
   const teamInfo = await teamModel.findById(req.body.team).select("members").lean();
   const teamMembers = teamInfo.members.map(id => id.toString());
@@ -64,7 +36,7 @@ exports.recordNewMeeting = async (req, res) => {
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
   const membersAbsent = (req.body.attendance?.["absent"] ?? []).flat().map(id => id.toString());
   const membersAccountedFor = membersInAttendance.concat(membersApologies, membersAbsent);
-  if (membersAccountedFor.length != teamMembers.length || !membersAccountedFor.every(id => teamMembers.includes(id))) {
+  if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
     return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
   }
   // Build new meeting object

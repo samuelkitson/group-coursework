@@ -25,6 +25,7 @@ import TeamMeetings from "./pages/TeamMeetings";
 import AssignmentTeams from "./pages/AssignmentTeams";
 import Profile from "./pages/Profile";
 import ResumeLogin from "./pages/ResumeLogin";
+import AssignmentSupervisors from "./pages/AssignmentSupervisors";
 
 function App() {
   return (
@@ -38,50 +39,36 @@ function App() {
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/profile" element={<Profile />} />
-              <Route element={<AssignmentRoute page="overview" />}>
-                <Route
-                  path="/assignment/overview"
-                  element={<AssignmentOverview />}
-                />
+
+              <Route path="/assignment/overview" element={<AssignmentRoute />}>
+                <Route index element={<AssignmentOverview />} />
               </Route>
-              <Route element={<AssignmentRoute page="students" />}>
-                <Route
-                  path="/assignment/students"
-                  element={<AssignmentStudents />}
-                />
+              <Route path="/assignment/students" element={<AssignmentRoute />}>
+                <Route index element={<AssignmentStudents />} />
               </Route>
-              <Route element={<AssignmentRoute page="configure" />}>
-                <Route
-                  path="/assignment/configure"
-                  element={<ConfigureAssignment />}
-                />
+              <Route path="/assignment/supervisors" element={<AssignmentRoute />}>
+                <Route index element={<AssignmentSupervisors />} />
               </Route>
-              <Route element={<AssignmentRoute page="allocate" />}>
-                <Route
-                  path="/assignment/allocate"
-                  element={<AllocationControls />}
-                />
+              <Route path="/assignment/configure" element={<AssignmentRoute />}>
+                <Route index element={<ConfigureAssignment />} />
               </Route>
-              <Route element={<AssignmentRoute page="teams" />}>
-                <Route
-                  path="/assignment/teams"
-                  element={<AssignmentTeams />}
-                />
+              <Route path="/assignment/allocate" element={<AssignmentRoute />}>
+                <Route index element={<AllocationControls />} />
               </Route>
-              <Route element={<AssignmentRoute page="questionnaire" />}>
-                <Route
-                  path="/assignment/questionnaire"
-                  element={<Questionnaire />}
-                />
+              <Route path="/assignment/teams" element={<AssignmentRoute />}>
+                <Route index element={<AssignmentTeams />} />
               </Route>
-              <Route element={<AssignmentRoute page="check-in" />}>
-                <Route path="/assignment/check-in" element={<CheckIn />} />
+              <Route path="/assignment/questionnaire" element={<AssignmentRoute />}>
+                <Route index element={<Questionnaire />} />
               </Route>
-              <Route element={<AssignmentRoute page="team" />}>
-                <Route path="/assignment/team" element={<MyTeam />} />
+              <Route path="/assignment/check-in" element={<AssignmentRoute />}>
+                <Route index element={<CheckIn />} />
               </Route>
-              <Route element={<AssignmentRoute page="meetings" />}>
-                <Route path="/assignment/meetings" element={<TeamMeetings />} />
+              <Route path="/assignment/team" element={<AssignmentRoute />}>
+                <Route index element={<MyTeam />} />
+              </Route>
+              <Route path="/assignment/meetings" element={<AssignmentRoute />}>
+                <Route index element={<TeamMeetings />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/login" />} />

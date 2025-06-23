@@ -5,7 +5,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { Badge, Button, Card, Col, Form, InputGroup, Modal, Row } from "react-bootstrap";
 import { timeOfDayName } from "@/utility/datetimes";
 
-import { Check2All, ChevronRight, ClipboardData, PlusCircleFill, Question, QuestionCircleFill, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
+import { Check2All, ChevronRight, ClipboardData, PlusCircleFill, InfoCircle, Question, QuestionCircleFill, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
 import { ASSIGNMENT_STATES, extractNameParts } from "@/utility/helpers";
 
 import "./style/Dashboard.css";
@@ -60,32 +60,17 @@ function Dashboard() {
   const includedAssignments = () => includeClosed ? assignments : assignments.filter(a => a.state !== "closed");
   const hasPastAssignments = assignments.some(a => a.state === "closed");
 
-  const getStatusIcon = (status) => {
-    let colour = "danger";
-    let icon = <Question />;
-    if (status === "pre-allocation") {
-      icon = <Tools />;
-      colour = user.role === "student" ? "secondary" : "primary";
-    } else if (status === "allocation-questions") {
-      icon = <ClipboardData />;
-      colour = user.role === "student" ? "primary" : "secondary";
-    } else if (status === "allocation") {
-      icon = <Shuffle />;
-      colour = user.role === "student" ? "secondary" : "primary";
-    } else if (status === "live") {
-      icon = <RocketTakeoff />;
-      colour = "success";
-    } else if (status === "closed") {
-      icon = <Check2All />;
-      colour = "dark";
-    }
-    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {staffName: "Unknown state", studentName: "Unknown state"};
-    const stateHelpText = user.role === "student" ? currentState.studentName : currentState.staffName;
+  const getStatusIcon = (status, role) => {
+    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {
+      name: "Unknown state",
+      icon: Question,
+      colour: {student: "dark", supervisor: "dark", lecturer: "dark"}
+    };
     return (
-      <Badge pill bg={colour} className="d-inline-flex align-items-center py-2 px-3 fs-5">
-        {icon}
+      <Badge pill bg={currentState.colour[role]} className="d-inline-flex align-items-center py-2 px-3 fs-5">
+        <currentState.icon />
         <span className="fw-normal fs-6 ms-2">
-          {stateHelpText}
+          {currentState.name}
         </span>
       </Badge>
     )
@@ -133,7 +118,10 @@ function Dashboard() {
                   <div>
                     <Card.Title className="mb-3">{assignment.name}</Card.Title>
                     <p className="text-muted">{assignment.description}</p>
-                    {getStatusIcon(assignment.state)}
+                    {assignment.role === "supervisor" &&
+                      <p className="text-muted mt-0 mb-3">You're a supervisor on this assignment.</p>
+                    }
+                    {getStatusIcon(assignment.state, assignment.role)}
                   </div>
                   <div>
                     <Button

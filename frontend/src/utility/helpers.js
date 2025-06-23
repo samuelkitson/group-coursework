@@ -1,3 +1,5 @@
+import { Check2All, ClipboardData, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
+
 // From: https://stackoverflow.com/a/22193094
 export function toTitleCase(string) {
   return string
@@ -16,28 +18,53 @@ export function extractNameParts(fullName) {
 export const ASSIGNMENT_STATES = [
   {
     id: "pre-allocation",
-    studentName: "Getting ready",
-    staffName: "Setup",
+    name: "Getting ready",
+    icon: Tools,
+    colour: {
+      student: "secondary",
+      supervisor: "secondary",
+      lecturer: "primary",
+    },
   },
   {
     id: "allocation-questions",
-    studentName: "Allocation open",
-    staffName: "Allocation questions",
+    name: "Allocation questions",
+    icon: ClipboardData,
+    colour: {
+      student: "primary",
+      supervisor: "secondary",
+      lecturer: "secondary",
+    },
   },
   {
     id: "allocation",
-    studentName: "Finalising allocation",
-    staffName: "Finalising allocation",
+    name: "Finalising allocation",
+    icon: Shuffle,
+    colour: {
+      student: "secondary",
+      supervisor: "secondary",
+      lecturer: "primary",
+    },
   },
   {
     id: "live",
-    studentName: "Working in teams",
-    staffName: "Live",
+    name: "Working in teams",
+    icon: RocketTakeoff,
+    colour: {
+      student: "success",
+      supervisor: "success",
+      lecturer: "success",
+    },
   },
   {
     id: "closed",
-    studentName: "Finished",
-    staffName: "Finished",
+    name: "Finished",
+    icon: Check2All,
+    colour: {
+      student: "dark",
+      supervisor: "dark",
+      lecturer: "dark",
+    },
   },
 ];
 

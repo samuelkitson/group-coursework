@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { CheckCircleFill, InfoCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
+import { CheckCircleFill, Eyeglasses, InfoCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 
-const NewMeetingModal = ({ showModal, onHide, teamMembers, previousActions, onSubmit }) => {
+const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit }) => {
   const [location, setLocation] = useState('');
   const [dateTime, setDateTime] = useState('');
   const [minutes, setMinutes] = useState('');
@@ -89,7 +89,10 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, previousActions, onSu
       setLocation('');
       setDateTime('');
       setMinutes('');
-      setAttendance(JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" })));
+      const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
+      const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" }));
+      const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: "notneeded" }));
+      setAttendance([...memberAttendance, ...supervisorAttendance]);
       const copiedPrevActions = JSON.parse(JSON.stringify(previousActions));
       setPrevActions(copiedPrevActions.map(a => ({ ...a, complete: true })));
       setNewActions([{ action: '', assignees: [] }]);
@@ -133,7 +136,13 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, previousActions, onSu
           {attendance.map(user => (
             <Form.Group as={Row} className="mb-2 d-flex align-items-center" key={user._id}>
             <Col xs={12} md={8} className="d-flex justify-content-between align-items-center mb-1 mb-md-0">
-              <Form.Label className="mb-0 me-2">{user.displayName}</Form.Label>
+              {user?.supervisor ? 
+                <Form.Label className="mb-0 me-2 text-muted">
+                  <Eyeglasses className="me-1" />{user.displayName}
+                </Form.Label>
+              : 
+                <Form.Label className="mb-0 me-2">{user.displayName}</Form.Label>
+              }
               {attendanceIcon(user.status)}
             </Col>
             <Col xs={12} md={4}>
@@ -146,6 +155,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, previousActions, onSu
                 <option value="attended">Attended</option>
                 <option value="apologies">Sent apologies</option>
                 <option value="absent">Absent</option>
+                {user?.supervisor && <option value="notneeded">Supervisor not invited</option>}
               </Form.Select>
             </Col>
           </Form.Group>

@@ -6,6 +6,8 @@ const meetingModel = require("../models/meeting");
 const checkinModel = require("../models/checkin");
 const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/maths");
 const { summariseMeetingAttendance } = require("./meetingController");
+const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
+const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
 
 const generateTeamInsights = (teamData) => {
   const insights = [];
@@ -84,22 +86,14 @@ const generateTeamInsights = (teamData) => {
 
 exports.getAllForAssignment = async (req, res) => {
   // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.query.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
+  const role = await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
+  // Get the teams for this assignment (if supervisor, only show their teams)
+  let teams;
+  if (role === "lecturer") {
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+  } else {
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
   }
-  // Get the teams for this assignment
-  const teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members", "email displayName").sort({ teamNumber: 1 }).lean();
   // Add in their last meeting time/date
   let teamsWithLastMeeting = await Promise.all(
     teams.map(async (team) => {
@@ -145,20 +139,7 @@ exports.getAllForAssignment = async (req, res) => {
 
 exports.downloadTeamsCsv = async (req, res) => {
   // Get and check permissions on the assignment object
-  if (!Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      req.query.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
+  await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
   // Get the teams for this assignment
   const assignment = await assignmentModel.findById(req.query.assignment);
   const teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members", "email").sort({ teamNumber: 1 }).lean();
@@ -175,7 +156,7 @@ exports.downloadTeamsCsv = async (req, res) => {
 exports.getMyTeam = async (req, res) => {
   // If assignment ID provided, check it's valid
   if (req.query.assignment && !Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
+    throw new InvalidObjectIdError("The provided assignment ID is invalid.");
   // Get the details of the user's teams
   const query = { members: { $in: [req.session.userId] } };
   if (req.query.assignment) {
@@ -184,10 +165,11 @@ exports.getMyTeam = async (req, res) => {
   const userTeams = await teamModel
     .find(query)
     .populate("members", "email displayName skills meetingPref bio")
+    .populate("supervisors", "email displayName meetingPref bio")
     .lean();
   // Check whether the team was actually found or not
   if (userTeams == null) {
-    return res.status(404).json({ message: "It doesn't look like you're currently on a team.", });
+    throw new GenericNotFoundError("It doesn't look like you're currently on a team.");
   }
   // Get the required skills for this assignment
   const assignment = await assignmentModel.findById(req.query.assignment);
@@ -203,35 +185,19 @@ exports.getMyTeam = async (req, res) => {
 };
 
 exports.addMember = async (req, res) => {
-  // Check valid team ID and student ID
-  if (req.params.team && !Types.ObjectId.isValid(req.params.team))
-    return res.status(400).json({ message: "Invalid team ID." });
-  // Check valid team ID and student ID
+  await checkTeamRole(req.params.team, req.session.userId, "lecturer");
+  // Check valid student ID
   if (req.body.student && !Types.ObjectId.isValid(req.body.student))
-    return res.status(400).json({ message: "Invalid student ID." });
+    throw new InvalidObjectIdError("The provided student ID is invalid.");
   // Get the team object and check permissions
   const team = await teamModel.findById(req.params.team);
-  if (!team || !team.assignment)
-    return res.status(404).json({ message: "The assignment is unknown or you are not registered as a lecturer on it." });
-  if (
-    !(await assignmentModel.isUserOnAssignment(
-      team.assignment,
-      req.session.userId,
-      "lecturer",
-    ))
-  ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
-  }
   // Remove the student from their previous team on this assignment
   const removedStudents = await teamModel.updateMany(
     { assignment: team.assignment, members: { $in: req.body.student }},
     { $pull: { members: req.body.student }},
   );
   if (removedStudents.modifiedCount === 0)
-    return res.status(400).json({ message: "Student not found. Please try again." });
+    throw new GenericNotFoundError("Student not found. Please try again.");
   team.members.push(req.body.student);
   await team.save();
   return res.json({message: "Student moved to new team successfully. Please contact the student to let them know."});
