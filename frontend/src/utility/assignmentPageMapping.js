@@ -4,14 +4,8 @@ import {
   Shuffle,
   PersonVideo3,
   CardChecklist,
-  HouseDoor,
-  PersonCircle,
-  BoxArrowRight,
-  InfoCircle,
   Tools,
   PersonCheck,
-  ChevronDown,
-  ChevronRight,
 } from "react-bootstrap-icons";
 
 export const pageMap = [
