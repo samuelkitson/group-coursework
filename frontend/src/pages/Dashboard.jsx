@@ -5,7 +5,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { Badge, Button, Card, Col, Form, InputGroup, Modal, Row } from "react-bootstrap";
 import { timeOfDayName } from "@/utility/datetimes";
 
-import { Check2All, ChevronRight, ClipboardData, PlusCircleFill, Question, QuestionCircleFill, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
+import { Check2All, ChevronRight, ClipboardData, PlusCircleFill, InfoCircle, Question, QuestionCircleFill, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
 import { ASSIGNMENT_STATES, extractNameParts } from "@/utility/helpers";
 
 import "./style/Dashboard.css";
@@ -133,6 +133,9 @@ function Dashboard() {
                   <div>
                     <Card.Title className="mb-3">{assignment.name}</Card.Title>
                     <p className="text-muted">{assignment.description}</p>
+                    {assignment.role === "supervisor" &&
+                      <p className="text-muted mt-0 mb-3">You're a supervisor on this assignment.</p>
+                    }
                     {getStatusIcon(assignment.state)}
                   </div>
                   <div>

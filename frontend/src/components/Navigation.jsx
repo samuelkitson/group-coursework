@@ -33,6 +33,7 @@ import { useAuthStore } from "../store/authStore";
 import "./style/Navigation.css";
 import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
+import { getAllowedPages } from "@/utility/assignmentPageMapping";
 
 // Extracted navigation menu items to a separate component
 function NavigationItems({ isSidebar = false, hideOffcanvas }) {
@@ -62,6 +63,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
   }, [fetchAssignments, fetchTeams, user]);
 
   const getProjectOptions = () => {
+    return getAllowedPages(selectedAssignment.state, selectedAssignment.role);
     if (user?.role == "student") {
       switch (selectedAssignment.state) {
         case "pre-allocation":
@@ -236,7 +238,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
                           key={index}
                         >
                           <div className="d-flex align-items-center">
-                            {option.icon}
+                            <option.icon />
                             <span className="ms-2">{option.label}</span>
                           </div>
                           { option.badge && 
