@@ -22,12 +22,12 @@ exports.requireLoggedIn = (permittedRole = null) => {
  * Authorisation handler to check whether the current logged-in user has a
  * certain role on a given assignment (or any role, by omitting the role
  * parameter).
- * @param {ObjectId} assignmentIdLocation "params-assignment", "params-id",
- * "body-assignment" or "body-id".
+ * @param {ObjectId} assignmentId the assignment ID.
  * @param {ObjectId} userId the user's ID.
- * @param {string|null} role the role to check or null if any is allowed.
+ * @param {string|null} accessLevel the roles to check (forward slash delimited)
+ * or null if any is allowed.
  */
-exports.checkAssignmentRole = async (assignmentId, userId, role = null) => {
+exports.checkAssignmentRole = async (assignmentId, userId, accessLevel = null) => {
   // Check whether the assignment ID is a valid ObjectId.
   if (!Types.ObjectId.isValid(assignmentId)) {
     throw new AssignmentNotFoundError("The provided assignment ID is invalid.");
@@ -36,12 +36,19 @@ exports.checkAssignmentRole = async (assignmentId, userId, role = null) => {
   if (!Types.ObjectId.isValid(userId)) {
     throw new SessionInvalidError();
   }
-  // Now check whether the user is on the given assignment.
-  const valid = await assignmentModel.isUserOnAssignment(assignmentId, userId, role);
-  if (!valid) {
-    // Assignment is either not known, or the user has the wrong role.
-    throw new AssignmentNotFoundError();
+  // If applicable, check whether the user is a student on the assignment.
+  if (accessLevel.includes("student")) {
+    if (await assignmentModel.isUserOnAssignment(assignmentId, userId, "student")) return "student";
   }
+  // If applicable, check whether the user is a lecturer on the assignment.
+  if (accessLevel.includes("lecturer")) {
+    if (await assignmentModel.isUserOnAssignment(assignmentId, userId, "lecturer")) return "lecturer";
+  }
+  // If applicable, check whether the user is a supervisor on the assignment.
+  if (accessLevel.includes("supervisor")) {
+    if (await assignmentModel.isUserOnAssignment(assignmentId, userId, "supervisor")) return "supervisor";
+  }
+  throw new AssignmentNotFoundError();
 };
 
 /**
@@ -66,17 +73,17 @@ exports.checkTeamRole = async (teamId, userId, accessLevel = "member") => {
   }
   // If applicable, check whether the user is a team member.
   if (accessLevel.includes("member")) {
-    if (await teamModel.isUserOnTeam(teamId, userId)) return;
+    if (await teamModel.isUserOnTeam(teamId, userId)) return "member";
   }
   // If applicable, check whether the user is a team supervisor.
   if (accessLevel.includes("supervisor")) {
-    if (await teamModel.isSupervisorOnTeam(teamId, userId)) return;
+    if (await teamModel.isSupervisorOnTeam(teamId, userId)) return "supervisor";
   }
   // If applicable, check whether the user is an assignment lecturer.
   if (accessLevel.includes("lecturer")) {
     const teamDetails = await teamModel.findById(teamId).select("assignment").lean();
     if (teamDetails?.assignment) {
-      if (await assignmentModel.isUserOnAssignment(teamDetails.assignment, userId, "lecturer")) return;
+      if (await assignmentModel.isUserOnAssignment(teamDetails.assignment, userId, "lecturer")) return "lecturer";
     }
   }
   // None of the checks passed.
