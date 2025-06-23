@@ -62,124 +62,6 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
     }
   }, [fetchAssignments, fetchTeams, user]);
 
-  const getProjectOptions = () => {
-    return getAllowedPages(selectedAssignment.state, selectedAssignment.role);
-    if (user?.role == "student") {
-      switch (selectedAssignment.state) {
-        case "pre-allocation":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-          ];
-        case "allocation-questions":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            {
-              label: "Allocation",
-              icon: <Shuffle />,
-              link: "assignment/questionnaire",
-            },
-          ];
-        case "allocation":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-          ];
-        case "live":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            { label: "My Team", icon: <People />, link: "/assignment/team" },
-            {
-              label: "Meetings",
-              icon: <PersonVideo3 />,
-              link: "/assignment/meetings",
-            },
-            {
-              label: "Check-In",
-              icon: <CardChecklist />,
-              link: `/assignment/check-in`,
-            },
-          ];
-        case "closed":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            { label: "My Team", icon: <People />, link: "/assignment/team" },
-            {
-              label: "Meetings",
-              icon: <PersonVideo3 />,
-              link: "/assignment/meetings",
-            },
-          ];
-        default:
-          return [];
-      }
-    } else if (user?.role == "lecturer") {
-      switch (selectedAssignment.state) {
-        case "pre-allocation":
-        case "allocation-questions":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            {
-              label: "Configure",
-              icon: <Tools />,
-              link: "assignment/configure",
-            },
-            {
-              label: "Students",
-              icon: <PersonCheck />,
-              link: "assignment/students",
-            },
-          ];
-        case "allocation":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            {
-              label: "Configure",
-              icon: <Tools />,
-              link: "assignment/configure",
-            },
-            {
-              label: "Students",
-              icon: <PersonCheck />,
-              link: "assignment/students",
-            },
-            {
-              label: "Allocation",
-              icon: <Shuffle />,
-              link: "assignment/allocate",
-            },
-          ];
-        case "live":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            {
-              label: "Configure",
-              icon: <Tools />,
-              link: "assignment/configure",
-            },
-            {
-              label: "Students",
-              icon: <PersonCheck />,
-              link: "assignment/students",
-            },
-            { label: "Teams", icon: <People />, link: "/assignment/teams" },
-          ];
-        case "closed":
-          return [
-            { label: "Overview", icon: <Map />, link: "assignment/overview" },
-            {
-              label: "Students",
-              icon: <PersonCheck />,
-              link: "assignment/students",
-            },
-            { label: "Teams", icon: <People />, link: "/assignment/teams" },
-          ];
-        default:
-          return [];
-      }
-    } else {
-      return [];
-    }
-  };
-
   const logoutAndHide = () => {
     hideOffcanvas();
     api.post(
@@ -229,7 +111,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
                   <Collapse in={selectedAssignment?._id === assignment._id}>
                     <div>
                     {selectedAssignment &&
-                      getProjectOptions().map((option, index) => (
+                      getAllowedPages(selectedAssignment.state, selectedAssignment.role).map((option, index) => (
                         <Nav.Link
                           as={Link}
                           to={option.link}

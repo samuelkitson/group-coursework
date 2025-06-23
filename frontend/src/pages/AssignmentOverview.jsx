@@ -22,10 +22,9 @@ function AssignmentOverview() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
-  const userRole = useAuthStore((state) => state.user?.role);
 
   const stateHelpText = () => {
-    if (userRole == "student") {
+    if (selectedAssignment.role === "student") {
       switch (selectedAssignment.state) {
         case "pre-allocation":
           return "This assignment has just been set up by your lecturer. They're not quite ready to start the allocation process yet - check back soon.";
@@ -40,7 +39,22 @@ function AssignmentOverview() {
         default:
           return "This assignment is in an unknown state. Please ask your lecturer for help.";
       }
-    } else if (userRole == "lecturer") {
+    } else if (selectedAssignment.role === "supervisor") {
+      switch (selectedAssignment.state) {
+        case "pre-allocation":
+          return "This assignment has just been created. Please wait for the module team to get everything set up.";
+        case "allocation-questions":
+          return "The allocation questionnaire for this assignment is now live. Please encourage students to fill this in.";
+        case "allocation":
+          return "The module team is finalising allocation and creating teams. Check back soon to find out which teams you'll be supervising.";
+        case "live":
+          return "This assignment is live and students are busy working on it. Keep an eye on their progress using the tools here.";
+        case "closed":
+          return "This assignment is now closed. Students can no longer make edits.";
+        default:
+          return "This assignment is in an unknown state. Please ask the module team for help.";
+      }
+    } else if (selectedAssignment.role === "lecturer") {
       switch (selectedAssignment.state) {
         case "pre-allocation":
           return "This assignment has just been created. Choose your screening and pre-allocation questions to get started.";
@@ -115,7 +129,7 @@ function AssignmentOverview() {
         </Col>
       </Row>
 
-      {userRole == "lecturer" && (
+      {selectedAssignment.role === "lecturer" && (
         <Row className="mb-2">
           <Col lg={4}>
             <AdvanceAssignmentStateCard />
@@ -133,7 +147,7 @@ function AssignmentOverview() {
         </Row>
       )}
 
-      {userRole == "student" && (
+      {selectedAssignment.role === "student" && (
         <Row className="my-2 gy-3">
           { selectedAssignment.state === "allocation-questions" &&
             <Col lg={4}>

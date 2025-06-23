@@ -60,32 +60,17 @@ function Dashboard() {
   const includedAssignments = () => includeClosed ? assignments : assignments.filter(a => a.state !== "closed");
   const hasPastAssignments = assignments.some(a => a.state === "closed");
 
-  const getStatusIcon = (status) => {
-    let colour = "danger";
-    let icon = <Question />;
-    if (status === "pre-allocation") {
-      icon = <Tools />;
-      colour = user.role === "student" ? "secondary" : "primary";
-    } else if (status === "allocation-questions") {
-      icon = <ClipboardData />;
-      colour = user.role === "student" ? "primary" : "secondary";
-    } else if (status === "allocation") {
-      icon = <Shuffle />;
-      colour = user.role === "student" ? "secondary" : "primary";
-    } else if (status === "live") {
-      icon = <RocketTakeoff />;
-      colour = "success";
-    } else if (status === "closed") {
-      icon = <Check2All />;
-      colour = "dark";
-    }
-    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {name: "Unknown state"};
-    const stateHelpText = user.role === "student" ? currentState.name : currentState.name;
+  const getStatusIcon = (status, role) => {
+    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {
+      name: "Unknown state",
+      icon: Question,
+      colour: {student: "dark", supervisor: "dark", lecturer: "dark"}
+    };
     return (
-      <Badge pill bg={colour} className="d-inline-flex align-items-center py-2 px-3 fs-5">
-        {icon}
+      <Badge pill bg={currentState.colour[role]} className="d-inline-flex align-items-center py-2 px-3 fs-5">
+        <currentState.icon />
         <span className="fw-normal fs-6 ms-2">
-          {stateHelpText}
+          {currentState.name}
         </span>
       </Badge>
     )
@@ -136,7 +121,7 @@ function Dashboard() {
                     {assignment.role === "supervisor" &&
                       <p className="text-muted mt-0 mb-3">You're a supervisor on this assignment.</p>
                     }
-                    {getStatusIcon(assignment.state)}
+                    {getStatusIcon(assignment.state, assignment.role)}
                   </div>
                   <div>
                     <Button

@@ -1,3 +1,5 @@
+import { Check2All, ClipboardData, RocketTakeoff, Shuffle, Tools } from "react-bootstrap-icons";
+
 // From: https://stackoverflow.com/a/22193094
 export function toTitleCase(string) {
   return string
@@ -17,22 +19,52 @@ export const ASSIGNMENT_STATES = [
   {
     id: "pre-allocation",
     name: "Getting ready",
+    icon: Tools,
+    colour: {
+      student: "secondary",
+      supervisor: "secondary",
+      lecturer: "primary",
+    },
   },
   {
     id: "allocation-questions",
     name: "Allocation questions",
+    icon: ClipboardData,
+    colour: {
+      student: "primary",
+      supervisor: "secondary",
+      lecturer: "secondary",
+    },
   },
   {
     id: "allocation",
     name: "Finalising allocation",
+    icon: Shuffle,
+    colour: {
+      student: "secondary",
+      supervisor: "secondary",
+      lecturer: "primary",
+    },
   },
   {
     id: "live",
     name: "Working in teams",
+    icon: RocketTakeoff,
+    colour: {
+      student: "success",
+      supervisor: "success",
+      lecturer: "success",
+    },
   },
   {
     id: "closed",
     name: "Finished",
+    icon: Check2All,
+    colour: {
+      student: "dark",
+      supervisor: "dark",
+      lecturer: "dark",
+    },
   },
 ];
 
