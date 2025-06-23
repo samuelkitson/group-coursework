@@ -53,6 +53,39 @@ const assignmentSchema = new Schema(
   { timestamps: true },
 );
 
+assignmentSchema.statics.getAssignmentsByUser = async function (userId, allFields) {
+  const projection = allFields
+    ? {}
+    : { _id: 1, name: 1, description: 1, state: 1, supervisors: 1, students: 1, lecturers: 1 };
+  const userObjectId = new Types.ObjectId(userId);
+  // Check for the student role first
+  const assignmentsStudents = await this.find(
+    {
+      students: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  let assignments = assignmentsStudents.map(a => ({...a, role: "student", students: undefined, supervisors: undefined}));
+  // Check for the supervisor role next
+  const assignmentsSupervisors = await this.find(
+    {
+      supervisors: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  assignments = assignments.concat(assignmentsSupervisors.map(a => ({...a, role: "supervisor", students: undefined, supervisors: undefined})));
+  // Check for the lecturer role last
+  const assignmentsLecturers = await this.find(
+    {
+      lecturers: { $in: [userObjectId] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email").lean();
+  assignments = assignments.concat(assignmentsLecturers.map(a => ({...a, role: "lecturer"})));
+  // Return the combined list
+  return assignments;
+};
+
 assignmentSchema.statics.findByStudent = async function (
   studentId,
   allFields = false,
@@ -78,6 +111,21 @@ assignmentSchema.statics.findByLecturer = async function (
   return this.find(
     {
       lecturers: { $in: [new Types.ObjectId(lecturerId)] },
+    },
+    projection,
+  ).populate("lecturers", "displayName email");
+};
+
+assignmentSchema.statics.findBySupervisor = async function (
+  supervisorId,
+  allFields = false,
+) {
+  const projection = allFields
+    ? {}
+    : { _id: 1, name: 1, description: 1, state: 1, lecturers: 1 };
+  return this.find(
+    {
+      supervisors: { $in: [new Types.ObjectId(supervisorId)] },
     },
     projection,
   ).populate("lecturers", "displayName email");
