@@ -86,9 +86,14 @@ const generateTeamInsights = (teamData) => {
 
 exports.getAllForAssignment = async (req, res) => {
   // Get and check permissions on the assignment object
-  await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
+  const role = await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
   // Get the teams for this assignment (if supervisor, only show their teams)
-  const teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+  let teams;
+  if (role === "lecturer") {
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+  } else {
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+  }
   // Add in their last meeting time/date
   let teamsWithLastMeeting = await Promise.all(
     teams.map(async (team) => {

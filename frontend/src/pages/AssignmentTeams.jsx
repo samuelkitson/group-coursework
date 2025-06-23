@@ -6,7 +6,7 @@ import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Button, Card, Col, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
-import { ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, InfoCircleFill, InfoLg } from "react-bootstrap-icons";
+import { ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, InfoCircleFill, InfoLg } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
 
@@ -185,37 +185,66 @@ function AssignmentTeams() {
     <>
       <Row className="mb-3 mb-md-0">
         <Col md={9}>
-          <h1>All teams</h1>
+          {selectedAssignment.role === "supervisor" ? 
+            <h1>Your teams</h1>
+          :
+            <h1>All teams</h1>
+          }
+          { selectedAssignment?.role === "lecturer" ? 
           <p className="text-muted">
             Here you can see an overview of the teams for {selectedAssignment.name}.
             {selectedAssignment?.supervisors?.length > 0 &&
             <><br />Supervisors are indicated using the <Eyeglasses /> symbol.</>
             }
           </p>
+          :
+          <p className="text-muted">
+            Here you can see an overview of the teams that you're supervising for {selectedAssignment.name}.
+            <br />Supervisors are indicated using the <Eyeglasses /> symbol.
+          </p>
+          }
+          
         </Col>
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
-          <div className="d-grid gap-2">
-            <Button
-              variant="primary"
-              className="d-flex align-items-center"
-              href={`/api/team/csv?assignment=${selectedAssignment._id}`}
-              target="blank"
-            >
-              <CloudDownload className="me-2" />Export teams
-            </Button>
-            <Button
-              variant={moveMode ? "danger" : "primary"}
-              className="d-flex align-items-center"
-              onClick={togglemoveMode}
-            >
-              <ArrowLeftRight className="me-2" />Move students
-            </Button>
-          </div>
+          { selectedAssignment.role === "lecturer" &&
+            <div className="d-grid gap-2">
+              <Button
+                variant="primary"
+                className="d-flex align-items-center"
+                href={`/api/team/csv?assignment=${selectedAssignment._id}`}
+                target="blank"
+              >
+                <CloudDownload className="me-2" />Export teams
+              </Button>
+              <Button
+                variant={moveMode ? "danger" : "primary"}
+                className="d-flex align-items-center"
+                onClick={togglemoveMode}
+              >
+                <ArrowLeftRight className="me-2" />Move students
+              </Button>
+            </div>
+          }
         </Col>
       </Row>
 
       <Row>
         <Col>
+          {teams.length === 0 && 
+            <Card className="my-3">
+              <Card.Body>
+                <Card.Title className="d-flex align-items-center">
+                  <QuestionCircleFill className="me-2" /> No teams
+                </Card.Title>
+                <p className="text-muted mb-0">
+                  No teams were found for {selectedAssignment.name}.<br />
+                  {selectedAssignment.role === "supervisor" && 
+                    "You probably haven't been added to any teams as a supervisor yet."
+                  }
+                </p>
+              </Card.Body>
+            </Card>
+          }
           {teams.map((group, index) => (
             <Card key={index} className="my-3">
               <Card.Body>
