@@ -79,8 +79,8 @@ function Dashboard() {
       icon = <Check2All />;
       colour = "dark";
     }
-    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {staffName: "Unknown state", studentName: "Unknown state"};
-    const stateHelpText = user.role === "student" ? currentState.studentName : currentState.staffName;
+    const currentState = ASSIGNMENT_STATES.find(s => s.id === status) ?? {name: "Unknown state"};
+    const stateHelpText = user.role === "student" ? currentState.name : currentState.name;
     return (
       <Badge pill bg={colour} className="d-inline-flex align-items-center py-2 px-3 fs-5">
         {icon}

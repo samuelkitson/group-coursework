@@ -16,28 +16,23 @@ export function extractNameParts(fullName) {
 export const ASSIGNMENT_STATES = [
   {
     id: "pre-allocation",
-    studentName: "Getting ready",
-    staffName: "Setup",
+    name: "Getting ready",
   },
   {
     id: "allocation-questions",
-    studentName: "Allocation open",
-    staffName: "Allocation questions",
+    name: "Allocation questions",
   },
   {
     id: "allocation",
-    studentName: "Finalising allocation",
-    staffName: "Finalising allocation",
+    name: "Finalising allocation",
   },
   {
     id: "live",
-    studentName: "Working in teams",
-    staffName: "Live",
+    name: "Working in teams",
   },
   {
     id: "closed",
-    studentName: "Finished",
-    staffName: "Finished",
+    name: "Finished",
   },
 ];
 

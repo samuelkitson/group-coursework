@@ -76,7 +76,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to move this assignment to the state "
-          {nextState?.staffName}"?
+          {nextState?.name}"?
         </Modal.Body>
         <Modal.Footer>
           <Button

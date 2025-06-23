@@ -102,9 +102,7 @@ function AssignmentOverview() {
                     </div>
                   </div>
                   <span className="step-label text-center text-muted">
-                    {userRole === "lecturer"
-                      ? stage.staffName
-                      : stage.studentName}
+                    {stage.name}
                   </span>
                 </div>
               ))}
