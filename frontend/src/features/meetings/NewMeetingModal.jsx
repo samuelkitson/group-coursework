@@ -250,8 +250,8 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between">
         <Button variant="secondary" onClick={onHide}>Cancel</Button>
-        <p className="text-muted">Cannot be edited once saved</p>
-        <Button variant="primary" onClick={handleSubmit}>Save</Button>
+        <p className="text-muted">Editable for an hour after submitting</p>
+        <Button variant="primary" onClick={handleSubmit}>Submit</Button>
       </Modal.Footer>
     </Modal>
   );
