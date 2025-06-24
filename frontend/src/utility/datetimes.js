@@ -8,7 +8,7 @@ export function timestampToHumanFriendly (timestamp) {
   const hours = date.getHours();
   const minutes = date.getMinutes().toString().padStart(2, "0");
 
-  return `${dayName}, ${day} ${month} ${year} ${hours}:${minutes}`;
+  return `${dayName} ${day} ${month} ${year}, ${hours}:${minutes}`;
 }
 
 export function daysSince (timestamp) {

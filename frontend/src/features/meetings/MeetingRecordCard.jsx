@@ -25,13 +25,13 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                 { editAllowed && <>
                   <Dropdown.Item
                     className="d-flex align-items-center"
-                    onClick={() => onEdit(meeting._id)}
+                    onClick={() => onEdit(meeting)}
                   >
                     <PencilSquare className="me-2" /> Edit
                   </Dropdown.Item>
                   <Dropdown.Item
                     className="d-flex align-items-center text-danger"
-                    onClick={() => onDelete(meeting._id)}
+                    onClick={() => onDelete(meeting)}
                   >
                     <Trash3Fill className="me-2" /> Delete
                   </Dropdown.Item>
@@ -39,7 +39,7 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                 { disputeAllowed &&
                   <Dropdown.Item
                     className="d-flex align-items-center text-danger"
-                    onClick={() => onDispute(meeting._id)}
+                    onClick={() => onDispute(meeting)}
                   >
                     <ExclamationOctagonFill className="me-2" /> Dispute
                   </Dropdown.Item>

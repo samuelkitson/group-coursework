@@ -1,3 +1,4 @@
+import DisputeMeetingModal from "@/features/meetings/DisputeMeetingModal";
 import MeetingRecordCard from "@/features/meetings/MeetingRecordCard";
 import NewMeetingModal from "@/features/meetings/NewMeetingModal";
 import api from "@/services/apiMiddleware";
@@ -14,9 +15,10 @@ function TeamMeetings() {
   );
   const { user } = useAuthStore();
 
-  const [showModal, setShowModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [meetingHistory, setMeetingHistory] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState({});
+  const [disputeMeeting, setDisputeMeeting] = useState(null);
 
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -30,7 +32,7 @@ function TeamMeetings() {
         return resp.data;
       })
       .then((data) => {
-        setShowModal(false);
+        setActiveModal(null);
         refreshData();
       });
   };
@@ -39,6 +41,19 @@ function TeamMeetings() {
     if (rate >= 80) return "success";
     if (rate > 50) return "warning";
     return "danger";
+  };
+
+  const showMeetingDispute = (meeting) => {
+    setDisputeMeeting(meeting);
+    setActiveModal("dispute-meeting");
+  };
+
+  const handleSubmitDispute = (disputeNotes) => {
+    // TODO: actually submit the dispute
+    console.log(disputeNotes);
+    console.log(disputeMeeting._id);
+    setActiveModal(null);
+    setDisputeMeeting(null);
   };
 
   const refreshData = () => {
@@ -69,7 +84,7 @@ function TeamMeetings() {
           <Button
             variant="primary"
             className="d-flex align-items-center"
-            onClick={(e) => (setShowModal(true))}
+            onClick={(e) => (setActiveModal("new-meeting"))}
           >
             <PlusCircleFill className="me-2" />New meeting
           </Button>
@@ -82,11 +97,11 @@ function TeamMeetings() {
               meeting={meeting}
               key={meetingidx}
               meetingidx={meetingidx}
-              editAllowed={hoursSince(meeting?.recorded) < 1 && meeting.minuteTaker._id === user.userId}
+              editAllowed={hoursSince(meeting?.createdAt) < 1 && meeting.minuteTaker._id === user.userId}
               disputeAllowed={true}
               onEdit={(m) => console.log(m)}
               onDelete={(m) => console.log(m)}
-              onDispute={(m) => console.log(m)}
+              onDispute={(m) => showMeetingDispute(m)}
             />
           )) : 
             <Card className="shadow-sm">
@@ -119,7 +134,22 @@ function TeamMeetings() {
         </Col>
       </Row>
 
-      <NewMeetingModal showModal={showModal} onHide={() => setShowModal(false)} teamMembers={selectedTeam.members} supervisors={selectedTeam.supervisors} previousActions={getLatestActions()} onSubmit={submitMeetingRecord} />
+      <NewMeetingModal
+        showModal={activeModal==="new-meeting"}
+        onHide={() => setActiveModal(null)} 
+        teamMembers={selectedTeam.members}
+        supervisors={selectedTeam.supervisors}
+        previousActions={getLatestActions()}
+        onSubmit={submitMeetingRecord}
+      />
+
+      <DisputeMeetingModal
+        showModal={activeModal==="dispute-meeting"}
+        onHide={() => setActiveModal(null)}
+        onSubmit={handleSubmitDispute}
+        hasSupervisor={selectedTeam?.supervisors?.length > 0}
+        meeting={disputeMeeting}
+      />
     </>
   );
 }
