@@ -11,7 +11,7 @@ exports.getMeetingsForTeam = async (req, res) => {
   let query = meetingModel.find({ team: req.query.team, });
   if (userRole === "member") query = query.select("-disputes");
   // Get meeting documents for the team
-  const meetingHistory = await query.populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees", "displayName").sort({ dateTime: -1 }).lean();
+  const meetingHistory = await query.populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees disputes.complainant", "displayName").sort({ dateTime: -1 }).lean();
   const attendanceStats = this.summariseMeetingAttendance(meetingHistory, "displayName");
   return res.json({ meetings: meetingHistory, attendanceStats: attendanceStats, });
 };
@@ -80,6 +80,31 @@ exports.addMeetingDispute = async (req, res) => {
   meeting.disputes.push(dispute);
   await meeting.save();
   return res.json({ message: "Your dispute has been logged and will be read by your supervisor or the module team." });
+};
+
+exports.updateMeetingDispute = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.params.meeting))
+    throw new InvalidObjectIdError("The provided meeting ID is invalid.");
+  if (!Types.ObjectId.isValid(req.body.dispute))
+    throw new InvalidObjectIdError("The provided dispute ID is invalid.");
+  if (!req.body.status || !["outstanding", "escalate", "resolved", "ignore"].includes(req.body.status))
+    throw new InvalidParametersError("You must provide a valid new status for the dispute.");
+  // Try to fetch the meeting so we can check the team
+  const meeting = await meetingModel.findById(req.params.meeting);
+  if (!meeting)
+    throw new GenericNotFoundError("The meeting could not be found.");
+  await checkTeamRole(meeting.team, req.session.userId, "supervisor/lecturer");
+  let updated = false;
+  meeting.disputes.forEach(d => {
+    if (d._id.equals(req.body.dispute)) {
+      d.status = req.body.status;
+      updated = true;
+    }
+  });
+  if (!updated)
+    throw new GenericNotFoundError("The dispute could not be found in that meeting.");
+  await meeting.save();
+  return res.json({ message: `The dispute has been marked as ${req.body.status}.` });
 };
 
 /*

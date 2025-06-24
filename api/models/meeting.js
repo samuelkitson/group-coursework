@@ -19,7 +19,7 @@ const disputeSchema = new Schema(
       default: "outstanding",
     },
   },
-  { _id: false },
+  { _id: true },
 );
 
 const meetingSchema = new Schema(

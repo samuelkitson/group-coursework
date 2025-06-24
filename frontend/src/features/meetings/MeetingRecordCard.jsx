@@ -1,11 +1,46 @@
 import { timestampToHumanFriendly } from "@/utility/datetimes";
-import React from "react";
-import { Badge, Button, Card, Dropdown, ListGroup } from "react-bootstrap";
+import React, { useState } from "react";
+import { Badge, Button, Card, Dropdown, DropdownButton, ListGroup } from "react-bootstrap";
 import { PencilSquare, Trash3Fill, ExclamationOctagonFill, ThreeDotsVertical, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 import "../style/MeetingRecordCard.css";
+import { toTitleCase } from "@/utility/helpers";
+import api from "@/services/apiMiddleware";
 
 const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute }) => {
+  const [disputeStates, setDisputeStates] = useState(
+    (meeting?.disputes ?? []).reduce((acc, dispute) => {
+      acc[dispute._id] = dispute.status;
+      return acc;
+    }, {})
+  );
+
+  const disputeColour = (state) => {
+    switch(state) {
+      case "outstanding":
+        return "primary";
+      case "escalate":
+        return "danger";
+      case "resolved":
+        return "success";
+      case "ignore":
+      default:
+        return "secondary";
+    } 
+  };
+
+  const handleDisputeStateChange = async (dispute, newState) => {
+    setDisputeStates((prevStates) => ({
+      ...prevStates,
+      [dispute]: newState,
+    }));
+    const updateObj = {
+      dispute,
+      status: newState,
+    };
+    await api.patch(`/api/meeting/${meeting._id}/dispute`, updateObj, { successToasts: true });
+  };
+
   return (
     <Card className="mb-4 shadow-sm">
       <Card.Body>
@@ -13,6 +48,15 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
           <div className="d-flex align-items-center">
             <CalendarEvent />
             <span className="ms-2">{timestampToHumanFriendly(meeting.dateTime ?? meeting.createdAt)}</span>
+            { meeting?.disputes?.length > 0 &&
+              <Badge
+                pill
+                bg="danger"
+                className="ms-2"
+                style={{ fontSize: "0.7rem", verticalAlign: "middle" }}>
+                Disputed
+              </Badge>
+            }
           </div>
 
           { (editAllowed || disputeAllowed) &&
@@ -92,12 +136,12 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                   </div>
                 </div>
                 { action.complete ? 
-                  <Badge bg="success" className="d-flex align-items-center align-self-center">
+                  <Badge pill bg="success" className="d-flex align-items-center align-self-center">
                     <CheckCircleFill className="me-1" />
                     Done
                   </Badge>
                 : 
-                <Badge bg="danger" className="d-flex align-items-center align-self-center">
+                <Badge pill bg="danger" className="d-flex align-items-center align-self-center">
                   <ArrowRightCircleFill className="me-1" />
                   Ongoing
                 </Badge>
@@ -120,6 +164,40 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                     {action.assignees.map((person) => person.displayName).join(", ")}
                   </div>
                 </div>
+              </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </>
+        }
+
+        { meeting?.disputes?.length > 0 && 
+          <>
+            <h6 className="mt-3 mb-0 text-danger">Disputes:</h6>
+            <ListGroup variant="flush">
+              { meeting.disputes.map((dispute, disputeidx) => (
+                <ListGroup.Item key={`dispute-${meetingidx}-${disputeidx}`} className="d-flex justify-content-between align-items-center">
+                <div>
+                  {dispute.complainant.displayName}
+                  <div className="small text-muted">
+                    {dispute.notes}
+                  </div>
+                </div>
+                <Dropdown className="ms-2" onSelect={(eventKey)=> handleDisputeStateChange(dispute._id, eventKey)}>
+                  <Dropdown.Toggle
+                    variant={disputeColour(disputeStates[dispute._id])}
+                    className="badge rounded-pill text-white border-0"
+                    style={{ cursor: "pointer" }}
+                    id="dropdown-badge"
+                  >
+                    {toTitleCase(disputeStates[dispute._id])} ▾
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item eventKey="outstanding">Outstanding</Dropdown.Item>
+                    <Dropdown.Item eventKey="escalate">Escalate</Dropdown.Item>
+                    <Dropdown.Item eventKey="resolved">Resolved</Dropdown.Item>
+                    <Dropdown.Item eventKey="ignore">Ignore</Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
               </ListGroup.Item>
               ))}
             </ListGroup>

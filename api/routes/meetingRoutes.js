@@ -8,4 +8,5 @@ const router = express.Router();
 router.get("/", requireLoggedIn(), asyncHandler(meetingC.getMeetingsForTeam));
 router.post("/", requireLoggedIn(), asyncHandler(meetingC.recordNewMeeting));
 router.post("/:meeting/dispute", requireLoggedIn(), asyncHandler(meetingC.addMeetingDispute));
+router.patch("/:meeting/dispute", requireLoggedIn(), asyncHandler(meetingC.updateMeetingDispute));
 module.exports = router;

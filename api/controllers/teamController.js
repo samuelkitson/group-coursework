@@ -78,7 +78,20 @@ const generateTeamInsights = (teamData) => {
         text: `Good workload balance`,
       });
     }
-  } 
+  }
+  // Check disputes
+  if (teamData.disputes.outstanding > 0) {
+    insights.push({
+      type: "severe",
+      text: "Outstanding disputes about meetings",
+    });
+  }
+  if (teamData.disputes.escalate > 0) {
+    insights.push({
+      type: "severe",
+      text: "Disputes requiring escalation",
+    });
+  }
   // Show the most severe insights first
   const sortingOrder = { severe: 1, warning: 2, positive: 3 };
   return insights.sort((a, b) => (sortingOrder[a.type] || 4) - (sortingOrder[b.type] || 4));
@@ -103,14 +116,25 @@ exports.getAllForAssignment = async (req, res) => {
 
       const attendanceStats = summariseMeetingAttendance(teamMeetings);
 
+      const disputes = teamMeetings.flatMap(m => {
+        return Array.isArray(m.disputes) ? m.disputes : []
+      });
+
+      const outstandingDisputes = disputes.filter(d => d.status === "outstanding");
+      const escalateDisputes = disputes.filter(d => d.status === "escalate");
+
       team.members.map(student => {
         student.meetingAttendance = attendanceStats[student._id] ?? {attended: 0, apologies: 0, absent: 0, rate: 100, };
-      })
+      });
 
       return {
         ...team,
         lastMeetingDate: teamMeetings[0] ? teamMeetings[0].dateTime : null,
         meetingCount: teamMeetings.length ?? 0,
+        disputes: {
+          outstanding: outstandingDisputes.length,
+          escalate: escalateDisputes.length,
+        }
       };
     })
   );
