@@ -49,9 +49,6 @@ function TeamMeetings() {
   };
 
   const handleSubmitDispute = (disputeNotes) => {
-    // TODO: actually submit the dispute
-    console.log(disputeNotes);
-    console.log(disputeMeeting._id);
     api
       .post(`/api/meeting/${disputeMeeting._id}/dispute`,
         {notes: disputeNotes},
