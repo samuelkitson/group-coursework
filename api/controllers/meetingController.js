@@ -3,14 +3,15 @@ const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
 const { checkTeamRole } = require("../utility/auth");
+const { GenericNotFoundError, InvalidParametersError } = require("../errors/errors");
 
 // Provide the team ID in query params
 exports.getMeetingsForTeam = async (req, res) => {
-  await checkTeamRole(req.query.team, req.session.userId, "member/supervisor/lecturer");
+  const userRole = await checkTeamRole(req.query.team, req.session.userId, "member/supervisor/lecturer");
+  let query = meetingModel.find({ team: req.query.team, });
+  if (userRole === "member") query = query.select("-disputes");
   // Get meeting documents for the team
-  const meetingHistory = await meetingModel.find({
-    team: req.query.team,
-  }).populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees", "displayName").sort({ dateTime: -1 }).lean();
+  const meetingHistory = await query.populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees", "displayName").sort({ dateTime: -1 }).lean();
   const attendanceStats = this.summariseMeetingAttendance(meetingHistory, "displayName");
   return res.json({ meetings: meetingHistory, attendanceStats: attendanceStats, });
 };
@@ -56,6 +57,29 @@ exports.recordNewMeeting = async (req, res) => {
   }
   await meetingModel.create(meetingObj);
   return res.json({ message: "Meeting recorded successfully. "});
+};
+
+exports.addMeetingDispute = async (req, res) => {
+  if (!req.body.notes)
+    throw new InvalidParametersError("You must provide details of the dispute.");
+  if (typeof req.body.notes !== "string" || req.body.notes?.length < 150)
+    throw new InvalidParametersError("Please provide a longer dispute comment.");
+  if (!Types.ObjectId.isValid(req.params.meeting))
+    throw new InvalidObjectIdError("The provided meeting ID is invalid.");
+  // Try to fetch the meeting so we can check the team
+  const meeting = await meetingModel.findById(req.params.meeting);
+  if (!meeting)
+    throw new GenericNotFoundError("The meeting could not be found.");
+  await checkTeamRole(meeting.team, req.session.userId, "member");
+  // Create new dispute
+  const dispute = {
+    complainant: req.session.userId,
+    notes: req.body.notes,
+    status: "outstanding",
+  };
+  meeting.disputes.push(dispute);
+  await meeting.save();
+  return res.json({ message: "Your dispute has been logged and will be read by your supervisor or the module team." });
 };
 
 /*

@@ -52,8 +52,18 @@ function TeamMeetings() {
     // TODO: actually submit the dispute
     console.log(disputeNotes);
     console.log(disputeMeeting._id);
-    setActiveModal(null);
-    setDisputeMeeting(null);
+    api
+      .post(`/api/meeting/${disputeMeeting._id}/dispute`,
+        {notes: disputeNotes},
+        {successToasts: true},
+      )
+      .then((resp) => {
+        return resp.data;
+      })
+      .then((data) => {
+        setActiveModal(null);
+        setDisputeMeeting(null);
+      });
   };
 
   const refreshData = () => {
