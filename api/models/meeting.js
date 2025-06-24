@@ -14,6 +14,7 @@ const meetingSchema = new Schema(
     team: { type: "ObjectId", ref: "team", required: true, },
     location: { type: String, required: true, },
     dateTime: { type: Date, required: true, },
+    recorded: { type: Date, required: true, },
     minuteTaker: { type: "ObjectId", ref: "user", required: true, },
     attendance: {
       attended: [{ type: "ObjectId", ref: "user", required: true, }],

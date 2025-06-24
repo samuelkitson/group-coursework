@@ -79,9 +79,11 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
       apologies: attendance.filter(s => s.status === "apologies").map(s => s._id),
       absent: attendance.filter(s => s.status === "absent").map(s => s._id),
     };
+    // Convert timestamp to UTC
+    const dateTimeUTC = new Date(dateTime).toISOString();
     const prevActionsObj = prevActions.map(a => ({action: a.action, complete: a.complete, assignees: a.assignees.map(s => s._id)}));
     const newActionsObj = newActions.slice(0, -1).map(a => ({action: a.action, assignees: a.assignees.map(s => s.id)}));
-    onSubmit({location, dateTime, discussion: minutes, attendance: attendanceObj, previousActions: prevActionsObj, newActions: newActionsObj});
+    onSubmit({location, dateTime: dateTimeUTC, discussion: minutes, attendance: attendanceObj, previousActions: prevActionsObj, newActions: newActionsObj});
   };
 
   useEffect(() => {

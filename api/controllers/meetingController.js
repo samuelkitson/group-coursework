@@ -44,6 +44,7 @@ exports.recordNewMeeting = async (req, res) => {
     team: req.body.team,
     discussion,
     dateTime,
+    recorded: new Date(),
     minuteTaker: req.session.userId,
     location,
     attendance: {

@@ -1,15 +1,52 @@
 import { timestampToHumanFriendly } from "@/utility/datetimes";
 import React from "react";
-import { Badge, Card, ListGroup } from "react-bootstrap";
-import { ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
+import { Badge, Button, Card, Dropdown, ListGroup } from "react-bootstrap";
+import { PencilSquare, Trash3Fill, ExclamationOctagonFill, ThreeDotsVertical, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
-const MeetingRecordCard = ({ meeting, meetingidx }) => {
+import "../style/MeetingRecordCard.css";
+
+const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute }) => {
   return (
     <Card className="mb-4 shadow-sm">
       <Card.Body>
-        <Card.Title className="mb-2 d-flex align-items-center">
-          <CalendarEvent />
-          <span className="ms-2">{timestampToHumanFriendly(meeting.dateTime ?? meeting.createdAt)}</span>
+        <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
+          <div className="d-flex align-items-center">
+            <CalendarEvent />
+            <span className="ms-2">{timestampToHumanFriendly(meeting.dateTime ?? meeting.createdAt)}</span>
+          </div>
+
+          { (editAllowed || disputeAllowed) &&
+            <Dropdown>
+              <Dropdown.Toggle variant="light" size="sm">
+                <ThreeDotsVertical />
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu>
+                { editAllowed && <>
+                  <Dropdown.Item
+                    className="d-flex align-items-center"
+                    onClick={() => onEdit(meeting._id)}
+                  >
+                    <PencilSquare className="me-2" /> Edit
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    className="d-flex align-items-center text-danger"
+                    onClick={() => onDelete(meeting._id)}
+                  >
+                    <Trash3Fill className="me-2" /> Delete
+                  </Dropdown.Item>
+                </> }
+                { disputeAllowed &&
+                  <Dropdown.Item
+                    className="d-flex align-items-center text-danger"
+                    onClick={() => onDispute(meeting._id)}
+                  >
+                    <ExclamationOctagonFill className="me-2" /> Dispute
+                  </Dropdown.Item>
+                }
+              </Dropdown.Menu>
+            </Dropdown>
+          }
         </Card.Title>
 
         <p className="mb-1 small "><PinMapFill className="me-1 fs-6" /> {meeting.location ?? "unknown"}</p>

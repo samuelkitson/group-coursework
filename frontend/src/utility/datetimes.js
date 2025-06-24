@@ -18,6 +18,13 @@ export function daysSince (timestamp) {
   return daysDifference;
 }
 
+export function hoursSince (timestamp) {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const hoursDifference = Math.floor((now - date) / (1000 * 60 * 60));
+  return hoursDifference;
+}
+
 export function timeOfDayName() {
   const now = new Date();
   const hour = now.getHours();

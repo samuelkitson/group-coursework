@@ -3,7 +3,7 @@ import NewMeetingModal from "@/features/meetings/NewMeetingModal";
 import api from "@/services/apiMiddleware";
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { timestampToHumanFriendly } from "@/utility/datetimes";
+import { hoursSince, timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
 import { ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
@@ -78,7 +78,16 @@ function TeamMeetings() {
       <Row className="mb-4 gy-4 gx-4">
         <Col lg={9} md={12}>
           { meetingHistory.length > 0 ? meetingHistory.map((meeting, meetingidx) => (
-            <MeetingRecordCard meeting={meeting} key={meetingidx} meetingidx={meetingidx} />
+            <MeetingRecordCard
+              meeting={meeting}
+              key={meetingidx}
+              meetingidx={meetingidx}
+              editAllowed={hoursSince(meeting?.recorded) < 1 && meeting.minuteTaker._id === user.userId}
+              disputeAllowed={true}
+              onEdit={(m) => console.log(m)}
+              onDelete={(m) => console.log(m)}
+              onDispute={(m) => console.log(m)}
+            />
           )) : 
             <Card className="shadow-sm">
               <Card.Body>
