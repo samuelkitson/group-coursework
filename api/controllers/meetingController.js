@@ -3,7 +3,7 @@ const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
 const { checkTeamRole } = require("../utility/auth");
-const { GenericNotFoundError, InvalidParametersError } = require("../errors/errors");
+const { GenericNotFoundError, InvalidParametersError, GenericNotAllowedError } = require("../errors/errors");
 
 // Provide the team ID in query params
 exports.getMeetingsForTeam = async (req, res) => {
@@ -57,6 +57,27 @@ exports.recordNewMeeting = async (req, res) => {
   }
   await meetingModel.create(meetingObj);
   return res.json({ message: "Meeting recorded successfully. "});
+};
+
+exports.deleteMeeting = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.params.meeting))
+    throw new InvalidObjectIdError("The provided meeting ID is invalid.");
+  // Try to fetch the meeting so we can check the team
+  const meeting = await meetingModel.findById(req.params.meeting);
+  if (!meeting)
+    throw new GenericNotFoundError("The meeting could not be found.");
+  const userRole = await checkTeamRole(meeting.team, req.session.userId, "member/supervisor/lecturer");
+  // If this is a student, check that they're the minute taker and that this is
+  // within an hour of the meeting being added
+  if (userRole === "student") {
+    const minuteTakerMatch = meeting.minuteTaker._id === req.session.userId;
+    const withinHour = hoursSince(meeting?.createdAt) < 1;
+    if (!(minuteTakerMatch && withinHour))
+      throw new GenericNotAllowedError("You're not able to delete this meeting. Please ask your supervisor or lecturer for help.");
+  }
+  // Safe to delete the meeting
+  await meeting.deleteOne();
+  return res.json({ message: "The meeting has been deleted successfully." });
 };
 
 exports.addMeetingDispute = async (req, res) => {

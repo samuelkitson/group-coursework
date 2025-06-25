@@ -37,6 +37,12 @@ class ConfigurationError extends CustomError {
   }
 }
 
+class GenericNotAllowedError extends CustomError {
+  constructor(message = "Sorry, you're not allowed to perform that action.") {
+    super(message, 403);
+  }
+}
+
 class GenericNotFoundError extends CustomError {
   constructor(message = "Not found. Please try again.") {
     super(message, 404);
@@ -72,6 +78,7 @@ module.exports = {
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
   ConfigurationError,
+  GenericNotAllowedError,
   GenericNotFoundError,
   IncorrectRoleError,
   InvalidObjectIdError,
