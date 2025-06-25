@@ -138,11 +138,13 @@ function TeamMeetings() {
                 <p className="text-muted">
                   No meeting records found.
                 </p>
+                { getSelectedAssignment().role === "student" &&
                 <p className="text-muted mb-0">
                   When you meet for the first time, click the <PlusCircleFill />
                   {" "} button to add notes about what happened and the actions
                   you agreed.
                 </p>
+                }
               </Card.Body>
             </Card>
           }
