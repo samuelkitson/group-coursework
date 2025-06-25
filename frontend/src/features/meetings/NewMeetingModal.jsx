@@ -1,16 +1,18 @@
+import { utcToSelectorFormat } from '@/utility/datetimes';
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { CheckCircleFill, Eyeglasses, InfoCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 
-const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit }) => {
+const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting }) => {
   const [location, setLocation] = useState('');
   const [dateTime, setDateTime] = useState('');
   const [minutes, setMinutes] = useState('');
   const [attendance, setAttendance] = useState([]);
   const [prevActions, setPrevActions] = useState([]);
   const [newActions, setNewActions] = useState([]);
+  const [editMode, setEditMode] = useState(false);
 
   const teamMemberOptions = teamMembers.map(user => ({
     value: user._id,
@@ -61,7 +63,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
 
   const handleAssigneesChange = (index, selectedOptions) => {
     const assignees = selectedOptions.map(option => ({
-      id: option.value,
+      _id: option.value,
       displayName: option.label,
     }));
     handleActionChange(index, "assignees", assignees);
@@ -82,29 +84,55 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
     // Convert timestamp to UTC
     const dateTimeUTC = new Date(dateTime).toISOString();
     const prevActionsObj = prevActions.map(a => ({action: a.action, complete: a.complete, assignees: a.assignees.map(s => s._id)}));
-    const newActionsObj = newActions.slice(0, -1).map(a => ({action: a.action, assignees: a.assignees.map(s => s.id)}));
+    const newActionsObj = newActions.slice(0, -1).map(a => ({action: a.action, assignees: a.assignees.map(s => s._id)}));
     onSubmit({location, dateTime: dateTimeUTC, discussion: minutes, attendance: attendanceObj, previousActions: prevActionsObj, newActions: newActionsObj});
   };
 
   useEffect(() => {
+    setEditMode(existingMeeting ? true : false);
     if (showModal) {
-      setLocation('');
-      setDateTime('');
-      setMinutes('');
-      const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
-      const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" }));
-      const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: "notneeded" }));
-      setAttendance([...memberAttendance, ...supervisorAttendance]);
-      const copiedPrevActions = JSON.parse(JSON.stringify(previousActions));
-      setPrevActions(copiedPrevActions.map(a => ({ ...a, complete: true })));
-      setNewActions([{ action: '', assignees: [] }]);
+      if (existingMeeting) {
+        // Helper function to get the attendance records
+        const getAttendanceById = (userId) => {
+          if (existingMeeting.attendance.attended.find(a => a._id === userId)) return "attended";
+          if (existingMeeting.attendance.apologies.find(a => a._id === userId)) return "apologies";
+          if (existingMeeting.attendance.absent.find(a => a._id === userId)) return "absent";
+          return null;
+        };
+
+        setLocation(existingMeeting.location);
+        setDateTime(utcToSelectorFormat(existingMeeting.dateTime));
+        setMinutes(existingMeeting.discussion);
+        const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
+        const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "absent"}));
+        const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "notneeded" }));
+        setAttendance([...memberAttendance, ...supervisorAttendance]);
+        setPrevActions(existingMeeting.previousActions);
+        setNewActions(existingMeeting.newActions.concat({ action: '', assignees: [] }));
+      } else {
+        // New meeting
+        setLocation('');
+        setDateTime('');
+        setMinutes('');
+        const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
+        const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" }));
+        const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: "notneeded" }));
+        setAttendance([...memberAttendance, ...supervisorAttendance]);
+        const copiedPrevActions = JSON.parse(JSON.stringify(previousActions));
+        setPrevActions(copiedPrevActions.map(a => ({ ...a, complete: true })));
+        setNewActions([{ action: '', assignees: [] }]);
+      }
     }
   }, [showModal]);
 
   return (
     <Modal show={showModal} onHide={onHide} backdrop="static" keyboard={false} size="xl">
       <Modal.Header closeButton>
-        <Modal.Title>Record meeting minutes</Modal.Title>
+        { editMode ? 
+          <Modal.Title>Edit meeting minutes</Modal.Title>
+        :
+          <Modal.Title>Record meeting minutes</Modal.Title>
+        }
       </Modal.Header>
       <Modal.Body>
         <Form>
@@ -229,7 +257,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
                         isMulti
                         options={teamMemberOptions}
                         placeholder="Who will do it?"
-                        value={action.assignees.map(a => ({ value: a.id, label: a.displayName }))}
+                        value={action.assignees.map(a => ({ value: a._id, label: a.displayName }))}
                         onChange={(selectedOptions) => handleAssigneesChange(index, selectedOptions)}
                         menuPlacement="top"
                       />

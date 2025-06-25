@@ -22,6 +22,7 @@ function TeamMeetings() {
   const [attendanceHistory, setAttendanceHistory] = useState({});
   const [disputeMeeting, setDisputeMeeting] = useState(null);
   const [deleteMeeting, setDeleteMeeting] = useState(null);
+  const [editMeeting, setEditMeeting] = useState(null);
   
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -39,15 +40,31 @@ function TeamMeetings() {
   };
 
   const submitMeetingRecord = (recordObj) => {
-    api
-      .post(`/api/meeting`, {...recordObj, team: selectedTeam._id})
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setActiveModal(null);
-        refreshData();
-      });
+    // Check if we're editing or uploading new minutes.
+    if (editMeeting) {
+      // Editing existing meeting
+      api
+        .put(`/api/meeting/${editMeeting._id}`, {...recordObj})
+        .then((resp) => {
+          return resp.data;
+        })
+        .then((data) => {
+          setActiveModal(null);
+          setEditMeeting(null);
+          refreshData();
+        });
+    } else {
+      // New meeting
+      api
+        .post(`/api/meeting`, {...recordObj, team: selectedTeam._id})
+        .then((resp) => {
+          return resp.data;
+        })
+        .then((data) => {
+          setActiveModal(null);
+          refreshData();
+        });
+    }
   };
 
   const attendanceBadgeColour = (rate) => {
@@ -93,6 +110,11 @@ function TeamMeetings() {
       .finally(() => {
         setActiveModal(null);
       });
+  };
+
+  const startMeetingEdit = (meeting) => {
+    setEditMeeting(meeting);
+    setActiveModal("new-meeting");
   };
 
   const refreshData = () => {
@@ -158,7 +180,7 @@ function TeamMeetings() {
               meetingidx={meetingidx}
               editAllowed={meetingEditAllowed(meeting)}
               disputeAllowed={getSelectedAssignment().role === "student"}
-              onEdit={(m) => console.log(m)}
+              onEdit={(m) => startMeetingEdit(m)}
               onDelete={(m) => showDeleteConfirm(m)}
               onDispute={(m) => showMeetingDispute(m)}
             />
@@ -197,11 +219,12 @@ function TeamMeetings() {
 
       <NewMeetingModal
         showModal={activeModal==="new-meeting"}
-        onHide={() => setActiveModal(null)} 
+        onHide={() => {setActiveModal(null); setEditMeeting(null); }} 
         teamMembers={selectedTeam.members}
         supervisors={selectedTeam.supervisors}
         previousActions={getLatestActions()}
         onSubmit={submitMeetingRecord}
+        existingMeeting={editMeeting}
       />
 
       <DisputeMeetingModal
