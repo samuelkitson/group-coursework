@@ -7,22 +7,33 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { hoursSince, timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
-import { ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
+import { ArrowRightCircleFill, CalendarEvent, CheckCircleFill, ChevronLeft, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 function TeamMeetings() {
   const selectedTeam = useBoundStore((state) =>
     state.getSelectedTeam(),
   );
+  const { getSelectedAssignment } = useBoundStore();
   const { user } = useAuthStore();
 
   const [activeModal, setActiveModal] = useState(null);
   const [meetingHistory, setMeetingHistory] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState({});
   const [disputeMeeting, setDisputeMeeting] = useState(null);
-
+  
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
     return meetingHistory[0].newActions;
+  };
+
+  const meetingEditAllowed = (meeting) => {
+    if (getSelectedAssignment().role === "student") {
+      // Only allow edit if this is the minute taker, and we're within an hour.
+      return hoursSince(meeting?.createdAt) < 1 && meeting.minuteTaker._id === user.userId;
+    } else {
+      // Lecturer or supervisor, so edit is always allowed.
+      return true;
+    }
   };
 
   const submitMeetingRecord = (recordObj) => {
@@ -82,19 +93,30 @@ function TeamMeetings() {
   return (
     <>
       <Row className="mb-3 mb-md-0">
-        <Col md={9}>
-          <h1>Meetings</h1>
-          <p className="text-muted">Keep track of when you've met as a team, what you've agreed each
-          meeting and who's turned up.</p>
-        </Col>
+        { getSelectedAssignment().role === "student" ? 
+          <Col md={9}>
+            <h1>Meetings</h1>
+            <p className="text-muted">Keep track of when you've met as a team,
+            what you've agreed each meeting and who's turned up.</p>
+          </Col>
+        :
+          <Col md={9}>
+            <h1>Meetings (Team {selectedTeam.teamNumber})</h1>
+            <p className="text-muted">See an overview of Team {selectedTeam.teamNumber}'s{" "}
+            meetings and attendance logs. Review any outstanding disputes and
+            edit or delete meetings as appropriate.</p>
+          </Col>
+        }
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
-          <Button
-            variant="primary"
-            className="d-flex align-items-center"
-            onClick={(e) => (setActiveModal("new-meeting"))}
-          >
-            <PlusCircleFill className="me-2" />New meeting
-          </Button>
+          { getSelectedAssignment().role === "student" &&
+            <Button
+              variant="primary"
+              className="d-flex align-items-center"
+              onClick={(e) => (setActiveModal("new-meeting"))}
+            >
+              <PlusCircleFill className="me-2" />New meeting
+            </Button>
+          }
         </Col>
       </Row>
       <Row className="mb-4 gy-4 gx-4">
@@ -104,8 +126,8 @@ function TeamMeetings() {
               meeting={meeting}
               key={meetingidx}
               meetingidx={meetingidx}
-              editAllowed={hoursSince(meeting?.createdAt) < 1 && meeting.minuteTaker._id === user.userId}
-              disputeAllowed={true}
+              editAllowed={meetingEditAllowed(meeting)}
+              disputeAllowed={getSelectedAssignment().role === "student"}
               onEdit={(m) => console.log(m)}
               onDelete={(m) => console.log(m)}
               onDispute={(m) => showMeetingDispute(m)}

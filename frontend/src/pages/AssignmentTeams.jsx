@@ -9,12 +9,15 @@ import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, Progress
 import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
+import { useNavigate } from "react-router-dom";
 
 function AssignmentTeams() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const { setSelectedTeam } = useBoundStore();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   const [teams, setTeams] = useState([]);
   const [meetingHistory, setMeetingHistory] = useState(null);
@@ -33,16 +36,18 @@ function AssignmentTeams() {
     return `mailto:${emailAddresses}?subject=${selectedAssignment.name} - Team ${teams[groupidx].teamNumber}${ccSection}`;
   };
 
-  const viewMeetingHistory = (groupid) => {
-    api
-      .get(`/api/meeting?team=${groupid}`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setMeetingHistory(data.meetings);
-        setShowModal("meeting-history");
-      });
+  const viewMeetingHistory = async (groupidx) => {
+    // api
+    //   .get(`/api/meeting?team=${groupid}`)
+    //   .then((resp) => {
+    //     return resp.data;
+    //   })
+    //   .then((data) => {
+    //     setMeetingHistory(data.meetings);
+    //     setShowModal("meeting-history");
+    //   });
+    await setSelectedTeam(teams[groupidx]);
+    navigate("/assignment/meetings");
   };
 
   const viewCheckinHistory = (groupid) => {
@@ -276,7 +281,7 @@ function AssignmentTeams() {
                           </Dropdown.Item>
                           <Dropdown.Item
                             className="d-flex align-items-center"
-                            onClick={() => viewMeetingHistory(group._id)}>
+                            onClick={() => viewMeetingHistory(index)}>
                             <PersonVideo3 className="me-2" /> Meetings
                           </Dropdown.Item>
                           <Dropdown.Item

@@ -19,7 +19,17 @@ const createTeamsStore = (set, get) => ({
       console.error("Error fetching teams:", error);
     }
   },
-  setSelectedTeam: (id) => set({ selectedTeam: id }),
+  setSelectedTeam: (teamObj) => {
+    const { teams } = get();
+    // Only update if the team doesn't already exist in the list
+    const exists = teams.some((team) => team._id === teamObj._id);
+    const updatedTeams = exists ? teams : [...teams, teamObj];
+    set({
+      teams: updatedTeams,
+      selectedTeam: teamObj._id,
+    });
+  },
+  setTeamById: (id) => set({ selectedTeam: id }),
   getSelectedTeam: () => {
     const { teams, selectedTeam } = get();
     const selected =
