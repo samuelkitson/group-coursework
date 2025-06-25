@@ -89,7 +89,7 @@ const generateTeamInsights = (teamData) => {
   if (teamData.disputes.escalate > 0) {
     insights.push({
       type: "severe",
-      text: "Disputes requiring escalation",
+      text: "Meeting disputes requiring escalation",
     });
   }
   // Show the most severe insights first
