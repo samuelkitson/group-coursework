@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { hoursSince, timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
-import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
+import { Badge, Button, Card, Col, ListGroup, Modal, Row } from "react-bootstrap";
 import { ArrowLeftShort, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, ChevronLeft, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 function TeamMeetings() {
@@ -21,6 +21,7 @@ function TeamMeetings() {
   const [meetingHistory, setMeetingHistory] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState({});
   const [disputeMeeting, setDisputeMeeting] = useState(null);
+  const [deleteMeeting, setDeleteMeeting] = useState(null);
   
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -72,6 +73,25 @@ function TeamMeetings() {
       .then((data) => {
         setActiveModal(null);
         setDisputeMeeting(null);
+      });
+  };
+
+  const showDeleteConfirm = (meeting) => {
+    setDeleteMeeting(meeting);
+    setActiveModal("confirm-delete");
+  };
+
+  const handleDeleteMeeting = () => {
+    api
+      .delete(`/api/meeting/${deleteMeeting._id}`, {
+        successToasts: true,
+      })
+      .then(() => {
+        setDeleteMeeting(null);
+        refreshData();
+      })
+      .finally(() => {
+        setActiveModal(null);
       });
   };
 
@@ -139,7 +159,7 @@ function TeamMeetings() {
               editAllowed={meetingEditAllowed(meeting)}
               disputeAllowed={getSelectedAssignment().role === "student"}
               onEdit={(m) => console.log(m)}
-              onDelete={(m) => console.log(m)}
+              onDelete={(m) => showDeleteConfirm(m)}
               onDispute={(m) => showMeetingDispute(m)}
             />
           )) : 
@@ -191,6 +211,28 @@ function TeamMeetings() {
         hasSupervisor={selectedTeam?.supervisors?.length > 0}
         meeting={disputeMeeting}
       />
+
+      <Modal show={activeModal === "confirm-delete"} centered>
+        <Modal.Header>
+          <Modal.Title>Delete meeting</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the meeting on {" "}
+          {timestampToHumanFriendly(deleteMeeting?.dateTime ?? deleteMeeting?.createdAt)}?{" "}
+          This cannot be undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setActiveModal(null)}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteMeeting}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </>
   );
 }
