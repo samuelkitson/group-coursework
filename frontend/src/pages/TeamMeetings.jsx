@@ -87,8 +87,8 @@ function TeamMeetings() {
         successToasts: true,
       })
       .then(() => {
+        setMeetingHistory(mh => mh.filter(m => m._id !== deleteMeeting._id));
         setDeleteMeeting(null);
-        refreshData();
       })
       .finally(() => {
         setActiveModal(null);
@@ -217,9 +217,18 @@ function TeamMeetings() {
           <Modal.Title>Delete meeting</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete the meeting on {" "}
-          {timestampToHumanFriendly(deleteMeeting?.dateTime ?? deleteMeeting?.createdAt)}?{" "}
-          This cannot be undone.
+          <p>
+            Are you sure you want to delete the meeting on {" "}
+            {timestampToHumanFriendly(deleteMeeting?.dateTime ?? deleteMeeting?.createdAt)}?{" "}
+            This cannot be undone.
+          </p>
+          {["lecturer", "supervisor"].includes(getSelectedAssignment().role) && 
+          <p>
+            If there are disputes about this meeting, please add a private note
+            describing these and your actions before proceeding. Disputes are
+            lost when the linked meeting is deleted.
+          </p>
+          }
         </Modal.Body>
         <Modal.Footer>
           <Button

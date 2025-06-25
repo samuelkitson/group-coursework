@@ -1,5 +1,5 @@
 import { timestampToHumanFriendly } from "@/utility/datetimes";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Badge, Button, Card, Dropdown, DropdownButton, ListGroup } from "react-bootstrap";
 import { PencilSquare, Trash3Fill, ExclamationOctagonFill, ThreeDotsVertical, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
@@ -8,12 +8,8 @@ import { toTitleCase } from "@/utility/helpers";
 import api from "@/services/apiMiddleware";
 
 const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute }) => {
-  const [disputeStates, setDisputeStates] = useState(
-    (meeting?.disputes ?? []).reduce((acc, dispute) => {
-      acc[dispute._id] = dispute.status;
-      return acc;
-    }, {})
-  );
+  const [disputeStates, setDisputeStates] = useState({});
+  const [disputed, setDisputed] = useState(false);
 
   const disputeColour = (state) => {
     switch(state) {
@@ -29,6 +25,21 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
     } 
   };
 
+  useEffect(() => {
+    const checkActionable = Object.values(disputeStates).some(
+      (status) => status === "outstanding" || status === "escalate"
+    );
+    setDisputed(checkActionable);
+  }, [disputeStates]);
+
+  useEffect(() => {
+    const newStates = (meeting?.disputes ?? []).reduce((acc, dispute) => {
+      acc[dispute._id] = dispute.status;
+      return acc;
+    }, {});
+    setDisputeStates(newStates);
+  }, [meeting]);
+
   const handleDisputeStateChange = async (dispute, newState) => {
     setDisputeStates((prevStates) => ({
       ...prevStates,
@@ -42,13 +53,13 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
   };
 
   return (
-    <Card className="mb-4 shadow-sm">
+    <Card className="mb-4 shadow-sm" border={disputed && "danger"}>
       <Card.Body>
         <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
           <div className="d-flex align-items-center">
             <CalendarEvent />
             <span className="ms-2">{timestampToHumanFriendly(meeting.dateTime ?? meeting.createdAt)}</span>
-            { meeting?.disputes?.length > 0 &&
+            { disputed &&
               <Badge
                 pill
                 bg="danger"
@@ -189,7 +200,7 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                     style={{ cursor: "pointer" }}
                     id="dropdown-badge"
                   >
-                    {toTitleCase(disputeStates[dispute._id])} ▾
+                    {toTitleCase(disputeStates[dispute._id] ?? "")} ▾
                   </Dropdown.Toggle>
                   <Dropdown.Menu>
                     <Dropdown.Item eventKey="outstanding">Outstanding</Dropdown.Item>

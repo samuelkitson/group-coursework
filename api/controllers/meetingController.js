@@ -84,7 +84,7 @@ exports.deleteMeeting = async (req, res) => {
 exports.addMeetingDispute = async (req, res) => {
   if (!req.body.notes)
     throw new InvalidParametersError("You must provide details of the dispute.");
-  if (typeof req.body.notes !== "string" || req.body.notes?.length < 150)
+  if (typeof req.body.notes !== "string" || req.body.notes?.length < 100)
     throw new InvalidParametersError("Please provide a longer dispute comment.");
   if (!Types.ObjectId.isValid(req.params.meeting))
     throw new InvalidObjectIdError("The provided meeting ID is invalid.");
