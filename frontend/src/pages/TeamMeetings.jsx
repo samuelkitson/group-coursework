@@ -2,12 +2,13 @@ import DisputeMeetingModal from "@/features/meetings/DisputeMeetingModal";
 import MeetingRecordCard from "@/features/meetings/MeetingRecordCard";
 import NewMeetingModal from "@/features/meetings/NewMeetingModal";
 import api from "@/services/apiMiddleware";
+import { Link } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { hoursSince, timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import { Badge, Button, Card, Col, ListGroup, Row } from "react-bootstrap";
-import { ArrowRightCircleFill, CalendarEvent, CheckCircleFill, ChevronLeft, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
+import { ArrowLeftShort, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, ChevronLeft, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 function TeamMeetings() {
   const selectedTeam = useBoundStore((state) =>
@@ -93,6 +94,15 @@ function TeamMeetings() {
   return (
     <>
       <Row className="mb-3 mb-md-0">
+        { getSelectedAssignment().role !== "student" && 
+          <Col xs={12} className="mb-2">
+            <Link as={Button} to="/assignment/teams" variant="link" className="p-0 d-flex align-items-center">
+              <ArrowLeftShort size="25"/>
+              Back to teams overview
+            </Link>
+          </Col>
+        }
+
         { getSelectedAssignment().role === "student" ? 
           <Col md={9}>
             <h1>Meetings</h1>
