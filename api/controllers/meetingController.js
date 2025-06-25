@@ -60,6 +60,60 @@ exports.recordNewMeeting = async (req, res) => {
   return res.json({ message: "Meeting recorded successfully. "});
 };
 
+exports.updateMeeting = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.params.meeting))
+    throw new InvalidObjectIdError("The provided meeting ID is invalid.");
+  // Try to fetch the meeting so we can check the team
+  const meeting = await meetingModel.findById(req.params.meeting);
+  if (!meeting)
+    throw new GenericNotFoundError("The meeting could not be found.");
+  const userRole = await checkTeamRole(meeting.team, req.session.userId, "member/supervisor/lecturer");
+  // If this is a student, check that they're the minute taker and that this is
+  // within an hour of the meeting being added
+  if (userRole === "member") {
+    const minuteTakerMatch = meeting.minuteTaker._id.equals(req.session.userId);
+    const withinHour = hoursSince(meeting?.createdAt) < 1;
+    if (!(minuteTakerMatch && withinHour))
+      throw new GenericNotAllowedError("You're not able to delete this meeting. Please ask your supervisor or lecturer for help.");
+  }
+  // Safe to edit the meeting
+  // Get the team details
+  const teamInfo = await teamModel.findById(meeting.team).select("members").lean();
+  const teamMembers = teamInfo.members.map(id => id.toString());
+  // Validate incoming data
+  const location = req.body.location;
+  if (!location)
+    return res.status(400).json({ message: "You must provide a meeting location." });
+  const dateTime = new Date(req.body.dateTime);
+  if (!dateTime) return res.status(400).json({ message: "You must provide a meeting date and time." });
+  const now = new Date();
+  if (dateTime > now) return res.status(400).json({ message: "The meeting date and time can't be in the future." });
+  const discussion = req.body.discussion;
+  if (!discussion)
+    return res.status(400).json({ message: "You must provide a summary of the meeting discussion." });
+  // Make sure that all team members are accounted for in the attendance logs 
+  const membersInAttendance = (req.body.attendance?.["attended"] ?? []).flat().map(id => id.toString());
+  const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
+  const membersAbsent = (req.body.attendance?.["absent"] ?? []).flat().map(id => id.toString());
+  const membersAccountedFor = membersInAttendance.concat(membersApologies, membersAbsent);
+  if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
+    return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
+  }
+  // Process the meeting edit
+  meeting.discussion = discussion;
+  meeting.dateTime = dateTime;
+  meeting.location = location;
+  meeting.attendance = {
+    attended: membersInAttendance,
+    apologies: membersApologies,
+    absent: membersAbsent,
+  };
+  meeting.previousActions = req.body.previousActions;
+  meeting.newActions = req.body.newActions;
+  await meeting.save();
+  return res.json({ message: "Meeting updated successfully. "});
+};
+
 exports.deleteMeeting = async (req, res) => {
   if (!Types.ObjectId.isValid(req.params.meeting))
     throw new InvalidObjectIdError("The provided meeting ID is invalid.");
