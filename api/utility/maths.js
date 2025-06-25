@@ -33,7 +33,7 @@ exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
     } else {
       return (prevRating && prevRating <= rating) ? [prevSkill, prevRating] : [skill, rating];
     }
-  })[0];
+  }, [])[0];
   return result || "Skills not rated";
 };
 
@@ -62,6 +62,13 @@ exports.daysSince = (timestamp, numeric=true) => {
   if (daysDifference === 0) return "today";
   if (daysDifference === 1) return "yesterday";
   return `${daysDifference} days ago`;
+}
+
+exports.hoursSince = (timestamp) => {
+  const now = new Date();
+  const date = new Date(timestamp);
+  const hoursDifference = Math.floor((now - date) / (1000 * 60 * 60));
+  return hoursDifference;
 }
 
 exports.generateRandomString = (length) => {

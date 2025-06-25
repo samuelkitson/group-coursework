@@ -9,7 +9,7 @@ router.get("/all", requireLoggedIn(), asyncHandler(teamC.getAllForAssignment));
 router.get("/csv", requireLoggedIn(), asyncHandler(teamC.downloadTeamsCsv));
 router.get(
   "/mine",
-  requireLoggedIn("student"),
+  requireLoggedIn(),
   asyncHandler(teamC.getMyTeam),
 );
 router.post("/:team/new-member", requireLoggedIn(), asyncHandler(teamC.addMember));

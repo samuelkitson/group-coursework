@@ -5,16 +5,19 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Button, Card, Col, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
-import { ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, InfoCircleFill, InfoLg } from "react-bootstrap-icons";
+import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
+import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
+import { useNavigate } from "react-router-dom";
 
 function AssignmentTeams() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const { setSelectedTeam } = useBoundStore();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   const [teams, setTeams] = useState([]);
   const [meetingHistory, setMeetingHistory] = useState(null);
@@ -26,19 +29,25 @@ function AssignmentTeams() {
 
   const teamEmailLink = (groupidx) => {
     const emailAddresses = teams[groupidx].members.map(s => s.email).filter(e => e && e != user.email).join(";");
-    return `mailto:${emailAddresses}?subject=${selectedAssignment.name} - Team ${teams[groupidx].teamNumber}`;
+    let ccSection = "";
+    if (teams[groupidx].supervisors?.length > 0) {
+      ccSection = "&cc=" + teams[groupidx].supervisors.map(s => s.email).filter(e => e && e != user.email).join(";");
+    }
+    return `mailto:${emailAddresses}?subject=${selectedAssignment.name} - Team ${teams[groupidx].teamNumber}${ccSection}`;
   };
 
-  const viewMeetingHistory = (groupid) => {
-    api
-      .get(`/api/meeting?team=${groupid}`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setMeetingHistory(data.meetings);
-        setShowModal("meeting-history");
-      });
+  const viewMeetingHistory = async (groupidx) => {
+    // api
+    //   .get(`/api/meeting?team=${groupid}`)
+    //   .then((resp) => {
+    //     return resp.data;
+    //   })
+    //   .then((data) => {
+    //     setMeetingHistory(data.meetings);
+    //     setShowModal("meeting-history");
+    //   });
+    await setSelectedTeam(teams[groupidx]);
+    navigate("/assignment/meetings");
   };
 
   const viewCheckinHistory = (groupid) => {
@@ -248,7 +257,7 @@ function AssignmentTeams() {
           {teams.map((group, index) => (
             <Card key={index} className="my-3">
               <Card.Body>
-                <Card.Title className="mb-2">
+                <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
                   { moveMode === 2 ? 
                     <a
                       key={group._id}
@@ -258,7 +267,35 @@ function AssignmentTeams() {
                       role="button"
                     >Team {group.teamNumber}</a>
                   : 
-                    <span>Team {group.teamNumber}</span>
+                    <>
+                      <span>Team {group.teamNumber}</span>
+                      <Dropdown>
+                        <Dropdown.Toggle variant="light" size="sm" disabled={moveMode > 0}>
+                          <ThreeDotsVertical />
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu>
+                          <Dropdown.Item
+                            className="d-flex align-items-center"
+                            href={teamEmailLink(index)}>
+                            <Envelope className="me-2" /> Email team
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            className="d-flex align-items-center"
+                            onClick={() => viewMeetingHistory(index)}>
+                            <PersonVideo3 className="me-2" /> Meetings
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            className="d-flex align-items-center"
+                            onClick={() => viewCheckinHistory(group._id)}>
+                            <GraphUp className="me-2" /> Workload balance
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            className="d-flex align-items-center">
+                            <JournalText className="me-2" /> Observations
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </>
                   }
                 </Card.Title>
                 <Row>
@@ -292,31 +329,6 @@ function AssignmentTeams() {
                   <Col xs={8} md={6}>
                     { generateInsights(group?.insights ?? []) }
                   </Col>
-                  {moveMode == null && <Col xs={4} md={1} className="d-flex flex-column justify-content-start gap-3">
-                    <a
-                      href={teamEmailLink(index)}
-                      className="icon-button ms-auto d-flex align-items-center">
-                      { <OverlayTrigger overlay={<Tooltip>Email team members</Tooltip>} placement="left">
-                        <Envelope size={24} />
-                      </OverlayTrigger>}
-                    </a>
-                    <a
-                      onClick={() => viewMeetingHistory(group._id)}
-                      className="icon-button ms-auto d-flex align-items-center"
-                      role="button">
-                      { <OverlayTrigger overlay={<Tooltip>View meeting minutes</Tooltip>} placement="left">
-                        <PersonVideo3 size={24} />
-                      </OverlayTrigger>}
-                    </a>
-                    <a
-                      onClick={() => viewCheckinHistory(group._id)}
-                      className="icon-button ms-auto d-flex align-items-center"
-                      role="button">
-                      { <OverlayTrigger overlay={<Tooltip>View check-in data</Tooltip>} placement="left">
-                        <CardChecklist size={24} />
-                      </OverlayTrigger>}
-                    </a>
-                  </Col>}
                 </Row>
               </Card.Body>
             </Card>
@@ -330,7 +342,15 @@ function AssignmentTeams() {
         </Modal.Header>
         <Modal.Body>
         { meetingHistory?.length > 0 ? meetingHistory?.map((meeting, meetingidx) => (
-            <MeetingRecordCard meeting={meeting} key={meetingidx} meetingidx={meetingidx} />
+            <MeetingRecordCard
+              meeting={meeting}
+              key={meetingidx}
+              meetingidx={meetingidx}
+              editAllowed={true}
+              disputeAllowed={false}
+              onEdit={(m) => console.log(m)}
+              onDelete={(m) => console.log(m)}
+            />
           )) : 
             <p className="text-muted">
               No meeting records found for this team.

@@ -6,13 +6,17 @@ function AssignmentRoute({ page }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const selectedTeam = useBoundStore((state) =>
+    state.getSelectedTeam(),
+  );
   const location = useLocation();
   const path = location.pathname;
   // Redirect to dashboard if no assignment selected
   // if (selectedAssignment == null || page == null)
   //   return <Navigate to="/dashboard" />;
   // Check by state
-  if (isPageAllowed(path, selectedAssignment.state, selectedAssignment.role)) {
+  const teamSet = selectedTeam != null;
+  if (isPageAllowed(path, selectedAssignment?.state, selectedAssignment?.role, true, teamSet)) {
     // This page is allowed under the current assignment state and role
     return <Outlet />
   } else {

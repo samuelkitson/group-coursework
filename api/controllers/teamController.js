@@ -78,7 +78,20 @@ const generateTeamInsights = (teamData) => {
         text: `Good workload balance`,
       });
     }
-  } 
+  }
+  // Check disputes
+  if (teamData.disputes.outstanding > 0) {
+    insights.push({
+      type: "severe",
+      text: "Outstanding disputes about meetings",
+    });
+  }
+  if (teamData.disputes.escalate > 0) {
+    insights.push({
+      type: "severe",
+      text: "Meeting disputes requiring escalation",
+    });
+  }
   // Show the most severe insights first
   const sortingOrder = { severe: 1, warning: 2, positive: 3 };
   return insights.sort((a, b) => (sortingOrder[a.type] || 4) - (sortingOrder[b.type] || 4));
@@ -103,14 +116,25 @@ exports.getAllForAssignment = async (req, res) => {
 
       const attendanceStats = summariseMeetingAttendance(teamMeetings);
 
+      const disputes = teamMeetings.flatMap(m => {
+        return Array.isArray(m.disputes) ? m.disputes : []
+      });
+
+      const outstandingDisputes = disputes.filter(d => d.status === "outstanding");
+      const escalateDisputes = disputes.filter(d => d.status === "escalate");
+
       team.members.map(student => {
         student.meetingAttendance = attendanceStats[student._id] ?? {attended: 0, apologies: 0, absent: 0, rate: 100, };
-      })
+      });
 
       return {
         ...team,
         lastMeetingDate: teamMeetings[0] ? teamMeetings[0].dateTime : null,
         meetingCount: teamMeetings.length ?? 0,
+        disputes: {
+          outstanding: outstandingDisputes.length,
+          escalate: escalateDisputes.length,
+        }
       };
     })
   );
@@ -158,7 +182,10 @@ exports.getMyTeam = async (req, res) => {
   if (req.query.assignment && !Types.ObjectId.isValid(req.query.assignment))
     throw new InvalidObjectIdError("The provided assignment ID is invalid.");
   // Get the details of the user's teams
-  const query = { members: { $in: [req.session.userId] } };
+  const query = { $or: [
+    { members: { $in: [req.session.userId] } },
+    { supervisors: { $in: [req.session.userId] } }
+  ]};
   if (req.query.assignment) {
     query.assignment = req.query.assignment;
   }
@@ -172,15 +199,17 @@ exports.getMyTeam = async (req, res) => {
     throw new GenericNotFoundError("It doesn't look like you're currently on a team.");
   }
   // Get the required skills for this assignment
-  const assignment = await assignmentModel.findById(req.query.assignment);
-  const requiredSkills = assignment?.skills?.map(s => s.name);
-  userTeams.forEach(team => {
-    team.members.forEach(student => {
-      const bestSkill = bestWorstSkill(student.skills ?? [], true, requiredSkills);
-      const worstSkill = bestWorstSkill(student.skills ?? [], false, requiredSkills);
-      student.skills = { strongest: bestSkill, weakest: worstSkill };
+  if (req.query.assignment) {
+    const assignment = await assignmentModel.findById(req.query.assignment);
+    const requiredSkills = assignment?.skills?.map(s => s.name);
+    userTeams.forEach(team => {
+      team.members.forEach(student => {
+        const bestSkill = bestWorstSkill(student.skills ?? [], true, requiredSkills);
+        const worstSkill = bestWorstSkill(student.skills ?? [], false, requiredSkills);
+        student.skills = { strongest: bestSkill, weakest: worstSkill };
+      });
     });
-  });
+  }
   return res.json({teams: userTeams});
 };
 

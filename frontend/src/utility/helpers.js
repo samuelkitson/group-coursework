@@ -2,6 +2,7 @@ import { Check2All, ClipboardData, RocketTakeoff, Shuffle, Tools } from "react-b
 
 // From: https://stackoverflow.com/a/22193094
 export function toTitleCase(string) {
+  if (string == null || string.length === 0) return "";
   return string
     .split(" ")
     .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())

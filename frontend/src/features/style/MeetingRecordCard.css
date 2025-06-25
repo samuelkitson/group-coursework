@@ -1,0 +1,10 @@
+/* https://stackoverflow.com/a/69639789 */
+
+.dropdown-toggle::after {
+  display: none !important; 
+}
+
+.dropdown-item.text-danger:active {
+  background-color: var(--bs-secondary);
+  color: white!important;
+}

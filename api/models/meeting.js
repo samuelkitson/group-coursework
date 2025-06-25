@@ -9,6 +9,28 @@ const actionPointSchema = new Schema(
   { _id: false },
 );
 
+const disputeSchema = new Schema(
+  {
+    complainant: { type: "ObjectId", ref: "user", required: true, },
+    notes: { type: String, required: true, },
+    status: {
+      type: String,
+      enum: ["outstanding", "resolved", "escalate", "ignore"],
+      default: "outstanding",
+    },
+  },
+  { _id: true },
+);
+
+const editLogSchema = new Schema(
+  {
+    editor: { type: "ObjectId", ref: "user", required: true, },
+    dateTime: { type: Date, required: true, },
+    description: { type: String, required: false, },
+  },
+  { _id: false },
+);
+
 const meetingSchema = new Schema(
   {
     team: { type: "ObjectId", ref: "team", required: true, },
@@ -23,6 +45,8 @@ const meetingSchema = new Schema(
     discussion: { type: String, required: true, },
     previousActions: [actionPointSchema],
     newActions: [actionPointSchema],
+    disputes: [disputeSchema],
+    editLog: [editLogSchema],
   },
   { timestamps: true },
 );
