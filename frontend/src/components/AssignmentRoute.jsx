@@ -16,7 +16,7 @@ function AssignmentRoute({ page }) {
   //   return <Navigate to="/dashboard" />;
   // Check by state
   const teamSet = selectedTeam != null;
-  if (isPageAllowed(path, selectedAssignment.state, selectedAssignment.role, true, teamSet)) {
+  if (isPageAllowed(path, selectedAssignment?.state, selectedAssignment?.role, true, teamSet)) {
     // This page is allowed under the current assignment state and role
     return <Outlet />
   } else {
