@@ -12,7 +12,7 @@ exports.getMeetingsForTeam = async (req, res) => {
   let query = meetingModel.find({ team: req.query.team, });
   if (userRole === "member") query = query.select("-disputes");
   // Get meeting documents for the team
-  const meetingHistory = await query.populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees disputes.complainant", "displayName").sort({ dateTime: -1 }).lean();
+  const meetingHistory = await query.populate("minuteTaker attendance.attended attendance.apologies attendance.absent previousActions.assignees newActions.assignees disputes.complainant editLog.editor", "displayName").sort({ dateTime: -1 }).lean();
   const attendanceStats = this.summariseMeetingAttendance(meetingHistory, "displayName");
   return res.json({ meetings: meetingHistory, attendanceStats: attendanceStats, });
 };
@@ -110,6 +110,7 @@ exports.updateMeeting = async (req, res) => {
   };
   meeting.previousActions = req.body.previousActions;
   meeting.newActions = req.body.newActions;
+  meeting.editLog.push({ editor: req.session.userId, dateTime: new Date(), });
   await meeting.save();
   return res.json({ message: "Meeting updated successfully. "});
 };

@@ -22,6 +22,15 @@ const disputeSchema = new Schema(
   { _id: true },
 );
 
+const editLogSchema = new Schema(
+  {
+    editor: { type: "ObjectId", ref: "user", required: true, },
+    dateTime: { type: Date, required: true, },
+    description: { type: String, required: false, },
+  },
+  { _id: false },
+);
+
 const meetingSchema = new Schema(
   {
     team: { type: "ObjectId", ref: "team", required: true, },
@@ -37,6 +46,7 @@ const meetingSchema = new Schema(
     previousActions: [actionPointSchema],
     newActions: [actionPointSchema],
     disputes: [disputeSchema],
+    editLog: [editLogSchema],
   },
   { timestamps: true },
 );
