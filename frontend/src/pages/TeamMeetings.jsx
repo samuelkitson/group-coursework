@@ -23,6 +23,7 @@ function TeamMeetings() {
   const [disputeMeeting, setDisputeMeeting] = useState(null);
   const [deleteMeeting, setDeleteMeeting] = useState(null);
   const [editMeeting, setEditMeeting] = useState(null);
+  const [currentEditLog, setCurrentEditLog] = useState(null);
   
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -117,6 +118,11 @@ function TeamMeetings() {
     setActiveModal("new-meeting");
   };
 
+  const showEditLog = (editLog) => {
+    setCurrentEditLog(editLog);
+    setActiveModal("edit-log");
+  };
+
   const refreshData = () => {
     // Get the meeting history for the team
     api
@@ -183,6 +189,7 @@ function TeamMeetings() {
               onEdit={(m) => startMeetingEdit(m)}
               onDelete={(m) => showDeleteConfirm(m)}
               onDispute={(m) => showMeetingDispute(m)}
+              viewEdits={((editLog) => showEditLog(editLog))}
             />
           )) : 
             <Card className="shadow-sm">
@@ -235,7 +242,7 @@ function TeamMeetings() {
         meeting={disputeMeeting}
       />
 
-      <Modal show={activeModal === "confirm-delete"} centered>
+      <Modal show={activeModal === "confirm-delete"} centered onHide={() => setActiveModal(null)}>
         <Modal.Header>
           <Modal.Title>Delete meeting</Modal.Title>
         </Modal.Header>
@@ -264,6 +271,24 @@ function TeamMeetings() {
             Delete
           </Button>
         </Modal.Footer>
+      </Modal>
+
+      <Modal show={activeModal === "edit-log"} centered onHide={() => setActiveModal(null)}>
+        <Modal.Header>
+          <Modal.Title>Meeting edit log</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            The list below shows all edits made to this meeting's record:
+          </p>
+          <ul>
+            {currentEditLog?.map((l) => (
+              <li key={l.dateTime}>
+                <strong>{l.editor.displayName}</strong> edited on {timestampToHumanFriendly(l.dateTime)}
+              </li>
+            ))}
+          </ul>
+        </Modal.Body>
       </Modal>
     </>
   );

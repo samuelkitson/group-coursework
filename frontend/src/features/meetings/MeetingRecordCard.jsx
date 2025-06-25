@@ -1,13 +1,13 @@
 import { timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import { Badge, Button, Card, Dropdown, DropdownButton, ListGroup } from "react-bootstrap";
-import { PencilSquare, Trash3Fill, ExclamationOctagonFill, ThreeDotsVertical, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
+import { ClockHistory, PencilSquare, Trash3Fill, ExclamationOctagonFill, ThreeDotsVertical, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, PenFill, PinMapFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 import "../style/MeetingRecordCard.css";
 import { toTitleCase } from "@/utility/helpers";
 import api from "@/services/apiMiddleware";
 
-const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute }) => {
+const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute, viewEdits }) => {
   const [disputeStates, setDisputeStates] = useState({});
   const [disputed, setDisputed] = useState(false);
 
@@ -77,6 +77,14 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
+                { meeting?.editLog?.length > 0 &&
+                  <Dropdown.Item
+                    className="d-flex align-items-center"
+                    onClick={() => viewEdits(meeting.editLog)}
+                  >
+                    <ClockHistory className="me-2" /> Edit log
+                  </Dropdown.Item>
+                }
                 { editAllowed && <>
                   <Dropdown.Item
                     className="d-flex align-items-center"
