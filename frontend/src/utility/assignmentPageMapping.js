@@ -9,6 +9,11 @@ import {
   Eyeglasses,
 } from "react-bootstrap-icons";
 
+/**
+ * rolesVisible: roles for which the page appears in the menu.
+ * rolesHidden: roles for which the page can only be navigated to directly.
+ * needsTeam: selectedTeam must be set to navigate to this page.
+ */
 export const pageMap = [
   { label: "Overview",
     icon: Map,
@@ -56,35 +61,63 @@ export const pageMap = [
     icon: People,
     link: "/assignment/team",
     rolesVisible: ["student"],
-    statesVisible: ["live", "closed"]
+    statesVisible: ["live", "closed"],
+    needsTeam: true,
   },
   { label: "Meetings",
     icon: PersonVideo3,
     link: "/assignment/meetings",
     rolesVisible: ["student"],
-    statesVisible: ["live", "closed"]
+    rolesHidden: ["supervisor", "lecturer"],
+    statesVisible: ["live", "closed"],
+    needsTeam: true,
   },
   { label: "Check-In",
     icon: CardChecklist,
     link: "/assignment/check-in",
     rolesVisible: ["student"],
-    statesVisible: ["live"]
+    statesVisible: ["live"],
+    needsTeam: true,
   },
 ];
 
-export function getAllowedPages(assignmentState, userRole) {
-  return pageMap.filter(p =>
-    p.rolesVisible.includes(userRole) &&
-    p.statesVisible.includes(assignmentState)
-  );
+/**
+ * Returns a list of the pages that the user is allowed to view.
+ * @param {string} assignmentState the current state of the selected assignment.
+ * @param {string} userRole the user's role on the selected assignment.
+ * @param {boolean} includeHidden if true, include pages that shouldn't be shown in the menu.
+ * @returns list of page objects.
+ */
+export function getAllowedPages(assignmentState, userRole, includeHidden=false) {
+  if (includeHidden) {
+    return pageMap.filter(p =>
+      (p.rolesVisible.includes(userRole) || p?.rolesHidden?.includes(userRole)) &&
+      p.statesVisible.includes(assignmentState)
+    );
+  } else {
+    return pageMap.filter(p =>
+      (p.rolesVisible.includes(userRole)) &&
+      p.statesVisible.includes(assignmentState)
+    );
+  }
 };
 
-export function isPageAllowed(path, assignmentState, userRole) {
+/**
+ * Checks whether the user should be allowed to view the given page.
+ * @param {string} path the path to the page.
+ * @param {string} assignmentState the state of the selected assignment.
+ * @param {string} userRole the user's role on the selected assignment.
+ * @param {boolean} includeHidden if true, allow navigation to pages that aren't shown in the menu.
+ * @param {boolean} teamSet if true, a team is currently selected.
+ * @returns 
+ */
+export function isPageAllowed(path, assignmentState, userRole, includeHidden=true, teamSet=false) {
   const page = pageMap.find(p => p.link === path);
   if (page) {
-    if (page.rolesVisible.includes(userRole) && page.statesVisible.includes(assignmentState)) {
-      return true;
-    }
+    if (page?.needsTeam && !teamSet) return false;
+    if (!page.statesVisible.includes(assignmentState)) return false;
+    if (page.rolesVisible.includes(userRole)) return true;
+    if (includeHidden && page.rolesHidden.includes(userRole)) return true;
   }
   return false;
 };
