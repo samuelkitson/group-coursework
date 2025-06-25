@@ -182,7 +182,10 @@ exports.getMyTeam = async (req, res) => {
   if (req.query.assignment && !Types.ObjectId.isValid(req.query.assignment))
     throw new InvalidObjectIdError("The provided assignment ID is invalid.");
   // Get the details of the user's teams
-  const query = { members: { $in: [req.session.userId] } };
+  const query = { $or: [
+    { members: { $in: [req.session.userId] } },
+    { supervisors: { $in: [req.session.userId] } }
+  ]};
   if (req.query.assignment) {
     query.assignment = req.query.assignment;
   }
@@ -196,15 +199,17 @@ exports.getMyTeam = async (req, res) => {
     throw new GenericNotFoundError("It doesn't look like you're currently on a team.");
   }
   // Get the required skills for this assignment
-  const assignment = await assignmentModel.findById(req.query.assignment);
-  const requiredSkills = assignment?.skills?.map(s => s.name);
-  userTeams.forEach(team => {
-    team.members.forEach(student => {
-      const bestSkill = bestWorstSkill(student.skills ?? [], true, requiredSkills);
-      const worstSkill = bestWorstSkill(student.skills ?? [], false, requiredSkills);
-      student.skills = { strongest: bestSkill, weakest: worstSkill };
+  if (req.query.assignment) {
+    const assignment = await assignmentModel.findById(req.query.assignment);
+    const requiredSkills = assignment?.skills?.map(s => s.name);
+    userTeams.forEach(team => {
+      team.members.forEach(student => {
+        const bestSkill = bestWorstSkill(student.skills ?? [], true, requiredSkills);
+        const worstSkill = bestWorstSkill(student.skills ?? [], false, requiredSkills);
+        student.skills = { strongest: bestSkill, weakest: worstSkill };
+      });
     });
-  });
+  }
   return res.json({teams: userTeams});
 };
 
