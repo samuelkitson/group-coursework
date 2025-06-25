@@ -33,7 +33,7 @@ exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
     } else {
       return (prevRating && prevRating <= rating) ? [prevSkill, prevRating] : [skill, rating];
     }
-  })[0];
+  }, [])[0];
   return result || "Skills not rated";
 };
 
