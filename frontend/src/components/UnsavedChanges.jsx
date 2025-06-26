@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { Badge } from "react-bootstrap";
 
-const UnsavedChanges = ({ unsaved }) => {
+const UnsavedChanges = ({ unsaved, className} ) => {
   useEffect(() => {
     // If there are unsaved changes, prevent navigating away
     const handleBeforeUnload = (e) => {
@@ -22,6 +22,7 @@ const UnsavedChanges = ({ unsaved }) => {
         pill
         bg="danger"
         style={{ fontSize: "0.7rem", verticalAlign: "middle" }}
+        className={className}
       >
         Unsaved changes
       </Badge>

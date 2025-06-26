@@ -56,11 +56,11 @@ function AssignmentSettings({ unsaved, markUnsaved, markSaved }) {
   return (
     <>
       <div className="d-flex justify-content-between align-items-center">
-        <h3>Settings</h3>
+        <h3>Basic settings</h3>
         <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted">
-        Adjust the basic assignment settings that are visible to students.
+        Adjust the core assignment settings.
       </p>
 
       <Form.Group className="mb-4">
