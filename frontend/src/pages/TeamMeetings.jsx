@@ -45,7 +45,7 @@ function TeamMeetings() {
     if (editMeeting) {
       // Editing existing meeting
       api
-        .put(`/api/meeting/${editMeeting._id}`, {...recordObj})
+        .put(`/api/meeting/${editMeeting._id}`, {...recordObj}, { successToasts: true, })
         .then((resp) => {
           return resp.data;
         })
@@ -57,7 +57,7 @@ function TeamMeetings() {
     } else {
       // New meeting
       api
-        .post(`/api/meeting`, {...recordObj, team: selectedTeam._id})
+        .post(`/api/meeting`, {...recordObj, team: selectedTeam._id}, { successToasts: true, })
         .then((resp) => {
           return resp.data;
         })
@@ -274,7 +274,7 @@ function TeamMeetings() {
       </Modal>
 
       <Modal show={activeModal === "edit-log"} centered onHide={() => setActiveModal(null)}>
-        <Modal.Header>
+        <Modal.Header closeButton>
           <Modal.Title>Meeting edit log</Modal.Title>
         </Modal.Header>
         <Modal.Body>
