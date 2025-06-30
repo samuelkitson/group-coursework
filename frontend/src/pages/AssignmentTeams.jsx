@@ -58,13 +58,13 @@ function AssignmentTeams() {
       })
       .then((data) => {
         const checkinData = data.checkins.map(c => {
-          const startDate = new Date(c.periodStart);
-          const niceStartDate = startDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
-          return {periodStart: niceStartDate, ...c.netScores,}
+          const endDate = new Date(c.periodEnd);
+          const niceEndDate = endDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
+          return {periodEnd: niceEndDate, ...c.netScores,}
         });
         setCheckinHistory(checkinData);
         if (checkinData.length > 0) {
-          setCheckinStudents(Object.keys(checkinData[0]).filter(k => k !== "periodStart"));
+          setCheckinStudents(Object.keys(checkinData[0]).filter(k => k !== "periodEnd"));
         }
         setShowModal("checkins");
       });
@@ -381,8 +381,8 @@ function AssignmentTeams() {
                 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="periodStart">
-                  <Label offset={20} position="bottom" value="Weeks" />
+                <XAxis dataKey="periodEnd">
+                  <Label offset={20} position="bottom" value="Weeks (last day)" />
                 </XAxis>
                 <YAxis>
                   <Label position="left" angle={-90} value="Relative workload" />
