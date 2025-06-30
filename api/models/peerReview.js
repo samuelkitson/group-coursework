@@ -15,4 +15,18 @@ const peerReviewSchema = new Schema(
   { timestamps: false },
 );
 
+peerReviewSchema.statics.findByAssignment = async function (
+  assignmentId,
+  searchDate = new Date(),
+  selectFields,
+) {
+  return this.findOne(
+    {
+      assignment: assignmentId,
+      periodStart: { $lte: searchDate, },
+      periodEnd: { $gte: searchDate, },
+    },
+  ).select(selectFields);
+};
+
 module.exports = model("peerReview", peerReviewSchema);

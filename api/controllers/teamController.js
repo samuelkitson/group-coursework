@@ -4,6 +4,7 @@ const teamModel = require("../models/team");
 const assignmentModel = require("../models/assignment");
 const meetingModel = require("../models/meeting");
 const checkinModel = require("../models/checkin");
+const peerReviewModel = require("../models/peerReview");
 const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/maths");
 const { summariseMeetingAttendance } = require("./meetingController");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
@@ -141,7 +142,8 @@ exports.getAllForAssignment = async (req, res) => {
   // Add in check-in data
   const lastWeekDate = new Date();
   lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-  const checkins = await checkinModel.findActiveForTeams(teams.map(t => t._id), lastWeekDate, "team effortPoints");
+  const peerReview = await peerReviewModel.findByAssignment(req.query.assignment, lastWeekDate);
+  const checkins = await checkinModel.findByTeamsAndPeerReview(teams.map(t => t._id), peerReview._id, "team effortPoints");
   checkins.forEach(checkin => {
     if (Object.keys(checkin?.effortPoints ?? {}).length == 0 || checkin.team == null) return;
     const checkinStats = checkinStatistics(checkin.effortPoints);

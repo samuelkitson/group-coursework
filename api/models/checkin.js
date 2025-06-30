@@ -1,10 +1,11 @@
 const { Schema, model } = require("mongoose");
+const assignment = require("./assignment");
+const peerReview = require("./peerReview");
 
 const checkinSchema = new Schema(
   {
     team: { type: "ObjectId", ref: "team", required: true, },
-    periodStart: { type: Date, required: true, },
-    periodEnd: { type: Date, required: true, },
+    peerReview:  { type: "ObjectId", ref: "peerReview", required: true, },
     effortPoints: {
       type: Object,
       of: {
@@ -16,39 +17,37 @@ const checkinSchema = new Schema(
   },
 );
 
-checkinSchema.statics.findActiveForTeam = async function (
+checkinSchema.statics.findByTeamAndPeerReview = async function (
   teamId,
-  searchDate = new Date(),
+  peerReviewId,
   selectFields,
 ) {
   return this.findOne(
     {
       team: teamId,
-      periodStart: { $lte: searchDate, },
-      periodEnd: { $gte: searchDate, },
+      peerReview: peerReviewId,
     },
   ).select(selectFields);
-};
+}
 
-checkinSchema.statics.findActiveForTeams = async function (
+checkinSchema.statics.findByTeamsAndPeerReview = async function (
   teamIds = [],
-  searchDate = new Date(),
+  peerReviewId,
   selectFields,
 ) {
   return this.find(
     {
       team: { $in : teamIds, },
-      periodStart: { $lte: searchDate, },
-      periodEnd: { $gte: searchDate, },
+      peerReview: peerReviewId,
     }, 
   ).select(selectFields);
 };
 
 checkinSchema.statics.createNewCheckin = async function (
   teamId,
-  date=undefined,
+  peerReviewId,
 ) {
-  const checkinDate = date ?? new Date();
+  const checkinDate = new Date();
   let periodStart = new Date(checkinDate);
   if (checkinDate.getDay() !== 1) {
     // Not Monday today, so set start period back to previous Monday
@@ -63,6 +62,7 @@ checkinSchema.statics.createNewCheckin = async function (
 
   return await this.create({
     team: teamId,
+    peerReview: peerReviewId,
     periodStart,
     periodEnd,
     effortPoints: new Map(),
