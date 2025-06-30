@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
 
 import "./style/CheckIn.css";
-import { CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, EyeSlash, HourglassSplit, PlusCircle } from "react-bootstrap-icons";
+import { Ban, CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, EyeSlash, HourglassSplit, PlusCircle, QuestionCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 
 function CheckIn() {
@@ -19,6 +19,7 @@ function CheckIn() {
   const [ memberRatings, setMemberRatings ] = useState([]);
   const [ completionRate, setCompletionRate ] = useState({done: 0, outOf: 0});
   const [ pointsImbalance, setPointsImbalance ] = useState(0);
+  const [ checkInType, setCheckInType ] = useState(null);
   const [ checkInAvailable, setCheckInAvailable ] = useState(false);
 
   const MIN_RATING = 1;
@@ -103,7 +104,8 @@ function CheckIn() {
       })
       .then((data) => {
         setCheckInAvailable(data?.open ?? false);
-        setCompletionRate(data.completionRate);
+        setCheckInType(data?.type);
+        setCompletionRate(data?.completionRate ?? {done: 0, outOf: 0});
       })
   };
 
@@ -135,7 +137,42 @@ function CheckIn() {
         </Col>
       </Row>
 
-      { checkInAvailable ?
+      { checkInType === "disabled" && 
+      <Card>
+        <Card.Body>
+          <Card.Text>
+            <p>
+              No check-ins are needed this week.
+            </p>
+            <p className="d-flex align-items-center text-muted mb-1">
+              <QuestionCircle className="me-2" />
+              Either this assignment hasn't been set up to use this feature, or
+              you're not within the configured assignment dates.
+            </p>
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      }
+
+      { checkInType === "none" && 
+      <Card>
+        <Card.Body>
+          <Card.Text>
+            <p>
+              No check-ins are needed this week.
+            </p>
+            <p className="d-flex align-items-center text-muted mb-1">
+              <Ban className="me-2" />
+              Your module team has not requested any check-ins this week. Maybe
+              it's a holiday, or you've got exams!
+            </p>
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      }
+
+      { ["simple", "full"].includes(checkInType) && (
+      checkInAvailable ?
       <>
         <h4>
           Workload balance
@@ -212,7 +249,7 @@ function CheckIn() {
           </Card.Text>
         </Card.Body>
       </Card>
-      }
+      )}
 
       <Modal show={activeModal === "report-issues"} onHide={() => setActiveModal(null)} centered size="lg">
         <Modal.Header closeButton>
