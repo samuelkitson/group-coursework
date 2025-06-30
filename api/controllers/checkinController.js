@@ -25,10 +25,12 @@ exports.getCheckinStateStudent = async (req, res) => {
   const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
   const membersCount = teamInfo.members.length;
   const ratedCount = Object.keys(activeCheckIn.effortPoints).length;
+  const questions = peerReview.type === "full" ? peerReview.questions ?? [] : undefined;
   return res.json({
     type: peerReview.type,
     open: !alreadyCompleted,
-    completionRate: { done: ratedCount, outOf: membersCount }
+    completionRate: { done: ratedCount, outOf: membersCount },
+    questions,
   });
 };
 

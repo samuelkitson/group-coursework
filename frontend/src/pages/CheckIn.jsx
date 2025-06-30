@@ -21,6 +21,7 @@ function CheckIn() {
   const [ pointsImbalance, setPointsImbalance ] = useState(0);
   const [ checkInType, setCheckInType ] = useState(null);
   const [ checkInAvailable, setCheckInAvailable ] = useState(false);
+  const [ peerReviewQuestion, setPeerReviewQuestions ] = useState([]);
 
   const MIN_RATING = 1;
   const MAX_RATING = 7;
@@ -106,6 +107,7 @@ function CheckIn() {
         setCheckInAvailable(data?.open ?? false);
         setCheckInType(data?.type);
         setCompletionRate(data?.completionRate ?? {done: 0, outOf: 0});
+        setPeerReviewQuestions(data?.questions ?? []);
       })
   };
 
