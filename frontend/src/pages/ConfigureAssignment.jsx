@@ -1,5 +1,6 @@
 import UnsavedChanges from "@/components/UnsavedChanges";
 import AssignmentSettings from "@/features/configure/AssignmentSettings";
+import PeerReviewSettings from "@/features/configure/PeerReviewSettings";
 import SkillsConfigure from "@/features/configure/SkillsConfigure";
 import { useBoundStore } from "@/store/dataBoundStore";
 import React, { useState } from "react";
@@ -19,7 +20,11 @@ function ConfigureAssignment() {
       name: "Skills questionnaire",
       key: "skills-questionnaire",
       component: SkillsConfigure,
-    },
+    },{
+      name: "Peer reviews",
+      key: "prism",
+      component: PeerReviewSettings,
+    }
   ];
 
   const [unsavedChanges, setUnsavedChanges] = useState(settingsPanes.reduce((acc, p) => {
