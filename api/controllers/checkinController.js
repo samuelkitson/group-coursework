@@ -9,7 +9,7 @@ const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateErro
 exports.getCheckinStateStudent = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "member");
   // Get the current peer review state from the peer review collection
-  const teamInfo = await teamModel.findById(req.query.team).select("members assignment").lean();
+  const teamInfo = await teamModel.findById(req.query.team).populate("members", "displayName").select("members assignment").lean();
   const peerReview = await peerReviewModel.findByAssignment(teamInfo.assignment);
   if (!peerReview) {
     return res.json({ type: "disabled", open: false, });
@@ -26,14 +26,17 @@ exports.getCheckinStateStudent = async (req, res) => {
   const alreadyCompleted = reviewersSubmitted.some(r => r.equals(req.session.userId));
   // Some of the reviewers who have already submitted may be supervisors, so
   // filter them out
-  const teamMembersSubmitted = reviewersSubmitted.filter(r => teamInfo.members.some(m => m.equals(r)));
+  const teamMembersSubmitted = reviewersSubmitted.filter(r => teamInfo.members.some(m => m._id.equals(r)));
   const membersCount = teamInfo.members.length;
   const questions = peerReview.type === "full" ? peerReview.questions ?? [] : undefined;
+  const teamMembers = peerReview.type === "full" ? teamInfo.members.filter(m => !m._id.equals(req.session.userId)) : undefined;
+  // Get the details of their team members
   return res.json({
     type: peerReview.type,
     open: !alreadyCompleted,
     completionRate: { done: teamMembersSubmitted.length, outOf: membersCount },
     questions,
+    teamMembers,
   });
 };
 
