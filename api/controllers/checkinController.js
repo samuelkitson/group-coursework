@@ -92,9 +92,6 @@ exports.getCheckInHistory = async (req, res) => {
     acc[member._id] = member.displayName;
     return acc;
   }, {});
-  
-  // Array to store the output data
-  const summaryData = [];
 
   // Get all of the relevant check-ins, and group them together by the peer
   // review points
