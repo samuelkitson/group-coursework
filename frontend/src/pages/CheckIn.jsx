@@ -76,9 +76,18 @@ function CheckIn() {
       acc[rating._id] = rating.rating;
       return acc;
     }, {});
+    let reviews = undefined;
+    if (checkInType === "full") {
+      // Add in reviews if this is a full peer review week
+      reviews = peerReviewAnswers.reduce((acc, answer) => {
+        acc[answer.recipient] = { skills: answer.skills, comment: answer.comment, };
+        return acc;
+      }, {});
+    }
     const submitObj = {
       team: selectedTeam._id,
       effortPoints: ratingsObj,
+      reviews,
     }
     api
       .post(`/api/checkin`, submitObj, { successToasts: true, })

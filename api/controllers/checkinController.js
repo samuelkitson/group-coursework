@@ -59,6 +59,7 @@ exports.submitCheckIn = async (req, res) => {
     throw new InvalidParametersError("You've already completed this week's check-in.");
   // Check that everyone has been accounted for in the effort points
   const teamMembers = teamInfo.members.map(id => id.toString());
+  const membersOthers = teamMembers.filter(m => m !== req.session.userId.toString());
   const membersRated = Object.keys(effortPoints).map(id => id.toString());
   if (membersRated.length != teamMembers.length || !membersRated.every(id => teamMembers.includes(id)))
     throw new InvalidParametersError("You need to allocate some effort points to each team member.");
@@ -78,7 +79,32 @@ exports.submitCheckIn = async (req, res) => {
     peerReview: peerReview._id,
     effortPoints: effortPoints,
   };
-  //TODO: if the peerReview type is "full", add in the skill ratings and comment
+  // If this is a full peer review, check that we have all the fields
+  if (peerReview.type === "full") {
+    const questions = peerReview.questions ?? [];
+    if (!req.body.reviews)
+      throw new InvalidParametersError("You need to complete a full peer review this week.");
+    if (!Object.keys(req.body.reviews).length === membersOthers.length)
+      throw new InvalidParametersError("Please submit a full peer review for each team member.");
+    for (const [recipient, review] of Object.entries(req.body.reviews)) {
+      if (!membersOthers.includes(recipient))
+        throw new InvalidParametersError("You can only submit peer reviews for your own team members.");
+      if (!review.comment || review.comment.length < 50)
+        throw new InvalidParametersError("Please submit a suitable review comment for each team member.");
+      if (questions.length > 0) {
+        if (questions.length !== Object.keys(review?.skills ?? {}).length)
+          throw new InvalidParametersError("Please complete every skill rating for each team member.");
+      }
+      for (const [skillName, score] of Object.entries(review?.skills ?? {})) {
+        if (!questions.includes(skillName))
+          throw new InvalidParametersError(`"${skillName}" is not an allowed rating skill.`);
+        if (!(score >= 1 && score <= 5))
+          throw new InvalidParametersError("Please select a star rating from 1 to 5 for each skill area.");
+      };
+    };
+    // Checks passed
+    newCheckin.reviews = req.body.reviews;
+  }
   await checkinModel.create(newCheckin);
   return res.json({ message: "Your weekly check-in has been submitted. Thank you!"});
 };
