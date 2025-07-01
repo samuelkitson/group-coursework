@@ -3,7 +3,7 @@ name: Deploy Frontend [Prod-DigitalOcean]
 on:
   push:
     branches:
-      - digitalocean-deploy
+      - main
     paths:
       - frontend/**
 

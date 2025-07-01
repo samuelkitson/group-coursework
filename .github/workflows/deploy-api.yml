@@ -3,7 +3,7 @@ name: Deploy API [Prod-DigitalOcean]
 on:
   push:
     branches:
-      - digitalocean-deploy
+      - main
     paths:
       - api/**
 
