@@ -1,0 +1,43 @@
+name: Deploy Frontend [Prod-DigitalOcean]
+
+on:
+  push:
+    branches:
+      - digitalocean-deploy
+    paths:
+      - frontend/**
+
+jobs:
+  deploy:
+    name: Deploy frontend to DigitalOcean
+    runs-on: ubuntu-latest
+
+    env:
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_USER: ${{ secrets.VPS_USER }}
+      VPS_DEPLOY_PATH_FRONTEND: ${{ secrets.VPS_DEPLOY_PATH_FRONTEND }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: |
+          npm install
+      
+      - name: Build frontend with npm
+        working-directory: frontend
+        run: |
+          npm run build
+
+      - name: Transfer frontend files to VPS
+        run: |
+          rsync -avz --delete frontend/dist/ "$VPS_USER@$VPS_HOST:$VPS_DEPLOY_PATH_FRONTEND"
