@@ -28,7 +28,7 @@ router.use("/test", testDataRoutes);
 
 // Heartbeat endpoint to check session status
 router.get("/heartbeat", (req, res) => {
-  res.json({ online: true, loggedIn: req.session.email != null });
+  res.json({ online: true, loggedIn: req.session.email != null, version: "2.0", });
 });
 
 module.exports = router;
