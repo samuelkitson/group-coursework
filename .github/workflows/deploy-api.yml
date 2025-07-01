@@ -55,12 +55,12 @@ jobs:
           cp -r /tmp/api $VPS_DEPLOY_PATH
 
           export MONGO_HOST=localhost
-          export MONGO_USER={{ secrets.DB_USER }}
-          export MONGO_PASSWORD={{ secrets.DB_PASSWORD }}
-          export SESSION_SECRET={{ secrets.SESSION_SECRET }}
+          export MONGO_USER=${{ secrets.DB_USER }}
+          export MONGO_PASSWORD=${{ secrets.DB_PASSWORD }}
+          export SESSION_SECRET=${{ secrets.SESSION_SECRET }}
 
           # Start the service again
-          pm2 restart api
+          pm2 restart api --update-env
 
           # Clean up temporary files
           rm /tmp/api.tar.gz
