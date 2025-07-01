@@ -37,7 +37,7 @@ exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
   return result || "Skills not rated";
 };
 
-exports.checkinStatistics = (effortPoints) => {
+exports.checkinStatisticsOld = (effortPoints) => {
   if (!effortPoints) return null;
   const netScores = {};
   const expectedScore = Object.keys(effortPoints).length * 4;
@@ -47,6 +47,29 @@ exports.checkinStatistics = (effortPoints) => {
       netScores[recipient] += effortPoints[rater][recipient];
     }
   }
+  const totalScores = {...netScores};
+  for (const recipient in netScores) {
+    netScores[recipient] -= expectedScore;
+  }
+  return {netScores, totalScores};
+};
+
+/**
+ * Generates a summary about a check-in from a set of data. Supply a lean set of
+ * checkin objects for a single peer review point.
+ * @param {*} reviews 
+ */
+exports.checkinStatistics = (reviews) => {
+  if (!reviews) return null;
+  const netScores = {};
+  // Expected score is what a student would get overall if everyone gave them 4
+  const expectedScore = reviews.length * 4;
+  reviews.forEach(review => {
+    for (const recipient in review.effortPoints) {
+      if (!netScores[recipient]) netScores[recipient] = 0;
+      netScores[recipient] += review.effortPoints[recipient];
+    }
+  });
   const totalScores = {...netScores};
   for (const recipient in netScores) {
     netScores[recipient] -= expectedScore;

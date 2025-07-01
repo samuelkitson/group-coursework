@@ -1,41 +1,65 @@
 const { Types } = require("mongoose");
 const checkinModel = require("../models/checkin");
 const teamModel = require("../models/team");
+const peerReviewModel = require("../models/peerReview");
 const { checkinStatistics } = require("../utility/maths");
 const { checkTeamRole } = require("../utility/auth");
-const { InvalidParametersError } = require("../errors/errors");
+const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError } = require("../errors/errors");
 
 exports.getCheckinStateStudent = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "member");
-  // Check for active check-in, or create one if it doesn't exit
-  let activeCheckIn = await checkinModel.findActiveForTeam(req.query.team);
-  if (activeCheckIn == null) {
-    activeCheckIn = await checkinModel.createNewCheckin(req.query.team);
+  // Get the current peer review state from the peer review collection
+  const teamInfo = await teamModel.findById(req.query.team).populate("members", "displayName").select("members assignment").lean();
+  const peerReview = await peerReviewModel.findByAssignment(teamInfo.assignment);
+  if (!peerReview) {
+    return res.json({ type: "disabled", open: false, });
   }
-  const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
-  const teamInfo = await teamModel.findById(req.query.team).select("members").lean();
+  if (peerReview.type === "none") {
+    return res.json({ type: "none", open: false, });
+  }
+  // Check existing check-ins for this team for the current period
+  const existing = (await checkinModel.find({
+    peerReview: peerReview._id,
+    team: req.query.team,
+  }).lean()) ?? [];
+  const reviewersSubmitted = existing.map(c => c.reviewer);
+  const alreadyCompleted = reviewersSubmitted.some(r => r.equals(req.session.userId));
+  // Some of the reviewers who have already submitted may be supervisors, so
+  // filter them out
+  const teamMembersSubmitted = reviewersSubmitted.filter(r => teamInfo.members.some(m => m._id.equals(r)));
   const membersCount = teamInfo.members.length;
-  const ratedCount = Object.keys(activeCheckIn.effortPoints).length;
-  return res.json({ open: !alreadyCompleted, completionRate: { done: ratedCount, outOf: membersCount } });
+  const questions = peerReview.type === "full" ? peerReview.questions ?? [] : undefined;
+  const teamMembers = peerReview.type === "full" ? teamInfo.members.filter(m => !m._id.equals(req.session.userId)) : undefined;
+  // Get the details of their team members
+  return res.json({
+    type: peerReview.type,
+    open: !alreadyCompleted,
+    completionRate: { done: teamMembersSubmitted.length, outOf: membersCount },
+    questions,
+    teamMembers,
+  });
 };
 
 exports.submitCheckIn = async (req, res) => {
   await checkTeamRole(req.body.team, req.session.userId, "member");
+  // Check whether a peer review is active for this week
+  const teamInfo = await teamModel.findById(req.body.team).select("members assignment").lean();
+  const peerReview = await peerReviewModel.findByAssignment(teamInfo.assignment);
+  if (!peerReview || peerReview.type === "none")
+    throw new AssignmentInvalidStateError("No check-in is required for this week.");
   const effortPoints = req.body.effortPoints;
   if (!effortPoints || typeof effortPoints !== "object")
     throw new InvalidParametersError("Invalid effort points allocation.");
-  // Check for active check-in, or create one if it doesn't exit
-  let activeCheckIn = await checkinModel.findActiveForTeam(req.body.team);
-  if (activeCheckIn == null) {
-    activeCheckIn = await checkinModel.createNewCheckin(req.body.team);
-  }
-  if (activeCheckIn.effortPoints == null) activeCheckIn.effortPoints = {};
-  const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
-  if (alreadyCompleted)
+  // Make sure that the user hasn't already submitted
+  const existing = await checkinModel.findOne({
+    reviewer: req.session.userId,
+    peerReview: peerReview._id,
+  });
+  if (existing)
     throw new InvalidParametersError("You've already completed this week's check-in.");
   // Check that everyone has been accounted for in the effort points
-  const teamInfo = await teamModel.findById(req.body.team).select("members").lean();
   const teamMembers = teamInfo.members.map(id => id.toString());
+  const membersOthers = teamMembers.filter(m => m !== req.session.userId.toString());
   const membersRated = Object.keys(effortPoints).map(id => id.toString());
   if (membersRated.length != teamMembers.length || !membersRated.every(id => teamMembers.includes(id)))
     throw new InvalidParametersError("You need to allocate some effort points to each team member.");
@@ -49,10 +73,39 @@ exports.submitCheckIn = async (req, res) => {
   });
   if (!totalPoints === pointsSum)
     throw new InvalidParametersError("The effort points you have submitted are not balanced evenly.")
-  // All ok, update the record
-  activeCheckIn["effortPoints"][req.session.userId] = effortPoints;
-  activeCheckIn.markModified("effortPoints");
-  await activeCheckIn.save();
+  const newCheckin = {
+    reviewer: req.session.userId,
+    team: req.body.team,
+    peerReview: peerReview._id,
+    effortPoints: effortPoints,
+  };
+  // If this is a full peer review, check that we have all the fields
+  if (peerReview.type === "full") {
+    const questions = peerReview.questions ?? [];
+    if (!req.body.reviews)
+      throw new InvalidParametersError("You need to complete a full peer review this week.");
+    if (!Object.keys(req.body.reviews).length === membersOthers.length)
+      throw new InvalidParametersError("Please submit a full peer review for each team member.");
+    for (const [recipient, review] of Object.entries(req.body.reviews)) {
+      if (!membersOthers.includes(recipient))
+        throw new InvalidParametersError("You can only submit peer reviews for your own team members.");
+      if (!review.comment || review.comment.length < 50)
+        throw new InvalidParametersError("Please submit a suitable review comment for each team member.");
+      if (questions.length > 0) {
+        if (questions.length !== Object.keys(review?.skills ?? {}).length)
+          throw new InvalidParametersError("Please complete every skill rating for each team member.");
+      }
+      for (const [skillName, score] of Object.entries(review?.skills ?? {})) {
+        if (!questions.includes(skillName))
+          throw new InvalidParametersError(`"${skillName}" is not an allowed rating skill.`);
+        if (!(score >= 1 && score <= 5))
+          throw new InvalidParametersError("Please select a star rating from 1 to 5 for each skill area.");
+      };
+    };
+    // Checks passed
+    newCheckin.reviews = req.body.reviews;
+  }
+  await checkinModel.create(newCheckin);
   return res.json({ message: "Your weekly check-in has been submitted. Thank you!"});
 };
 
@@ -62,23 +115,36 @@ exports.getCheckInHistory = async (req, res) => {
   const team = await teamModel
     .findById(req.query.team)
     .populate("members", "displayName")
-    .select("members")
+    .select("assignment members")
     .lean();
   const idsToNames = team.members.reduce((acc, member) => {
     acc[member._id] = member.displayName;
     return acc;
   }, {});
-  // Get the checkins for this team
-  const checkins = await checkinModel.find({ team: new Types.ObjectId(req.query.team), periodEnd: { $lt: new Date() }, }).sort({ periodStart: 1 });
-  const checkinStats = checkins.map(c => {
-    const stats = checkinStatistics(c.effortPoints);
-    return { periodStart: c.periodStart, periodEnd: c.periodEnd, ...stats, };
-  }).filter(c => c?.netScores && c?.totalScores);
-  // Change the user IDs to display names for simplicity
-  const statsWithNames = checkinStats.map(c => ({
-    ...c,
+
+  // Get all of the relevant check-ins, and group them together by the peer
+  // review points
+  const checkins = await checkinModel.find({
+    team: new Types.ObjectId(req.query.team),
+  }).select("reviewer peerReview effortPoints").lean();
+  const peerReviewPoints = await peerReviewModel.find({
+    assignment: team.assignment,
+    periodEnd: { $lt: new Date() },
+  }).sort({ "periodStart": 1 }).lean();
+
+  const checkinsGrouped = peerReviewPoints.map(p => {
+    const relevantCheckins = checkins.filter(c => p._id.equals(c.peerReview)) ?? [];
+    const {netScores, totalScores} = checkinStatistics(relevantCheckins);
+    return {...p, checkins: relevantCheckins, netScores, totalScores};
+  });
+
+  const simplifiedStats = checkinsGrouped.map(c => ({
+    periodStart: c.periodStart,
+    periodEnd: c.periodEnd,
+    type: c.type,
     netScores: Object.keys(c.netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.netScores[id] }), {}),
     totalScores: Object.keys(c.totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.totalScores[id] }), {}),
   }));
-  return res.json({ checkins: statsWithNames, });
+
+  return res.json({ checkins: simplifiedStats, });
 };

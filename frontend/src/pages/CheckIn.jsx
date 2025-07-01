@@ -1,11 +1,12 @@
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
-import React, { useEffect, useState } from "react";
-import { Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
+import React, { useCallback, useEffect, useState } from "react";
+import { Accordion, Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
 
 import "./style/CheckIn.css";
-import { CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, EyeSlash, HourglassSplit, PlusCircle } from "react-bootstrap-icons";
+import { Ban, CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, Eye, EyeSlash, HourglassSplit, PlusCircle, QuestionCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
+import PeerReviewForm from "@/features/checkin/PeerReviewForm";
 
 function CheckIn() {
   const selectedAssignment = useBoundStore((state) =>
@@ -19,7 +20,11 @@ function CheckIn() {
   const [ memberRatings, setMemberRatings ] = useState([]);
   const [ completionRate, setCompletionRate ] = useState({done: 0, outOf: 0});
   const [ pointsImbalance, setPointsImbalance ] = useState(0);
+  const [ checkInType, setCheckInType ] = useState(null);
   const [ checkInAvailable, setCheckInAvailable ] = useState(false);
+  const [ peerReviewQuestions, setPeerReviewQuestions ] = useState([]);
+  const [ peerReviewRecipients, setPeerReviewRecipients ] = useState([]);
+  const [ peerReviewAnswers, setPeerReviewAnswers ] = useState([]);
 
   const MIN_RATING = 1;
   const MAX_RATING = 7;
@@ -71,9 +76,18 @@ function CheckIn() {
       acc[rating._id] = rating.rating;
       return acc;
     }, {});
+    let reviews = undefined;
+    if (checkInType === "full") {
+      // Add in reviews if this is a full peer review week
+      reviews = peerReviewAnswers.reduce((acc, answer) => {
+        acc[answer.recipient] = { skills: answer.skills, comment: answer.comment, };
+        return acc;
+      }, {});
+    }
     const submitObj = {
       team: selectedTeam._id,
       effortPoints: ratingsObj,
+      reviews,
     }
     api
       .post(`/api/checkin`, submitObj, { successToasts: true, })
@@ -91,6 +105,16 @@ function CheckIn() {
     return `mailto:${staffEmails}?subject=${selectedAssignment.name} - Team ${selectedTeam.teamNumber}`;
   };
 
+  const handlePeerReviewChange = useCallback((id, fieldName, value) => {
+    setPeerReviewAnswers(prevAnswers =>
+      prevAnswers.map(answer =>
+        answer.recipient === id
+          ? { ...answer, [fieldName]: value } 
+          : answer
+      )
+    );
+  }, []);
+
   const refreshData = () => {
     setCheckInAvailable(false);
     // Check whether this user's check-in is open
@@ -103,7 +127,23 @@ function CheckIn() {
       })
       .then((data) => {
         setCheckInAvailable(data?.open ?? false);
-        setCompletionRate(data.completionRate);
+        setCheckInType(data?.type);
+        setCompletionRate(data?.completionRate ?? {done: 0, outOf: 0});
+        setPeerReviewQuestions(data?.questions ?? []);
+        setPeerReviewRecipients(data?.teamMembers ?? []);
+        if (data?.teamMembers) {
+          const questionsMap = data?.questions.reduce((acc, q) => ({ ...acc, [q]: 0 }), {});
+          setPeerReviewAnswers(data.teamMembers.map(m => {
+            return {
+              recipient: m._id,
+              name: m.displayName,
+              comment: "",
+              skills: {...questionsMap},
+            }
+          }));
+        } else {
+          setPeerReviewAnswers([]);
+        }
       })
   };
 
@@ -135,7 +175,42 @@ function CheckIn() {
         </Col>
       </Row>
 
-      { checkInAvailable ?
+      { checkInType === "disabled" && 
+      <Card>
+        <Card.Body>
+          <Card.Text>
+            <p>
+              No check-ins are needed this week.
+            </p>
+            <p className="d-flex align-items-center text-muted mb-1">
+              <QuestionCircle className="me-2" />
+              Either this assignment hasn't been set up to use this feature, or
+              you're not within the configured assignment dates.
+            </p>
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      }
+
+      { checkInType === "none" && 
+      <Card>
+        <Card.Body>
+          <Card.Text>
+            <p>
+              No check-ins are needed this week.
+            </p>
+            <p className="d-flex align-items-center text-muted mb-1">
+              <Ban className="me-2" />
+              Your module team has not requested any check-ins this week. Maybe
+              it's a holiday, or you've got exams!
+            </p>
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      }
+
+      { ["simple", "full"].includes(checkInType) && (
+      checkInAvailable ?
       <>
         <h4>
           Workload balance
@@ -181,6 +256,38 @@ function CheckIn() {
           </Col>
         </Row>
 
+        { checkInType === "full" && 
+        <>
+          <h4>
+            Peer review
+            <OverlayTrigger overlay={<Tooltip>
+              Shared anonymously with your team.
+            </Tooltip>}>
+              <Eye className="ms-2" size={18} />
+            </OverlayTrigger>
+          </h4>
+          <p className="text-muted">
+            Tell us a bit more about each of your team member's contributions
+            towards the most recent deliverable. Your comments will help decide
+            individual marks and will be shared with your team anonymously.
+          </p>
+          <Row>
+            <Col xs={12}>
+              <Accordion>
+                {peerReviewAnswers.map((p, idx) => (
+                  <PeerReviewForm
+                    key={`peerreviewform-${idx}`}
+                    index={idx}
+                    answer={p}
+                    onChange={handlePeerReviewChange}
+                  />
+                ))}
+              </Accordion>
+            </Col>
+          </Row>
+        </>
+        }
+
         <Button
           variant="primary"
           className="d-flex align-items-center mt-3"
@@ -212,7 +319,7 @@ function CheckIn() {
           </Card.Text>
         </Card.Body>
       </Card>
-      }
+      )}
 
       <Modal show={activeModal === "report-issues"} onHide={() => setActiveModal(null)} centered size="lg">
         <Modal.Header closeButton>

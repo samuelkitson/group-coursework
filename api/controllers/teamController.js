@@ -4,6 +4,7 @@ const teamModel = require("../models/team");
 const assignmentModel = require("../models/assignment");
 const meetingModel = require("../models/meeting");
 const checkinModel = require("../models/checkin");
+const peerReviewModel = require("../models/peerReview");
 const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/maths");
 const { summariseMeetingAttendance } = require("./meetingController");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
@@ -141,22 +142,20 @@ exports.getAllForAssignment = async (req, res) => {
   // Add in check-in data
   const lastWeekDate = new Date();
   lastWeekDate.setDate(lastWeekDate.getDate() - 7);
-  const checkins = await checkinModel.findActiveForTeams(teams.map(t => t._id), lastWeekDate, "team effortPoints");
-  checkins.forEach(checkin => {
-    if (Object.keys(checkin?.effortPoints ?? {}).length == 0 || checkin.team == null) return;
-    const checkinStats = checkinStatistics(checkin.effortPoints);
-    let teamObject = teamsWithLastMeeting.find(team => team._id.toString() == checkin.team.toString());
-    teamObject.members.forEach(member => {
+  const peerReview = await peerReviewModel.findByAssignment(req.query.assignment, lastWeekDate);
+  const teamIds = teams.map(t => t._id);
+  const checkins = await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints");
+  teamsWithLastMeeting.forEach(team => {
+    const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+    const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
+    team.members.forEach(member => {
       member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
     });
-    teamObject.checkInStats = {
+    team.checkInStats = {
       minNetScore: Math.min(...Object.values(checkinStats.netScores)),
       maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
-    }
-  });
-  // Add insights
-  teamsWithLastMeeting.forEach(team => {
-    team.insights = generateTeamInsights(team, checkins.find(checkin => team._id.toString() == checkin.team.toString()));
+    };
+    team.insights = generateTeamInsights(team);
   });
   return res.json({teams: teamsWithLastMeeting});
 };
