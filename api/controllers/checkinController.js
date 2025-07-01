@@ -4,7 +4,7 @@ const teamModel = require("../models/team");
 const peerReviewModel = require("../models/peerReview");
 const { checkinStatistics } = require("../utility/maths");
 const { checkTeamRole } = require("../utility/auth");
-const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError } = require("../errors/errors");
+const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError } = require("../errors/errors");
 
 exports.getCheckinStateStudent = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "member");
@@ -17,19 +17,22 @@ exports.getCheckinStateStudent = async (req, res) => {
   if (peerReview.type === "none") {
     return res.json({ type: "none", open: false, });
   }
-  // Check for active check-in, or create one if it doesn't exit
-  let activeCheckIn = await checkinModel.findByTeamAndPeerReview(req.query.team, peerReview._id);
-  if (activeCheckIn == null) {
-    activeCheckIn = await checkinModel.createNewCheckin(req.query.team, peerReview._id);
-  }
-  const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
+  // Check existing check-ins for this team for the current period
+  const existing = (await checkinModel.find({
+    peerReview: peerReview._id,
+    team: req.query.team,
+  }).lean()) ?? [];
+  const reviewersSubmitted = existing.map(c => c.reviewer);
+  const alreadyCompleted = reviewersSubmitted.some(r => r.equals(req.session.userId));
+  // Some of the reviewers who have already submitted may be supervisors, so
+  // filter them out
+  const teamMembersSubmitted = reviewersSubmitted.filter(r => teamInfo.members.some(m => m.equals(r)));
   const membersCount = teamInfo.members.length;
-  const ratedCount = Object.keys(activeCheckIn.effortPoints).length;
   const questions = peerReview.type === "full" ? peerReview.questions ?? [] : undefined;
   return res.json({
     type: peerReview.type,
     open: !alreadyCompleted,
-    completionRate: { done: ratedCount, outOf: membersCount },
+    completionRate: { done: teamMembersSubmitted.length, outOf: membersCount },
     questions,
   });
 };
@@ -44,15 +47,12 @@ exports.submitCheckIn = async (req, res) => {
   const effortPoints = req.body.effortPoints;
   if (!effortPoints || typeof effortPoints !== "object")
     throw new InvalidParametersError("Invalid effort points allocation.");
-  // Check for active check-in
-  let activeCheckIn = await checkinModel.findByTeamAndPeerReview(req.body.team, peerReview._id);
-  if (activeCheckIn == null)
-    // This can happen if the lecturer has edited the current peer review in
-    // such a way that its ObjectID changed.
-    throw new AssignmentInvalidStateError("Something went wrong processing your response. Please copy your responses somewhere safe, then refresh and try again.");
-  if (activeCheckIn.effortPoints == null) activeCheckIn.effortPoints = {};
-  const alreadyCompleted = activeCheckIn.effortPoints?.hasOwnProperty(req.session.userId) ?? false;
-  if (alreadyCompleted)
+  // Make sure that the user hasn't already submitted
+  const existing = await checkinModel.findOne({
+    reviewer: req.session.userId,
+    peerReview: peerReview._id,
+  });
+  if (existing)
     throw new InvalidParametersError("You've already completed this week's check-in.");
   // Check that everyone has been accounted for in the effort points
   const teamMembers = teamInfo.members.map(id => id.toString());
@@ -69,10 +69,14 @@ exports.submitCheckIn = async (req, res) => {
   });
   if (!totalPoints === pointsSum)
     throw new InvalidParametersError("The effort points you have submitted are not balanced evenly.")
-  // All ok, update the record
-  activeCheckIn["effortPoints"][req.session.userId] = effortPoints;
-  activeCheckIn.markModified("effortPoints");
-  await activeCheckIn.save();
+  const newCheckin = {
+    reviewer: req.session.userId,
+    team: req.body.team,
+    peerReview: peerReview._id,
+    effortPoints: effortPoints,
+  };
+  //TODO: if the peerReview type is "full", add in the skill ratings and comment
+  await checkinModel.create(newCheckin);
   return res.json({ message: "Your weekly check-in has been submitted. Thank you!"});
 };
 
@@ -82,33 +86,39 @@ exports.getCheckInHistory = async (req, res) => {
   const team = await teamModel
     .findById(req.query.team)
     .populate("members", "displayName")
-    .select("members")
+    .select("assignment members")
     .lean();
   const idsToNames = team.members.reduce((acc, member) => {
     acc[member._id] = member.displayName;
     return acc;
   }, {});
-  // Get the checkins for this team
+  
+  // Array to store the output data
+  const summaryData = [];
+
+  // Get all of the relevant check-ins, and group them together by the peer
+  // review points
   const checkins = await checkinModel.find({
     team: new Types.ObjectId(req.query.team),
-    })
-    .populate({
-      path: "peerReview",
-      match: { periodEnd: { $lt: new Date() } },
-      select: "periodStart periodEnd type questions",
-    })
-    .sort({ "peerReview.periodStart": 1 }).lean();
-  // Filter to remove any where the peerReview object has been lost
-  const filteredCheckins = checkins.filter(checkin => checkin.peerReview !== null);
-  const checkinStats = filteredCheckins.map(c => {
-    const stats = checkinStatistics(c.effortPoints);
-    return { periodStart: c.peerReview.periodStart, periodEnd: c.peerReview.periodEnd, ...stats, };
-  }).filter(c => c?.netScores && c?.totalScores);
-  // Change the user IDs to display names for simplicity
-  const statsWithNames = checkinStats.map(c => ({
-    ...c,
+  }).select("reviewer peerReview effortPoints").lean();
+  const peerReviewPoints = await peerReviewModel.find({
+    assignment: team.assignment,
+    periodEnd: { $lt: new Date() },
+  }).sort({ "periodStart": 1 }).lean();
+
+  const checkinsGrouped = peerReviewPoints.map(p => {
+    const relevantCheckins = checkins.filter(c => p._id.equals(c.peerReview)) ?? [];
+    const {netScores, totalScores} = checkinStatistics(relevantCheckins);
+    return {...p, checkins: relevantCheckins, netScores, totalScores};
+  });
+
+  const simplifiedStats = checkinsGrouped.map(c => ({
+    periodStart: c.periodStart,
+    periodEnd: c.periodEnd,
+    type: c.type,
     netScores: Object.keys(c.netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.netScores[id] }), {}),
     totalScores: Object.keys(c.totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.totalScores[id] }), {}),
   }));
-  return res.json({ checkins: statsWithNames, });
+
+  return res.json({ checkins: simplifiedStats, });
 };

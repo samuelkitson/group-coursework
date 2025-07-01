@@ -2,7 +2,31 @@ const { Schema, model } = require("mongoose");
 const assignment = require("./assignment");
 const peerReview = require("./peerReview");
 
+// New object format
+
+const fullReviewSchema = new Schema(
+  {
+    skills: { type: Object, of: Number, required: true, },
+    comment: { type: String, required: true, },
+  },
+  { _id: false, },
+);
+
 const checkinSchema = new Schema(
+  {
+    reviewer: { type: "ObjectId", ref: "user", required: true, },
+    team: { type: "ObjectId", ref: "team", required: true, },
+    peerReview:  { type: "ObjectId", ref: "peerReview", required: true, },
+    effortPoints: { type: Object, of: Number, },
+    reviews: { type: Object, of: fullReviewSchema, },
+  },
+  { _id: true, timestamps: true, },
+);
+
+
+
+
+const oldCheckinSchema = new Schema(
   {
     team: { type: "ObjectId", ref: "team", required: true, },
     peerReview:  { type: "ObjectId", ref: "peerReview", required: true, },
@@ -22,7 +46,7 @@ checkinSchema.statics.findByTeamAndPeerReview = async function (
   peerReviewId,
   selectFields,
 ) {
-  return this.findOne(
+  return this.find(
     {
       team: teamId,
       peerReview: peerReviewId,
