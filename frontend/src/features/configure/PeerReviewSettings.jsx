@@ -189,11 +189,13 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
 
       { peerReviewEnabled &&
       <>
+        { isBefore(parseISO(overallPeriodStart), new Date()) && 
         <p className="text-danger d-flex align-items-center">
           <ExclamationTriangleFill className="me-2" />
           Don't edit historic peer reviews or disable them if students have
           started completing them. 
         </p>
+        }
         <Row className="mb-3 gy-3">
           <Col md={6}>
             <Form.Group className="form-floating">
