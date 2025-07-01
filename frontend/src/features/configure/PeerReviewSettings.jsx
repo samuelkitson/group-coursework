@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Col, Form, InputGroup, ListGroup, Modal, Row, ToggleButton, ToggleButtonGroup, } from "react-bootstrap";
 import { startOfWeek, endOfWeek, isBefore, isAfter, isEqual, addWeeks, format, parseISO, addDays } from "date-fns";
 import toast from "react-hot-toast";
-import { CheckCircleFill, PencilSquare, PlusCircleFill, Trash3Fill, XCircle, XLg } from "react-bootstrap-icons";
+import { CheckCircleFill, ExclamationTriangle, ExclamationTriangleFill, PencilSquare, PlusCircleFill, Trash3Fill, XCircle, XLg } from "react-bootstrap-icons";
 
 function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
@@ -189,6 +189,11 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
 
       { peerReviewEnabled &&
       <>
+        <p className="text-danger d-flex align-items-center">
+          <ExclamationTriangleFill className="me-2" />
+          Don't edit historic peer reviews or disable them if students have
+          started completing them. 
+        </p>
         <Row className="mb-3 gy-3">
           <Col md={6}>
             <Form.Group className="form-floating">
