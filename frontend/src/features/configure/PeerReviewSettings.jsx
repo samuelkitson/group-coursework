@@ -102,8 +102,8 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
         setPeerReviews(formatted);
         if (formatted.length === 0) {
           setPeerReviewEnabled(false);
-          setOverallPeriodStart(null);
-          setOverallPeriodEnd(null);
+          setOverallPeriodStart("");
+          setOverallPeriodEnd("");
         } else {
           setPeerReviewEnabled(true);
           setOverallPeriodStart(format(earliest, "yyyy-MM-dd"));
