@@ -2,12 +2,21 @@ import { utcToSelectorFormat } from '@/utility/datetimes';
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { CheckCircleFill, Eyeglasses, InfoCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
-import { useForm, useFormState } from 'react-hook-form';
+import { Controller, useFieldArray, useForm, useFormState, useWatch } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 
+const attendanceIcon = (status) => {
+  if (status === "attended") {
+    return (<CheckCircleFill className="text-success"/>)
+  } else if (status === "apologies") {
+    return (<SlashCircleFill className="text-warning"/>)
+  } if (status === "absent") {
+    return (<XCircleFill className="text-danger"/>)
+  }
+}
+
 const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting }) => {
-  const [attendance, setAttendance] = useState([]);
   const [prevActions, setPrevActions] = useState([]);
   const [newActions, setNewActions] = useState([]);
   const [editMode, setEditMode] = useState(false);
@@ -16,29 +25,18 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
     location: "",
     dateTime: "",
     minutes: "",
+    attendance: [],
   };
 
   const { control, register, reset, getValues, } = useForm({ defaultValues });
+  const { fields: attendanceFields, update: attendanceUpdate } = useFieldArray({ control, name: "attendance", });
   const { isDirty } = useFormState({ control });
+  const watchedAttendance = useWatch({ control, name: "attendance" });
 
   const teamMemberOptions = teamMembers.map(user => ({
     value: user._id,
     label: user.displayName,
   }));
-
-  const handleAttendanceChange = (id, status) => {
-    setAttendance(attendance.map(user => (user._id === id ? { ...user, status } : user)));
-  };
-
-  const attendanceIcon = (status) => {
-    if (status === "attended") {
-      return (<CheckCircleFill className="text-success"/>)
-    } else if (status === "apologies") {
-      return (<SlashCircleFill className="text-warning"/>)
-    } if (status === "absent") {
-      return (<XCircleFill className="text-danger"/>)
-    }
-  }
 
   const handleSetActionStatus = async (index, complete) => {
     setPrevActions(prev => prev.map((action, i) => i === index ? { ...action, complete } : action));
@@ -77,7 +75,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
   };
 
   const handleSubmit = () => {
-    const { location, dateTime, minutes } = getValues();
+    const { location, dateTime, minutes, attendance } = getValues();
     // Check if all fields are completed
     if (!location) return toast.error("Please add a meeting location.");
     if (!dateTime) return toast.error("Please add the meeting date and time.");
@@ -107,26 +105,25 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
           if (existingMeeting.attendance.absent.find(a => a._id === userId)) return "absent";
           return null;
         };
+        const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
+        const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "absent"}));
+        const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "notneeded" }));
+        setPrevActions(existingMeeting.previousActions);
+        setNewActions(existingMeeting.newActions.concat({ action: '', assignees: [] }));
         reset({...defaultValues,
           location: existingMeeting?.location ?? "",
           dateTime: utcToSelectorFormat(existingMeeting?.dateTime) ?? "",
           minutes: existingMeeting?.discussion ?? "",
+          attendance: [...memberAttendance, ...supervisorAttendance],
         });
-        const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
-        const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "absent"}));
-        const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "notneeded" }));
-        setAttendance([...memberAttendance, ...supervisorAttendance]);
-        setPrevActions(existingMeeting.previousActions);
-        setNewActions(existingMeeting.newActions.concat({ action: '', assignees: [] }));
       } else {
-        reset( defaultValues );
         const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
         const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" }));
         const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: "notneeded" }));
-        setAttendance([...memberAttendance, ...supervisorAttendance]);
         const copiedPrevActions = JSON.parse(JSON.stringify(previousActions));
         setPrevActions(copiedPrevActions.map(a => ({ ...a, complete: true })));
         setNewActions([{ action: '', assignees: [] }]);
+        reset( {...defaultValues, attendance: [...memberAttendance, ...supervisorAttendance]} );
       }
     }
   }, [showModal]);
@@ -169,7 +166,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
               <InfoCircle className="ms-2" size={14} />
             </OverlayTrigger>
           </h6>
-          {attendance.map(user => (
+          {attendanceFields.map((user, index) => (
             <Form.Group as={Row} className="mb-2 d-flex align-items-center" key={user._id}>
             <Col xs={12} md={8} className="d-flex justify-content-between align-items-center mb-1 mb-md-0">
               {user?.supervisor ? 
@@ -179,20 +176,21 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
               : 
                 <Form.Label className="mb-0 me-2">{user.displayName}</Form.Label>
               }
-              {attendanceIcon(user.status)}
+              {attendanceIcon(watchedAttendance?.[index]?.status)}
             </Col>
             <Col xs={12} md={4}>
-              <Form.Select
-                value={user.status}
-                onChange={(e) => handleAttendanceChange(user._id, e.target.value)}
-                size="sm"
-                className="w-100"
-              >
-                <option value="attended">Attended</option>
-                <option value="apologies">Sent apologies</option>
-                <option value="absent">Absent</option>
-                {user?.supervisor && <option value="notneeded">Supervisor not invited</option>}
-              </Form.Select>
+              <Controller
+                control={control}
+                name={`attendance.${index}.status`}
+                render={({ field }) => (
+                  <Form.Select {...field} size="sm" className="w-100">
+                    <option value="attended">Attended</option>
+                    <option value="apologies">Sent apologies</option>
+                    <option value="absent">Absent</option>
+                    {user?.supervisor && <option value="notneeded">Supervisor not invited</option>}
+                  </Form.Select>
+                )}
+              />
             </Col>
           </Form.Group>
           ))}
