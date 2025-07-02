@@ -1,7 +1,7 @@
 import { utcToSelectorFormat } from '@/utility/datetimes';
 import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
-import { CheckCircleFill, Eyeglasses, InfoCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
+import { CheckCircleFill, Eyeglasses, InfoCircle, PlusCircle, SlashCircleFill, XCircleFill, XLg } from 'react-bootstrap-icons';
 import { Controller, useFieldArray, useForm, useFormState, useWatch } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
@@ -17,8 +17,6 @@ const attendanceIcon = (status) => {
 }
 
 const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting }) => {
-  const [prevActions, setPrevActions] = useState([]);
-  const [newActions, setNewActions] = useState([]);
   const [editMode, setEditMode] = useState(false);
 
   const defaultValues = {
@@ -26,11 +24,13 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
     dateTime: "",
     minutes: "",
     attendance: [],
+    prevActions: [],
+    newActions: [],
   };
-
   const { control, register, reset, getValues, } = useForm({ defaultValues });
-  const { fields: attendanceFields, update: attendanceUpdate } = useFieldArray({ control, name: "attendance", });
-  const { isDirty } = useFormState({ control });
+  const { fields: attendanceFields, } = useFieldArray({ control, name: "attendance", });
+  const { fields: prevActionsFields, } = useFieldArray({ control, name: "prevActions", });
+  const { fields: newActionsFields, remove: newActionsRemove, append: newActionsAppend, } = useFieldArray({ control, name: "newActions", });
   const watchedAttendance = useWatch({ control, name: "attendance" });
 
   const teamMemberOptions = teamMembers.map(user => ({
@@ -38,44 +38,8 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
     label: user.displayName,
   }));
 
-  const handleSetActionStatus = async (index, complete) => {
-    setPrevActions(prev => prev.map((action, i) => i === index ? { ...action, complete } : action));
-  };
-
-  const handleActionChange = (index, field, value) => {
-    const updated = [...newActions];
-    updated[index][field] = value;
-    setNewActions(updated);
-  };
-  
-  // Called when the user has finished typing in an action field.
-  const checkAddNewAction = (index, value) => {
-    const updated = [...newActions];
-    // If this isn't the last action, and it's empty, delete it
-    if (index < updated.length - 1 && value.trim() == "") {
-      return handleRemoveAction(index);
-    }
-    //If this is the last action field and it's not empty, add a new blank one.
-    if (index === updated.length - 1 && value.trim() !== "") {
-      updated.push({ action: "", assignees: [] });
-      return setNewActions(updated);
-    }
-  };
-
-  const handleRemoveAction = (index) => {
-    setNewActions(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const handleAssigneesChange = (index, selectedOptions) => {
-    const assignees = selectedOptions.map(option => ({
-      _id: option.value,
-      displayName: option.label,
-    }));
-    handleActionChange(index, "assignees", assignees);
-  };
-
   const handleSubmit = () => {
-    const { location, dateTime, minutes, attendance } = getValues();
+    const { location, dateTime, minutes, attendance, prevActions, newActions } = getValues();
     // Check if all fields are completed
     if (!location) return toast.error("Please add a meeting location.");
     if (!dateTime) return toast.error("Please add the meeting date and time.");
@@ -90,7 +54,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
     // Convert timestamp to UTC
     const dateTimeUTC = new Date(dateTime).toISOString();
     const prevActionsObj = prevActions.map(a => ({action: a.action, complete: a.complete, assignees: a.assignees.map(s => s._id)}));
-    const newActionsObj = newActions.slice(0, -1).map(a => ({action: a.action, assignees: a.assignees.map(s => s._id)}));
+    const newActionsObj = newActions.filter(a => a.action != "");
     onSubmit({location, dateTime: dateTimeUTC, discussion: minutes, attendance: attendanceObj, previousActions: prevActionsObj, newActions: newActionsObj});
   };
 
@@ -108,22 +72,21 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
         const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
         const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "absent"}));
         const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: getAttendanceById(user._id) ?? "notneeded" }));
-        setPrevActions(existingMeeting.previousActions);
-        setNewActions(existingMeeting.newActions.concat({ action: '', assignees: [] }));
+        const newActionsAdj = existingMeeting.newActions.map(a => {return {...a, assignees: a.assignees.map(m => m._id)}});
         reset({...defaultValues,
           location: existingMeeting?.location ?? "",
           dateTime: utcToSelectorFormat(existingMeeting?.dateTime) ?? "",
           minutes: existingMeeting?.discussion ?? "",
           attendance: [...memberAttendance, ...supervisorAttendance],
+          prevActions: existingMeeting?.previousActions ?? [],
+          newActions: newActionsAdj ?? [],
         });
       } else {
         const supervisorsMarked = supervisors.map(s => ({...s, supervisor: true}));
         const memberAttendance = JSON.parse(JSON.stringify(teamMembers)).map(user => ({ ...user, status: "attended" }));
         const supervisorAttendance = JSON.parse(JSON.stringify(supervisorsMarked)).map(user => ({ ...user, status: "notneeded" }));
-        const copiedPrevActions = JSON.parse(JSON.stringify(previousActions));
-        setPrevActions(copiedPrevActions.map(a => ({ ...a, complete: true })));
-        setNewActions([{ action: '', assignees: [] }]);
-        reset( {...defaultValues, attendance: [...memberAttendance, ...supervisorAttendance]} );
+        const copiedPrevActions = JSON.parse(JSON.stringify(previousActions)).map(a => ({ ...a, complete: true }));
+        reset( {...defaultValues, attendance: [...memberAttendance, ...supervisorAttendance], prevActions: copiedPrevActions, newActions: [{ action: '', assignees: [] }], });
       }
     }
   }, [showModal]);
@@ -179,23 +142,17 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
               {attendanceIcon(watchedAttendance?.[index]?.status)}
             </Col>
             <Col xs={12} md={4}>
-              <Controller
-                control={control}
-                name={`attendance.${index}.status`}
-                render={({ field }) => (
-                  <Form.Select {...field} size="sm" className="w-100">
-                    <option value="attended">Attended</option>
-                    <option value="apologies">Sent apologies</option>
-                    <option value="absent">Absent</option>
-                    {user?.supervisor && <option value="notneeded">Supervisor not invited</option>}
-                  </Form.Select>
-                )}
-              />
+              <Form.Select {...register(`attendance.${index}.status`)} size="sm" className="w-100">
+                <option value="attended">Attended</option>
+                <option value="apologies">Sent apologies</option>
+                <option value="absent">Absent</option>
+                {user?.supervisor && <option value="notneeded">Supervisor not invited</option>}
+              </Form.Select>
             </Col>
           </Form.Group>
           ))}
 
-          { prevActions?.length > 0 && <>
+          { prevActionsFields?.length > 0 && <>
             <h6 className="mt-3">
               Previous actions
               <OverlayTrigger overlay={<Tooltip>
@@ -214,12 +171,14 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
                 </tr>
               </thead>
               <tbody>
-                {prevActions.map((action, index) => (
-                  <tr key={index}>
+                {prevActionsFields.map((action, index) => (
+                  <tr key={action.id}>
                     <td>{action.action}</td>
                     <td>{action.assignees.map(a => a.displayName).join(', ')}</td>
                     <td className="text-center">
-                      <Form.Check type="checkbox" checked={action.complete} onChange={(e) => handleSetActionStatus(index, e.target.checked)} />
+                      <Controller control={control} name={`prevActions.${index}.complete`} render={({ field }) => (
+                        <Form.Check type="checkbox" {...field} checked={!!field.value} onChange={e => field.onChange(e.target.checked)} />
+                      )}/>
                     </td>
                   </tr>
                 ))}
@@ -244,38 +203,52 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
               </tr>
             </thead>
             <tbody>
-              {newActions.map((action, index) => (
-                <tr key={index}>
+              {newActionsFields.map((action, index) => (
+                <tr key={action.id}>
                   <td>
                     <Form.Control
                       type="text"
-                      value={action.action}
+                      {...register(`newActions.${index}.action`)} 
                       placeholder="What needs doing?"
-                      onChange={(e) => handleActionChange(index, "action", e.target.value)}
-                      onBlur={(e) => checkAddNewAction(index, e.target.value)}
                     />
                   </td>
                   <td>
-                    {action.action.trim() && (
-                      <Select
-                        isMulti
-                        options={teamMemberOptions}
-                        placeholder="Who will do it?"
-                        value={action.assignees.map(a => ({ value: a._id, label: a.displayName }))}
-                        onChange={(selectedOptions) => handleAssigneesChange(index, selectedOptions)}
-                        menuPlacement="top"
-                      />
-                    )}
+                    <Controller
+                      control={control}
+                      name={`newActions.${index}.assignees`}
+                      render={({ field: { onChange, value, ref } }) => (
+                        <Select
+                          inputRef={ref}
+                          isMulti
+                          options={teamMemberOptions}
+                          placeholder="Who will do it?"
+                          menuPlacement="top"
+                          value={teamMemberOptions.filter(opt => value?.includes(opt.value))}
+                          onChange={opts => onChange(opts.map(opt => opt.value))}
+                        />
+                      )}
+                    />
                   </td>
                   <td className="text-center">
-                    {action.action.trim() && (
-                      <Button variant="link" size="sm" style={{ color: "#dc3545" }} onClick={() => handleRemoveAction(index)}>
-                        <XLg />
-                      </Button>
-                    )}
+                    <Button variant="link" size="sm" style={{ color: "#dc3545" }} onClick={() => newActionsRemove(index)}>
+                      <XLg />
+                    </Button>
                   </td>
                 </tr>
               ))}
+              <tr>
+                <td>
+                  <Button
+                    variant="link"
+                    className="d-flex align-items-center px-1"
+                    onClick={() => newActionsAppend({action: "", assignees: []})}
+                  >
+                    <PlusCircle/>
+                  </Button>
+                </td>
+                <td></td>
+                <td></td>
+              </tr>
             </tbody>
           </Table>
         </Form>
