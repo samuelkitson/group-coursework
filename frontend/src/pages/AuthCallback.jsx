@@ -32,7 +32,7 @@ function AuthCallback() {
     }
     // Start login flow
     api
-      .post(`/api/auth/github/callback`, { code, state, }, { genericErrorToasts: true, })
+      .post(`/api/auth/github/callback`, { code, state, }, { successToasts: true, genericErrorToasts: true, })
       .then((resp) => {
         return resp.data;
       })
