@@ -29,7 +29,6 @@ const EffortBlobsInput = ({ name, control, defaultValue=4, maxValue=7, }) => {
         >
           <div
             onClick={() => decrement(field)}
-            disabled={field.value <= 1}
             className={`icon-button d-flex align-items-center ${field.value <= 1 ? "opacity-25" : "text-danger"}`}
             bg="bs-primary"
           >
@@ -42,7 +41,6 @@ const EffortBlobsInput = ({ name, control, defaultValue=4, maxValue=7, }) => {
 
           <div
             onClick={() => increment(field)}
-            disabled={field.value >= maxValue}
             className={`icon-button d-flex align-items-center ${field.value >= maxValue ? "opacity-25" : "text-success"}`}
             bg="bs-primary"
           >
