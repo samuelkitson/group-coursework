@@ -107,3 +107,10 @@ export const chartColours = [
   "#FFBB28",
   "#FF8042",
 ]; 
+
+export function reduceArrayToObject(inputArray) {
+  return inputArray.reduce((accumulator, currentItem) => {
+    accumulator[currentItem.name] = currentItem.rating;
+    return accumulator;
+  }, {});
+} 

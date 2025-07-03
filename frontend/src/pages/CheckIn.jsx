@@ -1,12 +1,14 @@
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Accordion, Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
 
 import "./style/CheckIn.css";
 import { Ban, CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, Eye, EyeSlash, HourglassSplit, PlusCircle, QuestionCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PeerReviewForm from "@/features/checkin/PeerReviewForm";
+import toast from "react-hot-toast";
+import { reduceArrayToObject } from "@/utility/helpers";
 
 function CheckIn() {
   const selectedAssignment = useBoundStore((state) =>
@@ -25,6 +27,8 @@ function CheckIn() {
   const [ peerReviewQuestions, setPeerReviewQuestions ] = useState([]);
   const [ peerReviewRecipients, setPeerReviewRecipients ] = useState([]);
   const [ peerReviewAnswers, setPeerReviewAnswers ] = useState([]);
+
+  const peerReviewRefs = useRef([]);
 
   const MIN_RATING = 1;
   const MAX_RATING = 7;
@@ -79,8 +83,18 @@ function CheckIn() {
     let reviews = undefined;
     if (checkInType === "full") {
       // Add in reviews if this is a full peer review week
-      reviews = peerReviewAnswers.reduce((acc, answer) => {
-        acc[answer.recipient] = { skills: answer.skills, comment: answer.comment, };
+      const peerReviewData = [];
+      for (const ref of peerReviewRefs.current) {
+        if (ref) {
+          const values = ref.getValues();
+          if (!ref.isValid) {
+            return toast.error(`Please complete the peer review for ${values?.recipientName ?? "each team member"}.`);
+          }
+          peerReviewData.push(values);
+        }
+      }
+      reviews = peerReviewData.reduce((acc, answer) => {
+        acc[answer.recipientId] = { skills: reduceArrayToObject(answer.skills), comment: answer.comment, };
         return acc;
       }, {});
     }
@@ -278,8 +292,9 @@ function CheckIn() {
                   <PeerReviewForm
                     key={`peerreviewform-${idx}`}
                     index={idx}
-                    answer={p}
-                    onChange={handlePeerReviewChange}
+                    ref={el => peerReviewRefs.current[idx] = el}
+                    questions={peerReviewQuestions}
+                    recipient={{_id: p.recipient, name: p.name, }}
                   />
                 ))}
               </Accordion>

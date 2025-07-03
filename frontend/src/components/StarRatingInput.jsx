@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Star, StarFill } from "react-bootstrap-icons";
 import { Controller } from "react-hook-form";
 
-const StarRatingInput = ({ name, control, label, defaultValue=0, }) => {
+const StarRatingInput = ({ name, control, defaultValue=0, }) => {
   const [ hoverValue, setHoverValue ] = useState(null);
 
   const getStar = (value, starNumber) => {
@@ -20,6 +20,10 @@ const StarRatingInput = ({ name, control, label, defaultValue=0, }) => {
       name={name}
       control={control}
       defaultValue={defaultValue}
+      rules={{
+        required: `Please select a star rating.`,
+        min: { value: 1, message: `Please select a star rating.`, },
+      }}
       render={({ field }) => (
         <div
           className="flex items-center"
