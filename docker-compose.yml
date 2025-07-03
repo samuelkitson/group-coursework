@@ -37,6 +37,9 @@ services:
       PORT: ${API_PORT}
       MONGO_URI: ${MONGO_URI}
       SESSION_SECRET: ${SESSION_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
     volumes:
       - ./api:/app
       - /app/node_modules
