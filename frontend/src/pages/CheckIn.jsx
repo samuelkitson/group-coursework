@@ -1,12 +1,43 @@
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Accordion, Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
 
-import "./style/CheckIn.css";
 import { Ban, CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, Eye, EyeSlash, HourglassSplit, PlusCircle, QuestionCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PeerReviewForm from "@/features/checkin/PeerReviewForm";
+import toast from "react-hot-toast";
+import { reduceArrayToObject } from "@/utility/helpers";
+import EffortBlobsInput from "@/components/EffortBlobsInput";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
+
+function PointsBalanceIndicator({ control, expectedTotal }) {
+  const workloadBalance = useWatch({ control, name: "workloadBalance" });
+  const [ pointsImbalance, setPointsImbalance ] = useState(0);
+
+  useEffect(() => {
+    const pointsSum = workloadBalance?.reduce((acc, cur) => {return acc + cur.value}, 0) ?? 0;
+    setPointsImbalance(expectedTotal - pointsSum);
+  }, [workloadBalance]);
+
+  if (pointsImbalance === 0) return (
+    <div className="text-muted">
+      <Check2All className="me-2"/>
+      Points balanced
+    </div>
+  )
+
+  return (
+    <div className="text-danger d-flex align-items-center">
+      <ExclamationTriangle className="me-2"/>
+      { pointsImbalance > 0 ? 
+        `Give out ${pointsImbalance} more point${pointsImbalance === 1 ? "" : "s"}`
+      :
+        `Take away ${0-pointsImbalance} more point${pointsImbalance === -1 ? "" : "s"}`
+      }
+    </div>
+  )
+};
 
 function CheckIn() {
   const selectedAssignment = useBoundStore((state) =>
@@ -17,7 +48,6 @@ function CheckIn() {
   );
   const { user } = useAuthStore();
   const [ activeModal, setActiveModal ] = useState(null);
-  const [ memberRatings, setMemberRatings ] = useState([]);
   const [ completionRate, setCompletionRate ] = useState({done: 0, outOf: 0});
   const [ pointsImbalance, setPointsImbalance ] = useState(0);
   const [ checkInType, setCheckInType ] = useState(null);
@@ -26,61 +56,40 @@ function CheckIn() {
   const [ peerReviewRecipients, setPeerReviewRecipients ] = useState([]);
   const [ peerReviewAnswers, setPeerReviewAnswers ] = useState([]);
 
-  const MIN_RATING = 1;
-  const MAX_RATING = 7;
+  const { control, reset, getValues, } = useForm({ workloadBalance: [] });
+  const { fields: workloadFields, } = useFieldArray({ control, name: "workloadBalance", });
+  const expectedTotal = 4 * selectedTeam.members.length;
 
-  const handleIncrement = (index) => {
-    if (memberRatings[index].rating === MAX_RATING) return;
-    setMemberRatings(memberRatings.map((user, idx) => (idx === index ? { ...user, rating: Math.min(user.rating + 1, MAX_RATING) } : user)));
-    setPointsImbalance(pointsImbalance - 1);
-  };
+  const peerReviewRefs = useRef([]);
 
-  const handleDecrement = (index) => {
-    if (memberRatings[index].rating === MIN_RATING) return;
-    setMemberRatings(memberRatings.map((user, idx) => (idx === index ? { ...user, rating: Math.max(user.rating - 1, MIN_RATING) } : user)));
-    setPointsImbalance(pointsImbalance + 1);
-  };
-
-  const renderBlobs = (index) => {
-    const blobs = [];
-    blobs.push(
-      <div
-        onClick={() => handleDecrement(index)}
-        className="icon-button d-flex align-items-center text-danger"
-        bg="bs-primary"
-      >
-        <DashCircle className="me-4"/>
-      </div>
-    )
-    for (let i = MIN_RATING; i < MAX_RATING+1; i++) {
-      if (i <= memberRatings[index].rating) {
-        blobs.push(<span key={i} className="blob filled"></span>);
-      } else {
-        blobs.push(<span key={i} className="blob"></span>);
-      }
-    }
-    blobs.push(
-      <div
-        onClick={() => handleIncrement(index)}
-        className="icon-button d-flex align-items-center text-success"
-        bg="bs-primary"
-      >
-        <PlusCircle className="ms-4"/>
-      </div>
-    )
-    return blobs;
+  const validatePointsBalance = () => {
+    const currentWorkloadBalance = getValues("workloadBalance");
+    const pointsSum = currentWorkloadBalance?.reduce((acc, cur) => { return acc + cur.value }, 0) ?? 0;
+    return (expectedTotal - pointsSum) === 0;
   };
 
   const submitCheckIn = () => {
-    const ratingsObj = memberRatings.reduce((acc, rating) => {
-      acc[rating._id] = rating.rating;
+    if (!validatePointsBalance())
+      return toast.error("The effort points you have allocated aren't balanced properly.");
+    const ratingsObj = getValues().workloadBalance.reduce((acc, rating) => {
+      acc[rating._id] = rating.value;
       return acc;
     }, {});
     let reviews = undefined;
     if (checkInType === "full") {
       // Add in reviews if this is a full peer review week
-      reviews = peerReviewAnswers.reduce((acc, answer) => {
-        acc[answer.recipient] = { skills: answer.skills, comment: answer.comment, };
+      const peerReviewData = [];
+      for (const ref of peerReviewRefs.current) {
+        if (ref) {
+          const values = ref.getValues();
+          if (!ref.isValid) {
+            return toast.error(`Please complete the peer review for ${values?.recipientName ?? "each team member"}.`);
+          }
+          peerReviewData.push(values);
+        }
+      }
+      reviews = peerReviewData.reduce((acc, answer) => {
+        acc[answer.recipientId] = { skills: reduceArrayToObject(answer.skills), comment: answer.comment, };
         return acc;
       }, {});
     }
@@ -104,16 +113,6 @@ function CheckIn() {
     const staffEmails = selectedAssignment.lecturers.map(l => l.email).join(";");
     return `mailto:${staffEmails}?subject=${selectedAssignment.name} - Team ${selectedTeam.teamNumber}`;
   };
-
-  const handlePeerReviewChange = useCallback((id, fieldName, value) => {
-    setPeerReviewAnswers(prevAnswers =>
-      prevAnswers.map(answer =>
-        answer.recipient === id
-          ? { ...answer, [fieldName]: value } 
-          : answer
-      )
-    );
-  }, []);
 
   const refreshData = () => {
     setCheckInAvailable(false);
@@ -149,9 +148,10 @@ function CheckIn() {
 
   useEffect(() => {
     refreshData();
-    setMemberRatings(selectedTeam.members.map(member => {
-      return { _id: member._id, displayName: member.displayName, rating: 4, };
-    }));
+    const workloadFieldsDefault = selectedTeam.members.map(member => {
+      return { _id: member._id, displayName: member.displayName, value: 4, };
+    });
+    reset({ workloadBalance: workloadFieldsDefault, });
   }, [selectedAssignment]);
 
   return (
@@ -226,33 +226,19 @@ function CheckIn() {
         </p>
         <Row className="mb-4">
           <Col xs={12} md={8}>
-            { memberRatings.map((member, idx) => (
-              <Row className={idx === memberRatings.length-1 ? "mb-4 mb-md-0" : "mb-4 mb-md-3"} key={member._id}>
+            { workloadFields.map((field, index) => (
+              <Row className={index === selectedTeam.members.length ? "mb-4 mb-md-0" : "mb-4 mb-md-3"} key={field.id}>
                 <Col xs={12} md={5} className="mb-1 mb-md-0 text-center">
-                  { member.displayName }
+                  { field.displayName }
                 </Col>
                 <Col xs={12} md={7} className="d-flex align-items-center justify-content-center justify-content-md-start">
-                  { renderBlobs(idx) }
+                  <EffortBlobsInput name={`workloadBalance.${index}.value`} control={control} />
                 </Col>
               </Row>
             ))}
           </Col>
           <Col xs={12} md={4} className="d-flex align-items-center">
-            { pointsImbalance === 0 ? 
-              <div className="text-muted">
-                <Check2All className="me-2"/>
-                Points balanced
-              </div>
-            : 
-              <div className="text-muted d-flex align-items-center">
-                <ExclamationTriangle className="me-2"/>
-                { pointsImbalance > 0 ? 
-                  `Give out ${pointsImbalance} more point${pointsImbalance === 1 ? "" : "s"}`
-                :
-                  `Take away ${0-pointsImbalance} more point${pointsImbalance === -1 ? "" : "s"}`
-                }
-              </div>
-            }
+            <PointsBalanceIndicator control={control} expectedTotal={expectedTotal} />
           </Col>
         </Row>
 
@@ -278,8 +264,9 @@ function CheckIn() {
                   <PeerReviewForm
                     key={`peerreviewform-${idx}`}
                     index={idx}
-                    answer={p}
-                    onChange={handlePeerReviewChange}
+                    ref={el => peerReviewRefs.current[idx] = el}
+                    questions={peerReviewQuestions}
+                    recipient={{_id: p.recipient, name: p.name, }}
                   />
                 ))}
               </Accordion>
@@ -291,7 +278,6 @@ function CheckIn() {
         <Button
           variant="primary"
           className="d-flex align-items-center mt-3"
-          disabled={ pointsImbalance !== 0}
           onClick={submitCheckIn}
         >
           Submit check-in

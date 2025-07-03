@@ -64,14 +64,14 @@ exports.submitCheckIn = async (req, res) => {
   if (membersRated.length != teamMembers.length || !membersRated.every(id => teamMembers.includes(id)))
     throw new InvalidParametersError("You need to allocate some effort points to each team member.");
   // Check whether the points are balanced and add up correctly
-  const totalPoints = effortPoints.length * 7;
+  const totalPoints = teamMembers.length * 4;
   let pointsSum = 0;
   Object.values(effortPoints).forEach(points => {
     if (points < 1 || points > 7)
       throw new InvalidParametersError("Effort points can only be between 1 and 7 inclusive.")
     pointsSum += points;
   });
-  if (!totalPoints === pointsSum)
+  if (totalPoints !== pointsSum)
     throw new InvalidParametersError("The effort points you have submitted are not balanced evenly.")
   const newCheckin = {
     reviewer: req.session.userId,
