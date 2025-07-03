@@ -26,6 +26,7 @@ import AssignmentTeams from "./pages/AssignmentTeams";
 import Profile from "./pages/Profile";
 import ResumeLogin from "./pages/ResumeLogin";
 import AssignmentSupervisors from "./pages/AssignmentSupervisors";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Routes>
             <Route path="/help" element={<Help />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/login-callback" element={<AuthCallback />} />
             <Route path="/login/refresh" element={<ResumeLogin />} />
             <Route element={<PrivateRoute />}>
               <Route path="/dashboard" element={<Dashboard />} />

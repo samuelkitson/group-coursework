@@ -9,5 +9,7 @@ router.post("/login", asyncHandler(authC.login));
 router.get("/refresh", requireLoggedIn(), asyncHandler(authC.refreshUserData));
 router.post("/logout", requireLoggedIn(), asyncHandler(authC.logout));
 router.get("/database-test", requireLoggedIn(), asyncHandler(authC.databaseTest));
+router.get("/github/login", asyncHandler(authC.getGitHubLoginLink));
+router.post("/github/callback", asyncHandler(authC.gitHubLoginCallback));
 
 module.exports = router;

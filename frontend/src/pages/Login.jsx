@@ -12,6 +12,7 @@ import {
 } from "react-bootstrap";
 import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
+import { Github } from "react-bootstrap-icons";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -52,6 +53,13 @@ function Login() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGitHubLogin = async () => {
+    setIsLoading(true);
+    setError("");
+    const urlResponse = await api.get("/api/auth/github/login");
+    window.location.href = urlResponse.data.authUrl;
   };
 
   return (
@@ -97,9 +105,19 @@ function Login() {
                   className="w-100"
                   disabled={isLoading || !email || !password}
                 >
-                  {isLoading ? "Signing in..." : "Sign In"}
+                  Sign in
                 </Button>
               </Form>
+              <Button
+                variant="dark"
+                onClick={handleGitHubLogin}
+                disabled={isLoading}
+                size="lg"
+                className="mt-3 w-100 d-flex align-items-center justify-content-center"
+              >
+                <Github className="me-2"/>
+                Login with GitHub
+              </Button>
             </Card.Body>
           </Card>
         </Col>
