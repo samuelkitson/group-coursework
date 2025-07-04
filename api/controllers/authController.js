@@ -15,7 +15,7 @@ exports.login = async (req, res) => {
     "_id email passwordHash displayName role",
   );
   if (dbRecord === null)
-    return res.status(401).json({ message: "Invalid credentials" });
+    return res.status(401).json({ message: "Your username and password weren't recognised. Please try again." });
   if (!dbRecord.passwordHash)
     throw new AuthenticationError("This account isn't set up for password access. Please sign in with your external account.");
   // User found, so check their password
@@ -35,7 +35,7 @@ exports.login = async (req, res) => {
       },
     });
   } else {
-    res.status(401).json({ message: "Invalid credentials" });
+    res.status(401).json({ message: "Your username and password weren't recognised. Please try again." });
   }
 };
 
