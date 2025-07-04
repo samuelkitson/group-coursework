@@ -16,6 +16,12 @@ class CustomError extends Error {
   }
 }
 
+class AuthenticationError extends CustomError {
+  constructor(message = "Something went wrong while checking your identity. Please try again.") {
+    super(message, 401);
+  }
+}
+
 class AssignmentNotFoundError extends CustomError {
   constructor(message = "That assignment could not be found, or you're not allowed to perform that action.") {
     super(message, 404);
@@ -75,6 +81,7 @@ class SessionInvalidError extends CustomError {
 
 module.exports = {
   CustomError,
+  AuthenticationError,
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
   ConfigurationError,

@@ -1,0 +1,12 @@
+Button.uos-button {
+  background: linear-gradient(to right, #005C84, #8D3970);
+  border: none;
+}
+
+Button.uos-button:hover {
+  background: linear-gradient(to right, #014d6e, #6c2b56);
+}
+
+Button.uos-button:active {
+  background: linear-gradient(to right, #013b54, #521f41);
+}
