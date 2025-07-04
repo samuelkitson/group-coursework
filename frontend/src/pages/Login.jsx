@@ -83,18 +83,16 @@ function Login() {
   return (
     <Container className="mt-5">
       <Row className="d-flex justify-content-center">
-        <Col md={8} xl={6}>
+        <Col md={8} lg={6} xl={5}>
           <Card>
             <Card.Body className="p-4 text-center">
-              <div className="text-center mb-4">
-                <h2>Welcome</h2>
-                <p className="text-muted mb-0">
-                  This app is for staff and students within ECS.
-                </p>
-                <p className="text-muted">
-                  Please login with your Microsoft account to continue.
-                </p>
-              </div>
+              <h2>Welcome</h2>
+              <p className="text-muted mb-0">
+                This app is for staff and students within ECS.
+              </p>
+              <p className="text-muted">
+                Please login with your Microsoft account to continue.
+              </p>
 
               <Button
                 variant="primary"
