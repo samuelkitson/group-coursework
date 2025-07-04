@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
-import { Github, Microsoft } from "react-bootstrap-icons";
+import { Github, InfoCircle, Microsoft } from "react-bootstrap-icons";
 
 import "./style/Login.css";
 
@@ -160,6 +160,12 @@ function Login() {
             </Card.Body>
           </Card>
         </Col>
+      </Row>
+      <Row>
+        <p className="text-muted mt-3 mb-0 text-center" style={{fontSize: "0.75em"}}>
+          <InfoCircle className="me-2" />
+          This service is not provided or maintained by iSolutions.
+        </p>
       </Row>
     </Container>
   );
