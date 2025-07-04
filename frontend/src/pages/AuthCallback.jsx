@@ -57,10 +57,10 @@ function AuthCallback() {
   }, [navigate]);
 
   return (
-    <Container className="mt-5">
+    <Container style={{marginTop: "5em"}}>
       <Row className="d-flex justify-content-center">
         <Col md={8} lg={6} xl={5}>
-          <Card>
+          <Card className="shadow">
             <Card.Body className="p-4 text-center">
                 <Spinner animation="border" className="me-3 my-2" />
                 <h2>Signing you in...</h2>
