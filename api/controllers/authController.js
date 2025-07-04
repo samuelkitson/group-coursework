@@ -103,9 +103,10 @@ exports.gitHubLoginCallback = async (req, res) => {
     throw new ConfigurationError("Missing GitHub OAuth environment variables", "Sorry, login with GitHub is currently unavailable.");
   // Check the state token is valid
   const { code, state } = req.body;
-  if (!state || state !== req.session.oauthState)
-    throw new AuthenticationError("Invalid OAuth state parameter. Please try again.");
+  const oAuthState = req.session.oauthState ?? undefined;
   delete req.session.oauthState;
+  if (!state || state !== oAuthState)
+    throw new AuthenticationError("Invalid OAuth state parameter. Please try again.");
   const tokenResponse = await axios.post("https://github.com/login/oauth/access_token", {
     client_id,
     client_secret,
