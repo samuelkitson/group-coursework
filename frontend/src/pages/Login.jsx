@@ -13,6 +13,8 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
 import { Github, Microsoft } from "react-bootstrap-icons";
 
+import "./style/Login.css";
+
 function Login() {
   const [ passwordLogin, setPasswordLogin ] = useState(false);
   const [ email, setEmail ] = useState("");
@@ -99,7 +101,7 @@ function Login() {
                 onClick={handleMicrosoftLogin}
                 disabled={isLoading}
                 size="lg"
-                className="mt-3 w-100 d-flex align-items-center justify-content-center"
+                className="mt-3 w-100 d-flex align-items-center justify-content-center uos-button"
               >
                 <Microsoft className="me-2"/>
                 Login with UoS
