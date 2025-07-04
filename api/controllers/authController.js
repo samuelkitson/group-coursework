@@ -27,7 +27,7 @@ exports.login = async (req, res) => {
     req.session.email = dbRecord.email;
     req.session.role = dbRecord.role;
     res.json({
-      message: "Logged in successfully",
+      message: "Logged in successfully. Welcome back!",
       data: {
         userId: dbRecord._id,
         email: dbRecord.email,
