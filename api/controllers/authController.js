@@ -6,7 +6,7 @@ const { COOKIE_NAME } = require("../config/constants");
 
 const userModel = require("../models/user");
 const assignmentModel = require("../models/assignment");
-const { SessionInvalidError, AuthenticationError } = require("../errors/errors");
+const { SessionInvalidError, AuthenticationError, ConfigurationError } = require("../errors/errors");
 const { default: axios } = require("axios");
 
 exports.login = async (req, res) => {
@@ -79,24 +79,36 @@ exports.databaseTest = async (req, res) => {
 };
 
 exports.getGitHubLoginLink = async (req, res) => {
+  // Check that we're set up for GitHub login correctly
+  const client_id = process.env?.GITHUB_CLIENT_ID;
+  const redirect_uri = process.env?.OAUTH_REDIRECT_URI;
+  if (!client_id || !redirect_uri)
+    throw new ConfigurationError("Missing GitHub OAuth environment variables", "Sorry, login with GitHub is currently unavailable.");
+  // Generate secure state variable token
   const state = crypto.randomUUID();
   req.session.oauthState = state;
   const authUrl = `https://github.com/login/oauth/authorize?` +
-    `client_id=${process.env.GITHUB_CLIENT_ID}&` +
-    `redirect_uri=${encodeURIComponent(process.env.OAUTH_REDIRECT_URI)}&` +
+    `client_id=${client_id}&` +
+    `redirect_uri=${encodeURIComponent(redirect_uri)}&` +
     `state=${state}&` +
     `scope=user:email`;
   res.json({ authUrl });
 };
 
 exports.gitHubLoginCallback = async (req, res) => {
+  // Check that we're set up for GitHub login correctly
+  const client_id = process.env?.GITHUB_CLIENT_ID;
+  const client_secret = process.env?.GITHUB_CLIENT_SECRET;
+  if (!client_id || !client_secret)
+    throw new ConfigurationError("Missing GitHub OAuth environment variables", "Sorry, login with GitHub is currently unavailable.");
+  // Check the state token is valid
   const { code, state } = req.body;
   if (!state || state !== req.session.oauthState)
     throw new AuthenticationError("Invalid OAuth state parameter. Please try again.");
   delete req.session.oauthState;
   const tokenResponse = await axios.post("https://github.com/login/oauth/access_token", {
-    client_id: process.env.GITHUB_CLIENT_ID,
-    client_secret: process.env.GITHUB_CLIENT_SECRET,
+    client_id,
+    client_secret,
     code: code
   }, {
     headers: { 
