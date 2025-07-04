@@ -1,8 +1,8 @@
 import api from '@/services/apiMiddleware';
 import { useAuthStore } from '@/store/authStore';
 import { useBoundStore } from '@/store/dataBoundStore';
-import React, { useEffect } from 'react';
-import { Spinner } from 'react-bootstrap';
+import React, { useEffect, useState } from 'react';
+import { Card, Col, Container, Row, Spinner } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,7 +10,13 @@ function AuthCallback() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const resetDataStores = useBoundStore((state) => state.resetAll);
+  const [ tooLong, setTooLong ] = useState(false);
   let processing = false;
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTooLong(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleAuthCallback = async () => {
     // Stop API being called twice when running in dev mode
@@ -51,16 +57,27 @@ function AuthCallback() {
   }, [navigate]);
 
   return (
-    <>
-      <div className="d-flex align-items-center">
-        <Spinner animation="border" className="me-3" />
-        <h5>Processing login...</h5>
-      </div>
-      <p className="text-muted mt-4">
-        This might take a few moments.<br />If you think something's broken,
-        click <a href="/login">here</a> to go back and try logging in again.
-      </p>
-    </>
+    <Container style={{marginTop: "5em"}}>
+      <Row className="d-flex justify-content-center">
+        <Col md={8} lg={6} xl={5}>
+          <Card className="shadow">
+            <Card.Body className="p-4 text-center">
+                <Spinner animation="border" className="me-3 my-2" />
+                <h2>Signing you in...</h2>
+                <p className="text-muted mt-3">
+                  This might take a few moments.
+                </p>
+                { tooLong && 
+                  <p className="text-muted">
+                    If you think something's broken, click <a href="/login">here</a>{" "}
+                    to go back and try logging in again.
+                  </p>
+                }
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

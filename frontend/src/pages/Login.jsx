@@ -83,18 +83,16 @@ function Login() {
   return (
     <Container className="mt-5">
       <Row className="d-flex justify-content-center">
-        <Col md={8} xl={6}>
-          <Card>
+       <Col md={8} lg={6} xl={5}>
+          <Card className="shadow">
             <Card.Body className="p-4 text-center">
-              <div className="text-center mb-4">
-                <h2>Welcome</h2>
-                <p className="text-muted mb-0">
-                  This app is for staff and students within ECS.
-                </p>
-                <p className="text-muted">
-                  Please login with your Microsoft account to continue.
-                </p>
-              </div>
+              <h2>Welcome</h2>
+              <p className="text-muted mb-0">
+                This app is for ECS staff and students.
+              </p>
+              <p className="text-muted">
+                Please use your University account to continue.
+              </p>
 
               <Button
                 variant="primary"
@@ -105,17 +103,6 @@ function Login() {
               >
                 <Microsoft className="me-2"/>
                 Login with UoS
-              </Button>
-
-              <Button
-                variant="dark"
-                onClick={handleGitHubLogin}
-                disabled={isLoading}
-                size="lg"
-                className="mt-3 w-100 d-flex align-items-center justify-content-center"
-              >
-                <Github className="me-2"/>
-                Login with GitHub
               </Button>
 
               <Button variant="link" className="text-muted text-center mt-3" onClick={() => setPasswordLogin(true)}>
