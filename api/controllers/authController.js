@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { Types } = require("mongoose");
+const crypto = require("crypto");
 
 const { COOKIE_NAME } = require("../config/constants");
 
@@ -78,7 +79,7 @@ exports.databaseTest = async (req, res) => {
 };
 
 exports.getGitHubLoginLink = async (req, res) => {
-  const state = "supersecurerandomstate";
+  const state = crypto.randomUUID();
   req.session.oauthState = state;
   const authUrl = `https://github.com/login/oauth/authorize?` +
     `client_id=${process.env.GITHUB_CLIENT_ID}&` +
