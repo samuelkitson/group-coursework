@@ -68,7 +68,7 @@ function Login() {
   const handleMicrosoftLogin = async () => {
     setIsLoading(true);
     api
-      .get("/api/auth/microsoft/login")
+      .get("/api/auth/azure-login")
       .then((resp) => {
         return resp.data;
       })

@@ -22,7 +22,7 @@ function AuthCallback() {
     // Stop API being called twice when running in dev mode
     if (processing) return;
     processing = true;
-    // Extract query parameters from GitHub
+    // Extract query parameters from Microsoft
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
     const state = urlParams.get("state");
@@ -33,12 +33,12 @@ function AuthCallback() {
       return navigate("/login");
     }
     if (!code || !state) {
-      toast.error("Login with GitHub failed. Please try another method.");
+      toast.error("Login with Microsoft failed. Please try another method.");
       return navigate("/login");
     }
     // Start login flow
     api
-      .post(`/api/auth/github/callback`, { code, state, }, { successToasts: true, genericErrorToasts: true, })
+      .post(`/api/auth/azure-callback`, { code, state, }, { successToasts: true, genericErrorToasts: true, })
       .then((resp) => {
         return resp.data;
       })
