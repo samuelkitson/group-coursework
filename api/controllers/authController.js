@@ -111,7 +111,7 @@ exports.getAzureLoginLink = async (req, res) => {
     scope: "openid profile email",
     state,
   });
-  const authUrl = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/authorize?${urlParams.toString()}`;
+  const authUrl = `https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize?${urlParams.toString()}`;
   res.json({ authUrl });
 };
 
