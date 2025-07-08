@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/authStore";
 import React, { useEffect, useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import { Col, Form, Row } from "react-bootstrap";
+import { MortarboardFill, PersonBadge, PersonBadgeFill, QuestionCircleFill, ShieldCheck, ShieldFillCheck } from "react-bootstrap-icons";
 
 function Profile() {
   const { user } = useAuthStore();
@@ -36,6 +37,47 @@ function Profile() {
       });
   };
 
+  const RoleHelper = () => {
+    switch (user.role) {
+      case "student":
+        return (
+          <Col sm="10" className="d-flex align-items-center">
+            <MortarboardFill size={18} className="me-2" />
+            <p className="mb-0">
+              Student
+            </p>
+          </Col>
+        )
+      case "staff":
+        return (
+          <Col sm="10" className="d-flex align-items-center">
+            <PersonBadgeFill size={18} className="me-2" />
+            <p className="mb-0">
+              Staff member
+            </p>
+          </Col>
+        )
+      case "admin":
+        return (
+          <Col sm="10" className="d-flex align-items-center">
+            <ShieldFillCheck size={18} className="me-2" />
+            <p className="mb-0">
+              Administrator
+            </p>
+          </Col>
+        )
+      default:
+        return (
+          <Col sm="10" className="d-flex align-items-center">
+            <QuestionCircleFill className="me-2" />
+            <p className="mb-0">
+              Unknown - please log in again
+            </p>
+          </Col>
+        )
+    }
+  };
+
   const refreshData = () => {
     if (user.role !== "student") return;
 
@@ -62,7 +104,7 @@ function Profile() {
           </h1>
           <p className="text-muted">
             {user.role === "student"
-              ? "Use this page to edit your personal details that are visible to other students and staff. Note that many of the details here aren't user editable."
+              ? "Use this page to edit your personal details that are visible to other students and staff. Some are synced with your University account and can't be edited here."
               : "Here you can see your personal details that are visible to students and other staff. As a staff member, you can't edit any of the details here yourself."}
           </p>
         </Col>
@@ -78,6 +120,11 @@ function Profile() {
             doNotHide={true}
           />
         </Col>
+      </Row>
+
+      <Row className="mb-2 mb-md-3">
+        <Form.Label column sm="2">Account type</Form.Label>
+        <RoleHelper />
       </Row>
 
       <Form.Group as={Row} className="mb-2 mb-md-3">
