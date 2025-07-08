@@ -12,7 +12,7 @@ db.users.insertMany([
     displayName: "Dr. Bob Smith",
     passwordHash:
       "$2a$12$KYwAqXARCsO59hhsPn0kMuxtPsf9Osc3ToEXAH5BA5.eSrUcuDpOm",
-    role: "lecturer",
+    role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,

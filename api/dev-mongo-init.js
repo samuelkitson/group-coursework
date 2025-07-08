@@ -24,7 +24,7 @@ db.users.insertMany([
     displayName: "Bob Bobbington",
     passwordHash:
       "$2a$12$KYwAqXARCsO59hhsPn0kMuxtPsf9Osc3ToEXAH5BA5.eSrUcuDpOm",
-    role: "lecturer",
+    role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,
@@ -35,7 +35,7 @@ db.users.insertMany([
     displayName: "Charlie Smith",
     passwordHash:
       "$2a$12$BwkEfF/GOl4m2Uy.WVIS1ORubjGCdmYMl0u7TITScRrFoowN6ILhO",
-    role: "lecturer",
+    role: "staff",
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,
@@ -70,7 +70,7 @@ db.assignments.insertMany([
     state: "allocation-questions",
     groups: [],
     students: [],
-    lecturers: [ObjectId("6796bd91ae30ef147fe9496c")],
+    staffs: [ObjectId("6796bd91ae30ef147fe9496c")],
     groupSize: 5,
     skills: [
       { name: "Java programming" },
@@ -102,7 +102,7 @@ db.assignments.insertMany([
     state: "live",
     groups: [],
     students: [ObjectId("6796bd91ae30ef147fe9496b")],
-    lecturers: [
+    staffs: [
       ObjectId("6796bd91ae30ef147fe9496c"),
       ObjectId("6796bd91ae30ef147fe9496d"),
     ],

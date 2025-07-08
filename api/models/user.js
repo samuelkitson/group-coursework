@@ -8,7 +8,7 @@ const userSchema = new Schema(
     bio: String,
     role: {
       type: String,
-      enum: ["student", "lecturer"],
+      enum: ["student", "staff", "admin"],
       default: "student",
     },
     skills: {
