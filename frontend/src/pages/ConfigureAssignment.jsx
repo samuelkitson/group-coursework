@@ -1,5 +1,6 @@
 import UnsavedChanges from "@/components/UnsavedChanges";
 import AssignmentSettings from "@/features/configure/AssignmentSettings";
+import ModuleStaffSettings from "@/features/configure/ModuleStaffSettings";
 import PeerReviewSettings from "@/features/configure/PeerReviewSettings";
 import SkillsConfigure from "@/features/configure/SkillsConfigure";
 import { useBoundStore } from "@/store/dataBoundStore";
@@ -17,6 +18,10 @@ function ConfigureAssignment() {
       key: "settings",
       component: AssignmentSettings,
     },{
+      name: "Module staff",
+      key: "staff",
+      component: ModuleStaffSettings,
+    },{
       name: "Skills questionnaire",
       key: "skills-questionnaire",
       component: SkillsConfigure,
@@ -32,8 +37,11 @@ function ConfigureAssignment() {
     return acc;
   }, {}));
 
-  const setSaveState = (target, unsavedChange) =>
+  const setSaveState = (target, unsavedChange) => {
+    // Only update if needed
+    if (unsavedChanges[target] === unsavedChange) return;
     setUnsavedChanges((changes) => ({ ...changes, [target]: unsavedChange }));
+  }
 
   return (
     <>
