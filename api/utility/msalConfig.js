@@ -32,6 +32,7 @@ if ( AZURE_CLIENT_ID && AZURE_TENANT_ID && AZURE_THUMBPRINT && AZURE_KEY ) {
         privateKey,
       },
     },
+    scopes: ["User.Read"],
   };
 
   module.exports = new ConfidentialClientApplication(config);

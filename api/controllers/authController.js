@@ -112,15 +112,30 @@ exports.azureLoginCallback = async (req, res) => {
   const tokenResponse = await msalConfig.acquireTokenByCode(tokenRequest);
   if (!tokenResponse)
     throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
-  // Login successful
-  // const accessToken = tokenResponse.accessToken;
-  // const idToken = tokenResponse.idToken;
-  const { preferred_username: email, name } = tokenResponse.idTokenClaims;
-  if (!email)
-    throw new AuthenticationError("No email found in Microsoft profile.");
+  // Login successful - now call Microsoft Graph to get data about them
+  const graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me$select=userPrincipalName,jobTitle,department,employeeId,givenName,surname", {
+    headers: { Authorization: `Bearer ${tokenResponse.accessToken}`, },
+  });
+  const userData = graphResponse.data;
+  if (!userData)
+    throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
+  // Extract the relevant user profile fields
+  const email = userData.userPrincipalName;
+  const isStudent = (userData?.jobTitle ?? "").includes("(student)");
+  const department = userData.department;
+  const employeeId = userData.employeeId;
+  const firstName = userData.givenName;
+  const surname = userData.surname;
+  const displayName = `${firstName} ${surname}`;
   // Find user in database
   const dbRecord = await userModel.findOne( { email }, "_id email displayName role", );
   if (dbRecord) {
+    // Update display name in case this has changed since last login
+    if (dbRecord.displayName !== displayName) {
+      dbRecord.displayName = displayName;
+      await dbRecord.save();
+    }
+    // Start the session
     req.session.userId = dbRecord._id;
     req.session.email = dbRecord.email;
     req.session.role = dbRecord.role;
@@ -136,9 +151,9 @@ exports.azureLoginCallback = async (req, res) => {
   } else {
     // Create a new account for this user
     const createdAccount = await userModel.create({
-      displayName: name ?? email,
-      email: email,
-      role: "student",
+      displayName,
+      email,
+      role: isStudent ? "student" : "staff",
     });
     if (!createdAccount)
       throw new AuthenticationError("Something went wrong creating your account. Please try again.");
