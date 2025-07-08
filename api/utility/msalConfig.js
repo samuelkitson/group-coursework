@@ -1,21 +1,10 @@
-// msalConfig.js
 const { ConfidentialClientApplication } = require("@azure/msal-node");
 const fs = require("fs");
 const path = require("path");
 
-const {
-  AZURE_CLIENT_ID,
-  AZURE_TENANT_ID,
-  AZURE_THUMBPRINT,
-  AZURE_KEY,
-} = process.env;
+const { AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_THUMBPRINT, AZURE_KEY } = process.env;
 
-if (
-  AZURE_CLIENT_ID &&
-  AZURE_TENANT_ID &&
-  AZURE_THUMBPRINT &&
-  AZURE_KEY
-) {
+if ( AZURE_CLIENT_ID && AZURE_TENANT_ID && AZURE_THUMBPRINT && AZURE_KEY ) {
   let privateKey;
 
   try {
@@ -39,6 +28,6 @@ if (
 
   module.exports = new ConfidentialClientApplication(config);
 } else {
-  console.warn("Missing Azure AD environment variables — MSAL client will not be initialised.");
+  console.warn("Missing Azure AD environment variables — MSAL client will not be initialised");
   module.exports = null;
 }
