@@ -5,7 +5,7 @@ const { requireLoggedIn } = require("../utility/auth");
 
 const router = express.Router();
 
-router.post("/", requireLoggedIn("lecturer"), asyncHandler(assignmentC.createAssignment));
+router.post("/", requireLoggedIn(), asyncHandler(assignmentC.createAssignment));
 router.get("/all", requireLoggedIn(), asyncHandler(assignmentC.getAllVisible));
 router.delete("/:assignment", requireLoggedIn(), asyncHandler(assignmentC.deleteAssignment));
 router.patch("/:assignment", requireLoggedIn(), asyncHandler(assignmentC.updateAssignmentInfo));

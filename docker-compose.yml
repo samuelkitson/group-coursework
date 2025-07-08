@@ -38,6 +38,7 @@ services:
       MONGO_URI: ${MONGO_URI}
       SESSION_SECRET: ${SESSION_SECRET}
       OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
+      ASSIGNMENTS_ADMIN_LOCK: ${ASSIGNMENTS_ADMIN_LOCK}
     volumes:
       - ./api:/app
       - /app/node_modules

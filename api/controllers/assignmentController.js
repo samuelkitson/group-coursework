@@ -4,10 +4,15 @@ const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
 
 exports.createAssignment = async (req, res) => {
+  if (req.session.role === "student")
+    throw new IncorrectRoleError("Students cannot create new assignments.");
   if (!req.body.name)
     throw new InvalidParametersError("You must provide an assignment name.");
   if (!req.body.description)
     throw new InvalidParametersError("You must provide an assignment description.");
+  // If ASSIGNMENTS_ADMIN_LOCK is set, only allow admins to create assignments
+  if (process.env?.ASSIGNMENTS_ADMIN_LOCK && req.session.role !== "admin")
+    throw new IncorrectRoleError("You must be an admin to create new assignments.");
   const newAssignment = await assignmentModel.create({
     name: req.body.name,
     description: req.body.description,
