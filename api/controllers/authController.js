@@ -6,7 +6,7 @@ const { COOKIE_NAME } = require("../config/constants");
 
 const userModel = require("../models/user");
 const assignmentModel = require("../models/assignment");
-const { SessionInvalidError, AuthenticationError, ConfigurationError } = require("../errors/errors");
+const { SessionInvalidError, AuthenticationError, ConfigurationError, InvalidParametersError } = require("../errors/errors");
 const { default: axios } = require("axios");
 const msalConfig = require("../utility/msalConfig");
 
@@ -170,4 +170,23 @@ exports.azureLoginCallback = async (req, res) => {
       },
     });
   }
+};
+
+/**
+ * Used to search for users by email or display name and return their ID (as 
+ * well as other details) so that they can be added to a staff list for example.
+ */
+exports.searchForUser = async (req, res) => {
+  // Validate incoming data
+  const email = req.query.email;
+  const displayName = req.query.displayName;
+  if (!email && !displayName)
+    throw new InvalidParametersError("Provide either an email or display name to search by.")
+  const query = {};
+  if (email)
+    query.email = email;
+  if (displayName)
+    query.displayName = displayName;
+  const matches = await userModel.find(query).select("_id email displayName bio").lean();
+  res.json({ users: matches });
 };
