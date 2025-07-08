@@ -44,22 +44,8 @@ exports.updateAssignmentInfo = async (req, res) => {
 };
 
 exports.getAllVisible = async (req, res) => {
-  // Check whether to use student or lecturer filtering
-  if (req.session.role == "student" || req.session.role == "supervisor") {
-    const dbAssignments = await assignmentModel.getAssignmentsByUser(
-      req.session.userId,
-      false,
-    );
-    return res.json(dbAssignments);
-  } else if (req.session.role == "lecturer") {
-    const dbAssignments = await assignmentModel.getAssignmentsByUser(
-      req.session.userId,
-      true,
-    );
-    return res.json(dbAssignments);
-  } else {
-    throw new IncorrectRoleError();
-  }
+  const dbAssignments = await assignmentModel.getAssignmentsByUser(req.session.userId);
+  return res.json(dbAssignments);
 };
 
 exports.getEnrolledStudents = async (req, res) => {
