@@ -11,7 +11,7 @@ import {
 } from "react-bootstrap";
 import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
-import { Github, InfoCircle, Microsoft } from "react-bootstrap-icons";
+import { InfoCircle, Microsoft } from "react-bootstrap-icons";
 
 import "./style/Login.css";
 
@@ -46,21 +46,6 @@ function Login() {
       })
       .finally((error) => {
         setPassword("");
-        setIsLoading(false);
-      });
-  };
-
-  const handleGitHubLogin = async () => {
-    setIsLoading(true);
-    api
-      .get("/api/auth/github/login")
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        window.location.href = data.authUrl;
-      })
-      .finally((error) => {
         setIsLoading(false);
       });
   };
