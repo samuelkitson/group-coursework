@@ -113,7 +113,7 @@ exports.azureLoginCallback = async (req, res) => {
   if (!tokenResponse)
     throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
   // Login successful - now call Microsoft Graph to get data about them
-  const graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me$select=userPrincipalName,jobTitle,department,employeeId,givenName,surname", {
+  const graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me?$select=userPrincipalName,jobTitle,department,employeeId,givenName,surname", {
     headers: { Authorization: `Bearer ${tokenResponse.accessToken}`, },
   });
   const userData = graphResponse.data;
