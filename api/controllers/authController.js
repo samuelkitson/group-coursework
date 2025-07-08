@@ -73,29 +73,6 @@ exports.logout = async (req, res) => {
   });
 };
 
-exports.databaseTest = async (req, res) => {
-  const dbAssignments = await assignmentModel.find();
-
-  res.json(dbAssignments);
-};
-
-exports.getGitHubLoginLink = async (req, res) => {
-  // Check that we're set up for GitHub login correctly
-  const client_id = process.env?.GITHUB_CLIENT_ID;
-  const redirect_uri = process.env?.OAUTH_REDIRECT_URI;
-  if (!client_id || !redirect_uri)
-    throw new ConfigurationError("Missing GitHub OAuth environment variables", "Sorry, login with GitHub is currently unavailable.");
-  // Generate secure state variable token
-  const state = crypto.randomUUID();
-  req.session.oauthState = state;
-  const authUrl = `https://github.com/login/oauth/authorize?` +
-    `client_id=${client_id}&` +
-    `redirect_uri=${encodeURIComponent(redirect_uri)}&` +
-    `state=${state}&` +
-    `scope=user:email`;
-  res.json({ authUrl });
-};
-
 exports.getAzureLoginLink = async (req, res) => {
   const { OAUTH_REDIRECT_URI, AZURE_CLIENT_ID, AZURE_TENANT_ID, } = process.env;
   if (!OAUTH_REDIRECT_URI || !AZURE_CLIENT_ID || !AZURE_TENANT_ID || !msalConfig) {
@@ -113,84 +90,6 @@ exports.getAzureLoginLink = async (req, res) => {
   });
   const authUrl = `https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize?${urlParams.toString()}`;
   res.json({ authUrl });
-};
-
-exports.gitHubLoginCallback = async (req, res) => {
-  // Check that we're set up for GitHub login correctly
-  const client_id = process.env?.GITHUB_CLIENT_ID;
-  const client_secret = process.env?.GITHUB_CLIENT_SECRET;
-  if (!client_id || !client_secret)
-    throw new ConfigurationError("Missing GitHub OAuth environment variables", "Sorry, login with GitHub is currently unavailable.");
-  // Check the state token is valid
-  const { code, state } = req.body;
-  const oAuthState = req.session.oauthState ?? undefined;
-  delete req.session.oauthState;
-  if (!state || state !== oAuthState)
-    throw new AuthenticationError("Invalid OAuth state parameter. Please try again.");
-  const tokenResponse = await axios.post("https://github.com/login/oauth/access_token", {
-    client_id,
-    client_secret,
-    code: code
-  }, {
-    headers: { 
-      "Accept": "application/json",
-      "Content-Type": "application/json"
-    }
-  });
-  // Pull GitHub data for this user
-  const accessToken = tokenResponse.data.access_token;
-  if (!accessToken)
-    throw new AuthenticationError("No access token received from GitHub. Please try again.");
-  const userResponse = await axios.get('https://api.github.com/user', {
-    headers: { "Authorization": `token ${accessToken}` }
-  });
-  if (!userResponse)
-    throw new AuthenticationError("Something went wrong fetching your GitHub account info. Please try again.");
-  const emailResponse = await axios.get("https://api.github.com/user/emails", {
-    headers: { "Authorization": `token ${accessToken}` }
-  });
-  const userEmail = emailResponse.data.find(e => e.primary);
-  if (!userEmail)
-    throw new AuthenticationError("No primary email could be found for your GitHub account. Please check your account and try again");
-  // Find user in database
-  const dbRecord = await userModel.findOne( { email: userEmail.email }, "_id email displayName role", );
-  // if (!dbRecord)
-  //   throw new AuthenticationError(`${userEmail.email} isn't associated with any accounts. Please try a different GitHub account.`);
-  if (dbRecord) {
-    req.session.userId = dbRecord._id;
-    req.session.email = dbRecord.email;
-    req.session.role = dbRecord.role;
-    res.json({
-      message: "Logged in successfully. Welcome back!",
-      data: {
-        userId: dbRecord._id,
-        email: dbRecord.email,
-        displayName: dbRecord.displayName,
-        role: dbRecord.role,
-      },
-    });
-  } else {
-    // Create a new account for this user
-    const createdAccount = await userModel.create({
-      displayName: userResponse?.data?.name ?? userEmail.email,
-      email: userEmail.email,
-      role: "student",
-    });
-    if (!createdAccount)
-      throw new AuthenticationError("Something went wrong creating your account. Please try again.");
-    req.session.userId = createdAccount._id;
-    req.session.email = createdAccount.email;
-    req.session.role = createdAccount.role;
-    res.json({
-      message: "Account created successfully. Welcome!",
-      data: {
-        userId: createdAccount._id,
-        email: createdAccount.email,
-        displayName: createdAccount.displayName,
-        role: createdAccount.role,
-      },
-    });
-  }
 };
 
 exports.azureLoginCallback = async (req, res) => {
