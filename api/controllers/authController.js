@@ -178,15 +178,12 @@ exports.azureLoginCallback = async (req, res) => {
  */
 exports.searchForUser = async (req, res) => {
   // Validate incoming data
-  const email = req.query.email;
-  const displayName = req.query.displayName;
-  if (!email && !displayName)
-    throw new InvalidParametersError("Provide either an email or display name to search by.")
-  const query = {};
-  if (email)
-    query.email = email;
-  if (displayName)
-    query.displayName = displayName;
-  const matches = await userModel.find(query).select("_id email displayName bio").lean();
+  const searchString = req.query.string;
+  if (!searchString)
+    throw new InvalidParametersError("Provide either an email address or display name to search by.");
+  const query = { $or: [
+    { email: searchString }, { displayName: searchString },
+  ]};
+  const matches = await userModel.find(query).select("_id email displayName bio role").lean();
   res.json({ users: matches });
 };
