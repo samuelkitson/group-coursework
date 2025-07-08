@@ -4,7 +4,8 @@ const express = require("express");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 
-const { PORT, COOKIE_NAME, SESSION_SECRET } = require("./config/constants");
+const { API_PORT, SESSION_SECRET } = process.env;
+const { COOKIE_NAME } = require("./config/constants");
 const routes = require("./routes");
 const { requireLoggedIn } = require("./utility/auth");
 const { mongoUri } = require("./config/db");
@@ -46,8 +47,8 @@ app.use(
 app.use("/api", routes);
 
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Group courseworks API started on port ${PORT}`);
+  app.listen(API_PORT, () => {
+    console.log(`Group courseworks API started on port ${API_PORT}`);
   });
 }
 

@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      PORT: ${API_PORT}
+      API_PORT: ${API_PORT}
       MONGO_URI: ${MONGO_URI}
       SESSION_SECRET: ${SESSION_SECRET}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
