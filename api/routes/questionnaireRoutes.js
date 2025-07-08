@@ -17,7 +17,7 @@ router.patch(
 );
 router.get(
   "/existing-skills",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(questionnaireC.allExistingSkills),
 );
 

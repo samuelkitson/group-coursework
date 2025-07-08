@@ -8,7 +8,7 @@ const router = express.Router();
 
 router.post(
   "/upload",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   fileUpload.single("csv"),
   asyncHandler(studentC.upload),
 );
@@ -19,7 +19,7 @@ router.patch(
 );
 router.put(
   "/exclusions",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(studentC.setPairingExclusions),
 );
 router.get(

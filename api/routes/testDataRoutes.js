@@ -7,22 +7,22 @@ const router = express.Router();
 
 router.get(
   "/randomise-skill-ratings",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(testDataC.randomiseSkillRatings),
 );
 router.get(
   "/add-random-students",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(testDataC.addRandomStudents),
 );
 router.get(
   "/add-random-checkins",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(testDataC.addRandomCheckins),
 );
 router.get(
   "/add-random-meetings",
-  requireLoggedIn("lecturer"),
+  requireLoggedIn("staff"),
   asyncHandler(testDataC.addRandomMeetings),
 );
 router.get(

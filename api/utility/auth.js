@@ -6,10 +6,13 @@ const teamModel = require("../models/team");
 const { AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
 
 // Middleware to check if user is authenticated
+// If the permitted role is "staff" it will also allow admins access
 exports.requireLoggedIn = (permittedRole = null) => {
   return (req, res, next) => {
     if (!req.session.userId) {
       throw new SessionInvalidError();
+    } else if (permittedRole === "staff" && req.session.role === "admin") {
+      next();
     } else if (permittedRole && req.session.role != permittedRole) {
       throw new IncorrectRoleError();
     } else {
