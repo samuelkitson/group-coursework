@@ -23,7 +23,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
   const [searchString, setSearchString] = useState("");
   
   const addPerson = () => {
-    api.get(`/api/auth/search?string=${searchString}`)
+    api.get(`/api/auth/search?string=${searchString.toLowerCase()}`)
       .then((resp) => {
         return resp.data;
       })
@@ -64,7 +64,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
 
       <InputGroup className="mb-3">
         <Form.Control
-          placeholder="Email address or full name"
+          placeholder="Email address (e.g. aa1a25@soton.ac.uk)"
           type="email"
           value={searchString}
           onChange={(e) => setSearchString(e.target.value)}
