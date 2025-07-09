@@ -3,7 +3,7 @@ const userModel = require("../models/user");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError, IncorrectRoleError, InvalidObjectIdError } = require("../errors/errors");
+const { InvalidParametersError, IncorrectRoleError, InvalidObjectIdError, GenericNotAllowedError, GenericNotFoundError } = require("../errors/errors");
 
 exports.createAssignment = async (req, res) => {
   if (req.session.role === "student")
@@ -220,6 +220,33 @@ exports.addSupervisor = async (req, res) => {
     { $addToSet: { supervisors: user._id }},
   );
   return res.json({ message: "Supervisor added successfully."});
+};
+
+exports.changeSupervisorTeams = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  if (!Types.ObjectId.isValid(req.params.supervisor))
+    throw new InvalidObjectIdError("The provided supervisor ID is invalid.");
+  if (!req.body.teams || !Array.isArray(req.body.teams))
+    throw new InvalidObjectIdError("Please provide a list of teams.");
+  // Make sure the supervisor is listed on the module
+  const assignment = await assignmentModel.findOne({ _id: req.params.assignment, supervisors: req.params.supervisor });
+  if (!assignment)
+    throw new GenericNotFoundError("That person isn't listed as a supervisor on the module. Please refresh and try again.");
+  // Check that the teams are valid and from this assignment
+  const teamIds = req.body.teams.map(id => new Types.ObjectId(id));
+  const teams = await teamModel.find({_id: { $in: teamIds }, assignment: req.params.assignment }).select("_id").lean();
+  if (teams.length !== req.body.teams.length)
+    throw new InvalidParametersError("Some of the teams selected weren't valid. Please try again.");
+  // Remove them from any teams they currently supervise for this assignment
+  await teamModel.updateMany(
+    { assignment: req.params.assignment, supervisors: req.params.supervisor, },
+    { $pull: { supervisors: req.params.supervisor }},
+  );
+  await teamModel.updateMany(
+    { assignment: req.params.assignment, _id: { $in: teamIds }, },
+    { $addToSet: { supervisors: req.params.supervisor }},
+  );
+  return res.json({ message: "Supervisor teams updated successfully."});
 };
 
 exports.removeSupervisor = async (req, res) => {
