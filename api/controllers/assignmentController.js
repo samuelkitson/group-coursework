@@ -160,3 +160,9 @@ exports.setStaff = async (req, res) => {
   await assignmentModel.updateOne({_id: req.params.assignment}, {lecturers: staffIds});
   return res.json({message: "Module team updated successfully."});
 };
+
+exports.getSupervisors = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  const supervisors = await assignmentModel.getSupervisorsWithTeams(req.params.assignment);
+  return res.json({ supervisors });
+};
