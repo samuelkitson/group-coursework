@@ -62,4 +62,13 @@ userSchema.statics.allExistingSkills = async function () {
   return result[0]?.uniqueKeys.sort() || [];
 };
 
+userSchema.statics.createPlaceholder = async function (emailAddress, displayName) {
+  const userDisplayName = displayName ?? emailAddress;
+  return this.create({
+    email: emailAddress,
+    displayName: userDisplayName,
+    role: "placeholder",
+  });
+};
+
 module.exports = model("user", userSchema);
