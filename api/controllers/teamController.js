@@ -98,9 +98,24 @@ const generateTeamInsights = (teamData) => {
   return insights.sort((a, b) => (sortingOrder[a.type] || 4) - (sortingOrder[b.type] || 4));
 };
 
+/**
+ * By default, includes full details about each team (including insights and
+ * meeting data). For a simple list of team IDs and numbers for an assignment,
+ * pass mode=simple in the query string.
+ */
 exports.getAllForAssignment = async (req, res) => {
   // Get and check permissions on the assignment object
   const role = await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
+  // Simple mode is enabled when the query parameter "mode" is set to "simple"
+  if (req.query.mode === "simple") {
+    let teams;
+    if (role === "lecturer") {
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+    } else {
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+    }
+    return res.json({ teams });
+  }
   // Get the teams for this assignment (if supervisor, only show their teams)
   let teams;
   if (role === "lecturer") {

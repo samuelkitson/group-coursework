@@ -216,4 +216,62 @@ assignmentSchema.statics.allExistingSkills = async function () {
   ]);
 };
 
+assignmentSchema.statics.getSupervisorsWithTeams = async function (assignmentId) {
+  return this.aggregate([
+    { $match: { _id: new Types.ObjectId(assignmentId) } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "supervisors",
+        foreignField: "_id",
+        as: "supervisorDetails",
+      },
+    },
+    { $unwind: "$supervisorDetails" },
+    {
+      $project: {
+        _id: 0,
+        supervisor: {
+          _id: "$supervisorDetails._id",
+          displayName: "$supervisorDetails.displayName",
+          email: "$supervisorDetails.email",
+        },
+      },
+    },
+    {
+      $group: {
+        _id: "$supervisor._id",
+        displayName: { $first: "$supervisor.displayName" },
+        email: { $first: "$supervisor.email" },
+      },
+    },
+    {
+      $lookup: {
+        from: "teams",
+        let: { supervisorId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$assignment", new Types.ObjectId(assignmentId)] },
+                  { $in: ["$$supervisorId", "$supervisors"] },
+                ],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              teamNumber: 1,
+            },
+          },
+        ],
+        as: "teams",
+      },
+    },
+    { $sort: { displayName: 1 } },
+  ]);
+}
+
 module.exports = model("assignment", assignmentSchema);
