@@ -1,8 +1,9 @@
 const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
+const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
+const { InvalidParametersError, IncorrectRoleError, InvalidObjectIdError } = require("../errors/errors");
 
 exports.createAssignment = async (req, res) => {
   if (req.session.role === "student")
@@ -165,4 +166,43 @@ exports.getSupervisors = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const supervisors = await assignmentModel.getSupervisorsWithTeams(req.params.assignment);
   return res.json({ supervisors });
+};
+
+exports.setSupervisors = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  if (!req.body.supervisors || !Array.isArray(req.body.supervisors))
+    throw new InvalidParametersError("Please provide an array of user IDs.");
+  const assignment = await assignmentModel.findById(req.params.assignment);
+  const userIds = req.body.supervisors.map(id => new Types.ObjectId(id));
+  // Check that none of them are students or staff on the module
+  const staffList = assignment.lecturers.map(s => s.toString());
+  const studentsList = assignment.students.map(s => s.toString());
+  for (const supervisor of userIds) {
+    const supervisorId = supervisor.toString();
+    if (staffList.includes(supervisorId))
+      throw new InvalidParametersError("One of the supervisors is already a staff member on the module.");
+    if (studentsList.includes(supervisorId))
+      throw new InvalidParametersError("One of the supervisors is a student on the module.");
+  }
+  // Check that the user IDs are valid
+  const users = await userModel.find({_id: { $in: req.body.supervisors }}).select("_id").lean();
+  if (users.length !== userIds.length)
+    throw new InvalidParametersError("Some of the supervisors selected aren't valid.");
+  await assignmentModel.updateOne({_id: req.params.assignment}, { supervisors: req.body.supervisors });
+  return res.json({message: "Supervisors list updated successfully."});
+};
+
+exports.removeSupervisor = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  if (!Types.ObjectId.isValid(req.params.supervisor))
+    throw new InvalidObjectIdError("The provided supervisor ID is invalid.");
+  await teamModel.updateMany(
+    { assignment: req.params.assignment, supervisors: req.params.supervisor, },
+    { $pull: { supervisors: req.params.supervisor }},
+  );
+  await assignmentModel.updateOne(
+    { assignment: req.params.assignment },
+    { $pull: { supervisors: req.params.supervisor }},
+  );
+  return res.json({ message: "Supervisor removed successfully."});
 };
