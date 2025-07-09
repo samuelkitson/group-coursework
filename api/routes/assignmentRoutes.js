@@ -13,5 +13,6 @@ router.get("/:assignment/students", requireLoggedIn(), asyncHandler(assignmentC.
 router.get("/:assignment/skills", requireLoggedIn(), asyncHandler(assignmentC.getSkills));
 router.patch("/:assignment/skills", requireLoggedIn(), asyncHandler(assignmentC.setSkills));
 router.patch("/:assignment/state", requireLoggedIn(), asyncHandler(assignmentC.setState));
+router.put("/:assignment/staff", requireLoggedIn(), asyncHandler(assignmentC.setStaff));
 
 module.exports = router;
