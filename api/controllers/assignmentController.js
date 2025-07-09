@@ -202,9 +202,14 @@ exports.addSupervisor = async (req, res) => {
     throw new InvalidParametersError("Please provide a supervisor email address.");
   const assignment = await assignmentModel.findById(req.params.assignment);
   // Check that the user exists
-  const user = await userModel.findOne({ email: req.body.supervisor });
-  if (!user)
-    throw new InvalidParametersError("A user with that email address could not be found. Please make sure they've previously logged into the app.");
+  let user = await userModel.findOne({ email: req.body.supervisor });
+  let successMessage = "Supervisor added succesfully.";
+  if (!user) {
+    // Create a placeholder account for them
+    user = await userModel.createPlaceholder(req.body.supervisor);
+    successMessage = "A placeholder account has been created. Please ask the supervisor to log into the app.";
+  }
+  // throw new InvalidParametersError("A user with that email address could not be found. Please make sure they've previously logged into the app.");
   // Check that the user isn't a staff member or student on the module already
   const staffList = assignment.lecturers.map(s => s.toString());
   const studentsList = assignment.students.map(s => s.toString());
@@ -219,7 +224,7 @@ exports.addSupervisor = async (req, res) => {
     { _id: req.params.assignment, },
     { $addToSet: { supervisors: user._id }},
   );
-  return res.json({ message: "Supervisor added successfully."});
+  return res.json({ message: successMessage });
 };
 
 exports.changeSupervisorTeams = async (req, res) => {
