@@ -1,4 +1,5 @@
 const assignmentModel = require("../models/assignment");
+const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
@@ -143,4 +144,19 @@ exports.setState = async (req, res) => {
   return res.json({
     message: message ?? "Assignment state updated successfully.",
   });
+};
+
+exports.setStaff = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  // Check that all of the users provided a) exist and b) are staff
+  if (!req.body.staff || !Array.isArray(req.body.staff))
+    throw new InvalidParametersError("Please provide an array of staff IDs.");
+  const staffIds = req.body.staff.map(id => new Types.ObjectId(id));
+  if (!staffIds.some(s => s.equals(req.session.userId)))
+    throw new InvalidParametersError("You can't remove yourself from a module.");
+  const users = await userModel.find({_id: { $in: staffIds }, role: { $in: ["staff", "admin"] }}).select("_id").lean();
+  if (users.length !== staffIds.length)
+    throw new InvalidParametersError("Some of the staff members selected either haven't logged in before, or are listed as students.");
+  await assignmentModel.updateOne({_id: req.params.assignment}, {lecturers: staffIds});
+  return res.json({message: "Module team updated successfully."});
 };

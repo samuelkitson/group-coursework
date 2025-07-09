@@ -62,7 +62,7 @@ assignmentSchema.statics.getAssignmentsByUser = async function (userId) {
       students: { $in: [userObjectId] },
     },
     limitedFields,
-  ).populate("lecturers", "displayName email").lean();
+  ).populate("lecturers", "displayName email role").lean();
   let assignments = assignmentsStudents.map(a => ({...a, role: "student", students: undefined, supervisors: undefined}));
   // Check for the supervisor role next
   const assignmentsSupervisors = await this.find(
@@ -70,14 +70,14 @@ assignmentSchema.statics.getAssignmentsByUser = async function (userId) {
       supervisors: { $in: [userObjectId] },
     },
     limitedFields,
-  ).populate("lecturers", "displayName email").lean();
+  ).populate("lecturers", "displayName email role").lean();
   assignments = assignments.concat(assignmentsSupervisors.map(a => ({...a, role: "supervisor", students: undefined, supervisors: undefined})));
   // Check for the lecturer role last
   const assignmentsLecturers = await this.find(
     {
       lecturers: { $in: [userObjectId] },
     },
-  ).populate("lecturers", "displayName email").lean();
+  ).populate("lecturers", "displayName email role").lean();
   assignments = assignments.concat(assignmentsLecturers.map(a => ({...a, role: "lecturer"})));
   // Return the combined list
   return assignments;

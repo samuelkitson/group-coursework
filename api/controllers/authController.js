@@ -6,7 +6,7 @@ const { COOKIE_NAME } = require("../config/constants");
 
 const userModel = require("../models/user");
 const assignmentModel = require("../models/assignment");
-const { SessionInvalidError, AuthenticationError, ConfigurationError } = require("../errors/errors");
+const { SessionInvalidError, AuthenticationError, ConfigurationError, InvalidParametersError } = require("../errors/errors");
 const { default: axios } = require("axios");
 const msalConfig = require("../utility/msalConfig");
 
@@ -19,9 +19,12 @@ exports.login = async (req, res) => {
   if (dbRecord === null)
     return res.status(401).json({ message: "Your username and password weren't recognised. Please try again." });
   if (!dbRecord.passwordHash)
-    throw new AuthenticationError("This account isn't set up for password access. Please sign in with your external account.");
+    throw new AuthenticationError("This account isn't set up for password access. Please sign in with Microsoft instead.");
   // User found, so check their password
   pwCorrect = await bcrypt.compare(req.body.password, dbRecord.passwordHash);
+  // If the user account status is "placeholder", they need to log in via Entra
+  if (dbRecord.role === "placeholder")
+    throw new AuthenticationError("Your account isn't fully set up. Please log in via Microsoft first.")
   if (pwCorrect) {
     // Initialise session
     req.session.userId = dbRecord._id;
@@ -130,8 +133,14 @@ exports.azureLoginCallback = async (req, res) => {
   // Find user in database
   const dbRecord = await userModel.findOne( { email }, "_id email displayName role", );
   if (dbRecord) {
+    // If the user state is "placeholder", set both the display name and role
+    if (dbRecord.role === "placeholder") {
+      dbRecord.role = isStudent ? "student" : "staff";
+      dbRecord.displayName = displayName;
+      await dbRecord.save();
+    }
     // Update display name in case this has changed since last login
-    if (dbRecord.displayName !== displayName) {
+    else if (dbRecord.displayName !== displayName) {
       dbRecord.displayName = displayName;
       await dbRecord.save();
     }
@@ -170,4 +179,20 @@ exports.azureLoginCallback = async (req, res) => {
       },
     });
   }
+};
+
+/**
+ * Used to search for users by email or display name and return their ID (as 
+ * well as other details) so that they can be added to a staff list for example.
+ */
+exports.searchForUser = async (req, res) => {
+  // Validate incoming data
+  const searchString = req.query.string;
+  if (!searchString)
+    throw new InvalidParametersError("Provide either an email address or display name to search by.");
+  const query = { $or: [
+    { email: searchString }, { displayName: searchString },
+  ]};
+  const matches = await userModel.find(query).select("_id email displayName bio role").lean();
+  res.json({ users: matches });
 };

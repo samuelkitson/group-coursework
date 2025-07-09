@@ -77,7 +77,6 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
   const handleAssignmentChange = (id) => {
     setSelectedAssignment(id);
     setTeamByAssignment(id);
-    navigate("/assignment/overview");
   };
 
   return (
@@ -99,7 +98,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas }) {
             <>
             { assignmentsActive.map((assignment) => (
                 <div key={assignment._id}>
-                  <Nav.Link as={Link} onClick={() => handleAssignmentChange(assignment._id)}>
+                  <Nav.Link as={Link} to="/assignment/overview" onClick={() => handleAssignmentChange(assignment._id)}>
                     {assignment.name}
                     {assignment.state === "closed" && " (old)"}
                     {selectedAssignment?._id === assignment._id ? 
