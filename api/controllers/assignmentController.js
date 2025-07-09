@@ -192,6 +192,36 @@ exports.setSupervisors = async (req, res) => {
   return res.json({message: "Supervisors list updated successfully."});
 };
 
+/**
+ * Add a supervisor by their email address. Currently only allows existing users
+ * to be added.
+ */
+exports.addSupervisor = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  if (!req.body.supervisor)
+    throw new InvalidParametersError("Please provide a supervisor email address.");
+  const assignment = await assignmentModel.findById(req.params.assignment);
+  // Check that the user exists
+  const user = await userModel.findOne({ email: req.body.supervisor });
+  if (!user)
+    throw new InvalidParametersError("A user with that email address could not be found. Please make sure they've previously logged into the app.");
+  // Check that the user isn't a staff member or student on the module already
+  const staffList = assignment.lecturers.map(s => s.toString());
+  const studentsList = assignment.students.map(s => s.toString());
+  const supervisorsList = assignment.supervisors.map(s => s.toString());
+  if (staffList.includes(user._id.toString()))
+      throw new InvalidParametersError("That person is a staff member on the module.");
+  if (studentsList.includes(user._id.toString()))
+      throw new InvalidParametersError("That person is a student on the module.");
+  if (supervisorsList.includes(user._id.toString()))
+      throw new InvalidParametersError("That person is already a supervisor on the module.");
+  await assignmentModel.updateOne(
+    { _id: req.params.assignment, },
+    { $addToSet: { supervisors: user._id }},
+  );
+  return res.json({ message: "Supervisor added successfully."});
+};
+
 exports.removeSupervisor = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   if (!Types.ObjectId.isValid(req.params.supervisor))
@@ -201,7 +231,7 @@ exports.removeSupervisor = async (req, res) => {
     { $pull: { supervisors: req.params.supervisor }},
   );
   await assignmentModel.updateOne(
-    { assignment: req.params.assignment },
+    { _id: req.params.assignment },
     { $pull: { supervisors: req.params.supervisor }},
   );
   return res.json({ message: "Supervisor removed successfully."});
