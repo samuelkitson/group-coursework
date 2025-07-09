@@ -1,5 +1,23 @@
 const { Schema, model } = require("mongoose");
 
+/**
+ * NOTES ON HOW USER ACCOUNTS WORK
+ * User accounts are stored within the app, identified by their MongoDB ObjectID
+ * but in places also by their email address. Most accounts won't have a
+ * passwordHash field set, meaning that they can only be logged into via Entra.
+ * 
+ * When a user logs in with their University account via Entra, the email
+ * address in the response is looked up in MongoDB to find their account. If an
+ * account is found with that email, a session is created for that user. If no
+ * account is found, a new one will be created using their email, display name
+ * and student/staff status.
+ * 
+ * In some cases, user accounts need to be created before they have logged in,
+ * for example when adding a new staff member to a module team. In this case,
+ * their role will be set to "placeholder" and will be updated when they first
+ * log in via Entra.
+ */
+
 const userSchema = new Schema(
   {
     email: { type: String, required: true },
@@ -8,7 +26,7 @@ const userSchema = new Schema(
     bio: String,
     role: {
       type: String,
-      enum: ["student", "staff", "admin"],
+      enum: ["student", "staff", "admin", "placeholder"],
       default: "student",
     },
     skills: {
