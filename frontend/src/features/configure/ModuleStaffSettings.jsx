@@ -19,8 +19,16 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const [pending, setPending] = useState(false);
   const [moduleStaff, setModuleStaff] = useState([]);
   const [searchString, setSearchString] = useState("");
+
+  // Remove a staff member from the list
+  const handleRemoveStaffMember = (index) => {
+    setModuleStaff(moduleStaff.filter((_, i) => i !== index));
+    markUnsaved();
+    toast.success("Staff member removed. Remember to save your changes.");
+  };
   
   const addPerson = () => {
     api.get(`/api/auth/search?string=${searchString.toLowerCase()}`)
@@ -43,7 +51,23 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
         }
         setModuleStaff([...moduleStaff, bestMatch]);
         setSearchString("");
-        toast.success(`${bestMatch.displayName} has been added as a lecturer on ${selectedAssignment.name}.`);
+        toast.success(`${bestMatch.displayName} has been added. Remember to save your changes.`);
+        markUnsaved();
+      });
+  };
+
+  const saveChanges = () => {
+    setPending(true);
+    const updateObj = {
+      staff: moduleStaff.map(m => m._id),
+    };
+    api
+      .put(`/api/assignment/${selectedAssignment._id}/staff`, updateObj, { successToasts: true })
+      .then(() => {
+        markSaved();
+      })
+      .finally(() => {
+        setPending(false);
       });
   };
   
@@ -55,6 +79,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
     <>
       <div className="d-flex justify-content-between align-items-center">
         <h3>Module staff</h3>
+        <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted">
         Adjust the list of teaching staff with access to {selectedAssignment.name}.
@@ -104,6 +129,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
             variant="outline-danger"
             className="rounded-circle"
             disabled={lecturer._id === user.userId}
+            onClick={() => handleRemoveStaffMember(idx)}
           >
             <XLg />
           </Button>
