@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, Button, Form, InputGroup } from "react-bootstrap";
+import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, InfoCircle, XCircle } from "react-bootstrap-icons";
+import { Envelope, InfoCircle, People, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
-import { useForm, useFormState } from "react-hook-form";
+import { Controller, useForm, useFormState } from "react-hook-form";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -21,10 +22,12 @@ function AssignmentSupervisors() {
   const [supervisorsList, setSupervisorsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pending, setIsPending] = useState(false);
+  const [teamsList, setTeamsList] = useState([]);
+  const [supervisorToEdit, setSupervisorToEdit] = useState(null);
   const [supervisorToDelete, setSupervisorToDelete] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
 
-  const defaultValues = { newSupervisor: "" };
+  const defaultValues = { newSupervisor: "", supervisorEditTeams: [], };
   const { control, register, reset, getValues, } = useForm({
     defaultValues, mode: "onTouched"
   });
@@ -37,6 +40,28 @@ function AssignmentSupervisors() {
     return `Supervising Team${teamsList.length === 1 ? "" : "s"} ${teamsString}`
   };
 
+  const showEditTeamsModal = (supervisor) => {
+    setSupervisorToEdit(supervisor);
+    reset({ supervisorEditTeams: supervisor.teams.map(t => t._id), });
+    setActiveModal("edit-teams");
+  };
+
+  const saveSupervisorTeams = () => {
+    const { supervisorEditTeams } = getValues();
+    const updateObj = { teams: supervisorEditTeams, };
+    setIsLoading(true);
+    api
+      .patch(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
+      .then((resp) => {
+        setSupervisorToEdit(null);
+        setActiveModal(null);
+        refreshData();
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  };
+
   const showDeleteModal = (supervisor) => {
     setSupervisorToDelete(supervisor);
     setActiveModal("delete-supervisor");
@@ -46,7 +71,7 @@ function AssignmentSupervisors() {
     const newSupervisorsList = supervisorsList.filter(s => s._id !== supervisorToDelete._id);
     setIsLoading(true);
     api
-      .delete(`/api/assignment/${selectedAssignment._id}/supervisors/${supervisorToDelete._id}`, { successToasts: true })
+      .delete(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToDelete._id}`, { successToasts: true })
       .then((resp) => {
         setActiveModal(null);
         setSupervisorToDelete(null);
@@ -64,7 +89,7 @@ function AssignmentSupervisors() {
     setIsPending(true);
     const updateObj = { supervisor: newSupervisor.trim() };
     api
-      .post(`/api/assignment/${selectedAssignment._id}/supervisors`, updateObj, { successToasts: true })
+      .post(`/api/assignment/${selectedAssignment._id}/supervisor`, updateObj, { successToasts: true })
       .then((resp) => {
         fetchAssignments(true);
       })
@@ -78,7 +103,7 @@ function AssignmentSupervisors() {
     setIsLoading(true);
     reset(defaultValues);
     api
-      .get(`/api/assignment/${selectedAssignment._id}/supervisors`)
+      .get(`/api/assignment/${selectedAssignment._id}/supervisor`)
       .then((resp) => {
         return resp.data;
       })
@@ -87,6 +112,15 @@ function AssignmentSupervisors() {
       })
       .finally(() => {
         setIsLoading(false);
+      });
+    api
+      .get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`)
+      .then((resp) => {
+        return resp.data;
+      })
+      .then((data) => {
+        const teamsOptions = data.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
+        setTeamsList(teamsOptions);
       });
   };
 
@@ -146,6 +180,13 @@ function AssignmentSupervisors() {
                           <Envelope size={24} />
                         </OverlayTrigger>}
                       </a>
+                      <div
+                        onClick={() => showEditTeamsModal(supervisor)}
+                        className="icon-button ms-auto d-flex align-items-center text-primary">
+                        { <OverlayTrigger overlay={<Tooltip>Edit teams</Tooltip>} placement="top">
+                          <People size={24} />
+                        </OverlayTrigger>}
+                      </div>
                       <div
                         onClick={() => showDeleteModal(supervisor)}
                         className="icon-button ms-auto d-flex align-items-center text-danger">
@@ -220,6 +261,45 @@ function AssignmentSupervisors() {
           </Button>
           <Button variant="danger" onClick={removeSupervisor} disabled={pending}>
             Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={activeModal === "edit-teams"} onHide={() => setActiveModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit teams</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            You're editing the teams that {supervisorToEdit?.displayName} is
+            supervising.
+          </p>
+          <Controller
+            control={control}
+            name={`supervisorEditTeams`}
+            render={({ field: { onChange, value, ref } }) => (
+              <Select
+                inputRef={ref}
+                isMulti
+                options={teamsList}
+                placeholder="Which teams are they supervising?"
+                menuPlacement="top"
+                value={teamsList.filter(opt => value?.includes(opt.value))}
+                onChange={opts => onChange(opts.map(opt => opt.value))}
+              />
+            )}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setActiveModal(null)}
+            disabled={pending}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={saveSupervisorTeams} disabled={pending}>
+            Save
           </Button>
         </Modal.Footer>
       </Modal>
