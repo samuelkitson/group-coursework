@@ -270,6 +270,7 @@ assignmentSchema.statics.getSupervisorsWithTeams = async function (assignmentId)
         as: "teams",
       },
     },
+    { $sort: { displayName: 1 } },
   ]);
 }
 
