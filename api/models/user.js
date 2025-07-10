@@ -27,7 +27,7 @@ const userSchema = new Schema(
     role: {
       type: String,
       enum: ["student", "staff", "admin", "placeholder"],
-      default: "student",
+      default: "placeholder",
     },
     skills: {
       type: Map,
@@ -69,6 +69,19 @@ userSchema.statics.createPlaceholder = async function (emailAddress, displayName
     displayName: userDisplayName,
     role: "placeholder",
   });
+};
+
+// Provide a list of user objects, each with "email" and "displayName".
+// For any email addresses where accounts exist, the existing  user ID will be
+// returned. For others, a placeholder account will be created and the new user
+// ID returned.
+userSchema.statics.findOrPlaceholderBulk = async function (users) {
+  const emails = users.map(u => u.email);
+  const existing = await this.find({ email: { $in: emails }}).select("_id email").lean();
+  const existingEmails = existing.map(u => u.email);
+  const toCreate = users.filter(u => !existingEmails.includes(u.email));
+  const created = (await this.create(toCreate)).map(u => u._id);
+  return created.concat(existing.map(u => u._id));
 };
 
 module.exports = model("user", userSchema);
