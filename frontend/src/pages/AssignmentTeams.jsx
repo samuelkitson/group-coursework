@@ -37,17 +37,13 @@ function AssignmentTeams() {
   };
 
   const viewMeetingHistory = async (groupidx) => {
-    // api
-    //   .get(`/api/meeting?team=${groupid}`)
-    //   .then((resp) => {
-    //     return resp.data;
-    //   })
-    //   .then((data) => {
-    //     setMeetingHistory(data.meetings);
-    //     setShowModal("meeting-history");
-    //   });
     await setSelectedTeam(teams[groupidx]);
     navigate("/assignment/meetings");
+  };
+
+  const viewPeerReviews = async (groupidx) => {
+    await setSelectedTeam(teams[groupidx]);
+    navigate("/assignment/peer-reviews");
   };
 
   const viewCheckinHistory = (groupid) => {
@@ -290,8 +286,9 @@ function AssignmentTeams() {
                             <GraphUp className="me-2" /> Workload balance
                           </Dropdown.Item>
                           <Dropdown.Item
-                            className="d-flex align-items-center">
-                            <JournalText className="me-2" /> Observations
+                            className="d-flex align-items-center"
+                            onClick={() => viewPeerReviews(index)}>
+                            <JournalText className="me-2" /> Peer reviews
                           </Dropdown.Item>
                         </Dropdown.Menu>
                       </Dropdown>
