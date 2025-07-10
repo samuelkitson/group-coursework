@@ -2,7 +2,7 @@ const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
-const { checkAssignmentRole } = require("../utility/auth");
+const { checkAssignmentRole, isValidEmail } = require("../utility/auth");
 const { InvalidParametersError, IncorrectRoleError, InvalidObjectIdError, GenericNotAllowedError, GenericNotFoundError } = require("../errors/errors");
 
 exports.createAssignment = async (req, res) => {
@@ -225,6 +225,29 @@ exports.addSupervisor = async (req, res) => {
     { $addToSet: { supervisors: user._id }},
   );
   return res.json({ message: successMessage });
+};
+
+exports.bulkAddSupervisors = async (req, res) => {
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
+  if (!req.body.supervisors || !Array.isArray(req.body.supervisors))
+    throw new InvalidObjectIdError("Please provide a list of supervisor emails.");
+  if (!req.body.supervisors.every(isValidEmail))
+    throw new InvalidParametersError("Some of the email addresses provided were invalid.");
+  const supervisorIDs = await userModel.findOrPlaceholderBulk(req.body.supervisors.map(u => ({email: u, displayName: u})));
+  // Check that none of these people are already registered as staff/students
+  const assignment = await assignmentModel.findById(req.params.assignment);
+  const staffList = assignment.lecturers.map(s => s.toString());
+  const studentsList = assignment.students.map(s => s.toString());
+  const staffStudentsList = new Set(staffList.concat(studentsList));
+  const crossovers = supervisorIDs.map(toString).filter(e => staffStudentsList.has(e));
+  if (crossovers.length > 0)
+    throw new InvalidParametersError("Some of the users provided are either staff or students on this assignment, and can't become supervisors.");
+  // No crossovers, so safe to add
+  await assignmentModel.updateOne(
+    { _id: req.params.assignment, },
+    { $addToSet: { supervisors: { $each: supervisorIDs } }},
+  );
+  return res.json({ message: `${supervisorIDs.length} supervisors have been added.` });
 };
 
 exports.changeSupervisorTeams = async (req, res) => {
