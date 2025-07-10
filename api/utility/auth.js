@@ -102,7 +102,7 @@ exports.generateHash = async (password) => {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 };
 
-exports.isValidEmail = async (email) => {
+exports.isValidEmail = (email) => {
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!regex.test(email))
     return false;
