@@ -28,6 +28,8 @@ import Profile from "./pages/Profile";
 import ResumeLogin from "./pages/ResumeLogin";
 import AssignmentSupervisors from "./pages/AssignmentSupervisors";
 import AuthCallback from "./pages/AuthCallback";
+import TeamPeerReviews from "./pages/TeamPeerReviews";
+import ScrollToTop from "./utility/ScrollToTop";
 
 function WithNavigation() {
   return (
@@ -44,6 +46,7 @@ function WithNavigation() {
 function App() {
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/login-callback" element={<AuthCallback />} />
@@ -84,6 +87,9 @@ function App() {
             </Route>
             <Route path="/assignment/meetings" element={<AssignmentRoute />}>
               <Route index element={<TeamMeetings />} />
+            </Route>
+            <Route path="/assignment/peer-reviews" element={<AssignmentRoute />}>
+              <Route index element={<TeamPeerReviews />} />
             </Route>
           </Route>
         </Route>
