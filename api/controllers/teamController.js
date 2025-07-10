@@ -158,20 +158,28 @@ exports.getAllForAssignment = async (req, res) => {
   const lastWeekDate = new Date();
   lastWeekDate.setDate(lastWeekDate.getDate() - 7);
   const peerReview = await peerReviewModel.findByAssignment(req.query.assignment, lastWeekDate);
-  const teamIds = teams.map(t => t._id);
-  const checkins = await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints");
-  teamsWithLastMeeting.forEach(team => {
-    const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
-    const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
-    team.members.forEach(member => {
-      member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
+  if (!peerReview) {
+    // No check-in data - maybe peer reviews aren't enabled?
+    // TODO: use more than just last week's data
+    teamsWithLastMeeting.forEach(team => {
+      team.insights = [];
     });
-    team.checkInStats = {
-      minNetScore: Math.min(...Object.values(checkinStats.netScores)),
-      maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
-    };
-    team.insights = generateTeamInsights(team);
-  });
+  } else {
+    const teamIds = teams.map(t => t._id);
+    const checkins = await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints");
+    teamsWithLastMeeting.forEach(team => {
+      const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+      const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
+      team.members.forEach(member => {
+        member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
+      });
+      team.checkInStats = {
+        minNetScore: Math.min(...Object.values(checkinStats.netScores)),
+        maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
+      };
+      team.insights = generateTeamInsights(team);
+    });
+  }
   return res.json({teams: teamsWithLastMeeting});
 };
 
