@@ -39,6 +39,7 @@ services:
       SESSION_SECRET: ${SESSION_SECRET}
       OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
       ASSIGNMENTS_ADMIN_LOCK: ${ASSIGNMENTS_ADMIN_LOCK}
+      ALLOWED_EMAIL_DOMAINS: soton.ac.uk,southampton.ac.uk
     volumes:
       - ./api:/app
       - /app/node_modules
