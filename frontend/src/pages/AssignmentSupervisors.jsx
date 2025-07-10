@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, HourglassSplit, InfoCircle, People, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, InfoCircle, People, Shuffle, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -51,10 +51,13 @@ function AssignmentSupervisors() {
 
   const saveSupervisorTeams = () => {
     const { supervisorEditTeams } = getValues();
-    const updateObj = { teams: supervisorEditTeams, };
+    const updateObj = { 
+      assignment: selectedAssignment._id,
+      teams: supervisorEditTeams, 
+    };
     setIsLoading(true);
     api
-      .patch(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
+      .patch(`/api/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
       .then((resp) => {
         setSupervisorToEdit(null);
         setActiveModal(null);
@@ -74,7 +77,7 @@ function AssignmentSupervisors() {
     const newSupervisorsList = supervisorsList.filter(s => s._id !== supervisorToDelete._id);
     setIsLoading(true);
     api
-      .delete(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToDelete._id}`, { successToasts: true })
+      .delete(`/api/supervisor/${supervisorToDelete._id}?assignment=${selectedAssignment._id}`, { successToasts: true })
       .then((resp) => {
         setActiveModal(null);
         setSupervisorToDelete(null);
@@ -90,9 +93,12 @@ function AssignmentSupervisors() {
     const { newSupervisor } = getValues();
     if (newSupervisor.trim() === "") return;
     setIsPending(true);
-    const updateObj = { supervisor: newSupervisor.trim() };
+    const updateObj = {
+      assignment: selectedAssignment._id,
+      supervisor: newSupervisor.trim(),
+    };
     api
-      .post(`/api/assignment/${selectedAssignment._id}/supervisor`, updateObj, { successToasts: true })
+      .post(`/api/supervisor`, updateObj, { successToasts: true })
       .then((resp) => {
         fetchAssignments(true);
       })
@@ -124,9 +130,12 @@ function AssignmentSupervisors() {
 
   const sendUploadedFile = async () => {
     setIsPending(true);
-    const uploadObj = { supervisors: uploadedFileContent };
+    const uploadObj = {
+      assignment: selectedAssignment._id,
+      supervisors: uploadedFileContent,
+    };
     api
-      .post(`/api/assignment/${selectedAssignment._id}/supervisor/bulk`, uploadObj, { successToasts: true })
+      .post(`/api/supervisor/bulk`, uploadObj, { successToasts: true })
       .then((resp) => {
         refreshData();
       })
@@ -137,12 +146,20 @@ function AssignmentSupervisors() {
       });
   };
 
+  const autoAllocate = async () => {
+    api
+      .post("/api/supervisor/allocate", { assignment: selectedAssignment._id }, { successToasts: true })
+      .then((resp) => {
+        refreshData();
+      });
+  };
+
   const refreshData = () => {
     setSupervisorsList([]);
     setIsLoading(true);
     reset(defaultValues);
     api
-      .get(`/api/assignment/${selectedAssignment._id}/supervisor`)
+      .get(`/api/supervisor?assignment=${selectedAssignment._id}`)
       .then((resp) => {
         return resp.data;
       })
@@ -283,8 +300,8 @@ function AssignmentSupervisors() {
             bulk.
           </p>
           <InputGroup>
-          <Form.Control type="file" accept=".txt" onChange={handleFileUpload} ref={fileUploadRef}/>
-          <Button
+            <Form.Control type="file" accept=".txt" onChange={handleFileUpload} ref={fileUploadRef}/>
+            <Button
               onClick={sendUploadedFile}
               variant="primary"
               disabled={pending || !uploadedFileContent}
@@ -292,6 +309,23 @@ function AssignmentSupervisors() {
               Add
             </Button>
           </InputGroup>
+          
+          { (selectedAssignment.state === "live" && supervisorsList.length > 0) && <>
+            <h3 className="mt-4">Allocate to teams</h3>
+            <p>
+              After you've added all supervisors, click the button below to
+              automatically assign them to teams.
+            </p>
+            <Button
+              disabled={pending}
+              variant="success"
+              className="d-flex align-items-center"
+              onClick={autoAllocate}
+            >
+              <Shuffle className="me-2" />
+              Assign supervisors
+            </Button>
+          </>}
         </Col>
       </Row>
 

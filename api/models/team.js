@@ -26,4 +26,20 @@ teamSchema.statics.isSupervisorOnTeam = async function (
   return this.exists(searchQuery);
 };
 
+teamSchema.statics.getNumberOfSupervisees = async function (
+  supervisorIds,
+) {
+  const supervisorTeamCounts = supervisorIds.reduce((acc, cur) => { return {...acc, [cur]: 0}}, {});
+  const teams = await this.find({ supervisors: { $in: supervisorIds } }).lean();
+  teams.forEach(team => {
+    team.supervisors.forEach(supervisorId => {
+      const supervisorIdStr = supervisorId.toString();
+      if (supervisorTeamCounts.hasOwnProperty(supervisorIdStr)) {
+        supervisorTeamCounts[supervisorIdStr]++;
+      }
+    });
+  });
+  return supervisorTeamCounts;
+};
+
 module.exports = model("team", teamSchema);
