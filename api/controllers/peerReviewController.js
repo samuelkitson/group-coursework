@@ -4,10 +4,15 @@ const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError } = require("../errors/errors");
 
 exports.getPeerReviewStructure = async (req, res) => {
-  await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
+  await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
+  const query = { assignment: new Types.ObjectId(req.query.assignment), };
+  if (req.query.pastOnly)
+    query.periodEnd = { $lte: new Date() };
+  if (req.query.futureOnly)
+    query.periodStart = { $gte: new Date() };
   // Extract all peer review points for this assignment
   const peerReviews = await peerReviewModel
-    .find({ assignment: new Types.ObjectId(req.query.assignment), })
+    .find(query)
     .sort({ periodStart: 1, })
     .lean();
   return res.json({ peerReviews });
