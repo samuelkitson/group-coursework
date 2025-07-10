@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, HourglassSplit, InfoCircle, People, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, InfoCircle, People, Shuffle, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -283,8 +283,8 @@ function AssignmentSupervisors() {
             bulk.
           </p>
           <InputGroup>
-          <Form.Control type="file" accept=".txt" onChange={handleFileUpload} ref={fileUploadRef}/>
-          <Button
+            <Form.Control type="file" accept=".txt" onChange={handleFileUpload} ref={fileUploadRef}/>
+            <Button
               onClick={sendUploadedFile}
               variant="primary"
               disabled={pending || !uploadedFileContent}
@@ -292,6 +292,22 @@ function AssignmentSupervisors() {
               Add
             </Button>
           </InputGroup>
+          
+          { (selectedAssignment.state === "live" && supervisorsList.length > 0) && <>
+            <h3 className="mt-4">Allocate to teams</h3>
+            <p>
+              After you've added all supervisors, click the button below to
+              automatically assign them to teams.
+            </p>
+            <Button
+              disabled={pending}
+              variant="success"
+              className="d-flex align-items-center"
+            >
+              <Shuffle className="me-2" />
+              Assign supervisors
+            </Button>
+          </>}
         </Col>
       </Row>
 
