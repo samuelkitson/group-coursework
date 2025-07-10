@@ -146,6 +146,14 @@ function AssignmentSupervisors() {
       });
   };
 
+  const autoAllocate = async () => {
+    api
+      .post("/api/supervisor/allocate", { assignment: selectedAssignment._id }, { successToasts: true })
+      .then((resp) => {
+        refreshData();
+      });
+  };
+
   const refreshData = () => {
     setSupervisorsList([]);
     setIsLoading(true);
@@ -312,6 +320,7 @@ function AssignmentSupervisors() {
               disabled={pending}
               variant="success"
               className="d-flex align-items-center"
+              onClick={autoAllocate}
             >
               <Shuffle className="me-2" />
               Assign supervisors

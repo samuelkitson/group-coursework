@@ -11,5 +11,6 @@ router.post("/", requireLoggedIn(), asyncHandler(supervisorC.addSupervisor));
 router.post("/bulk", requireLoggedIn(), asyncHandler(supervisorC.bulkAddSupervisors));
 router.patch("/:supervisor", requireLoggedIn(), asyncHandler(supervisorC.changeSupervisorTeams));
 router.delete("/:supervisor", requireLoggedIn(), asyncHandler(supervisorC.removeSupervisor));
+router.post("/allocate", requireLoggedIn(), asyncHandler(supervisorC.autoAllocateSupervisors));
 
 module.exports = router;

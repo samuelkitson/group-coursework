@@ -134,3 +134,33 @@ exports.removeSupervisor = async (req, res) => {
   );
   return res.json({ message: "Supervisor removed successfully."});
 };
+
+function getKeyOfMinValue(obj) {
+  const keys = Object.keys(obj);
+  if (keys.length === 0) return undefined;
+  return keys.reduce((minKey, currentKey) => {
+    return obj[currentKey] < obj[minKey] ? currentKey : minKey;
+  });
+};
+
+exports.autoAllocateSupervisors = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const assignment = await assignmentModel.findById(req.body.assignment).select("supervisors").lean();
+  const teamsWithoutSupervisors = await teamModel.find({
+    assignment: req.body.assignment,
+    supervisors: [],
+  });
+  if (teamsWithoutSupervisors.length === 0)
+    throw new InvalidParametersError("All teams have a supervisor already.");
+  const supervisors = assignment.supervisors ?? [];
+  if (supervisors.length === 0)
+    throw new InvalidParametersError("You need to add some supervisors first.");
+  const supervisorTeamCounts = await teamModel.getNumberOfSupervisees(supervisors);
+  for (const team of teamsWithoutSupervisors) {
+    const nextSupervisor = getKeyOfMinValue(supervisorTeamCounts);
+    team.supervisors.push(nextSupervisor);
+    supervisorTeamCounts[nextSupervisor] += 1;
+    await team.save();
+  }
+  return res.json({ message: "Supervisors allocated successfully. "});
+};
