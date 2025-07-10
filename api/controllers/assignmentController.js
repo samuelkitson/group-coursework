@@ -239,7 +239,7 @@ exports.bulkAddSupervisors = async (req, res) => {
   const staffList = assignment.lecturers.map(s => s.toString());
   const studentsList = assignment.students.map(s => s.toString());
   const staffStudentsList = new Set(staffList.concat(studentsList));
-  const crossovers = supervisorIDs.map(toString).filter(e => staffStudentsList.has(e));
+  const crossovers = supervisorIDs.map(s => s.toString()).filter(e => staffStudentsList.has(e));
   if (crossovers.length > 0)
     throw new InvalidParametersError("Some of the users provided are either staff or students on this assignment, and can't become supervisors.");
   // No crossovers, so safe to add

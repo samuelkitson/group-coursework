@@ -132,6 +132,7 @@ function AssignmentSupervisors() {
       })
       .finally(() => {
         setIsPending(false);
+        setUploadedFileContent(null);
         if (fileUploadRef.current) fileUploadRef.current.value = "";
       });
   };
