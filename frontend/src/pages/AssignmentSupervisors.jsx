@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, InfoCircle, People, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, InfoCircle, People, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -207,6 +207,16 @@ function AssignmentSupervisors() {
                   >
                     <div className="text-break me-3">
                       <span className="fw-bold">{supervisor.displayName}</span>
+                      {supervisor.role === "placeholder" && (
+                        <OverlayTrigger
+                          placement="right"
+                          overlay={<Tooltip>Name will update when the user first logs in.</Tooltip>}
+                        >
+                          <span className="ms-2 text-secondary">
+                            <HourglassSplit />
+                          </span>
+                        </OverlayTrigger>
+                      )}
                       <br />
                       {teamsHelpText(supervisor.teams)}
                     </div>
