@@ -4,6 +4,10 @@ const { BCRYPT_ROUNDS } = require("../config/constants");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const { AssignmentNotFoundError, IncorrectRoleError, SessionInvalidError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
+const { ALLOWED_EMAIL_DOMAINS } = process.env;
+
+// Provide a list of allowed emails domains as a comma separated list
+const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
 
 // Middleware to check if user is authenticated
 // If the permitted role is "staff" it will also allow admins access
@@ -96,4 +100,16 @@ exports.checkTeamRole = async (teamId, userId, accessLevel = "member") => {
 // Generate a hash from a given password
 exports.generateHash = async (password) => {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
+};
+
+exports.isValidEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!regex.test(email))
+    return false;
+  if (ALLOWED_EMAIL_DOMAINS) {
+    const emailParts = email.split("@");
+    return allowedDomains.includes(emailParts[emailParts.length - 1]);
+  } else {
+    return true;
+  }
 };

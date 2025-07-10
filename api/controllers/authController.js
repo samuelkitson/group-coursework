@@ -196,3 +196,4 @@ exports.searchForUser = async (req, res) => {
   const matches = await userModel.find(query).select("_id email displayName bio role").lean();
   res.json({ users: matches });
 };
+

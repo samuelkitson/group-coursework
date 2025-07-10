@@ -234,6 +234,7 @@ assignmentSchema.statics.getSupervisorsWithTeams = async function (assignmentId)
         supervisor: {
           _id: "$supervisorDetails._id",
           displayName: "$supervisorDetails.displayName",
+          role: "$supervisorDetails.role",
           email: "$supervisorDetails.email",
         },
       },
@@ -242,6 +243,7 @@ assignmentSchema.statics.getSupervisorsWithTeams = async function (assignmentId)
       $group: {
         _id: "$supervisor._id",
         displayName: { $first: "$supervisor.displayName" },
+        role: { $first: "$supervisor.role" },
         email: { $first: "$supervisor.email" },
       },
     },

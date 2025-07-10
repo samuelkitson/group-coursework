@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, Button, Form, InputGroup } from "react-bootstrap";
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, InfoCircle, People, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, InfoCircle, People, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
+import toast from "react-hot-toast";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -25,6 +26,8 @@ function AssignmentSupervisors() {
   const [teamsList, setTeamsList] = useState([]);
   const [supervisorToEdit, setSupervisorToEdit] = useState(null);
   const [supervisorToDelete, setSupervisorToDelete] = useState(null);
+  const fileUploadRef = useRef(null);
+  const [uploadedFileContent, setUploadedFileContent] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
 
   const defaultValues = { newSupervisor: "", supervisorEditTeams: [], };
@@ -98,6 +101,41 @@ function AssignmentSupervisors() {
       });
   };
 
+  const handleFileUpload = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) {
+      setUploadedFileContent(null);
+    }
+    if (selectedFile.type !== "text/plain") {
+      setUploadedFileContent(null);
+      return toast.error("Please upload a text file.");
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content  = e.target.result;
+      setUploadedFileContent(content.split(/\r?\n/).filter(line => line.trim() !== ""));
+    }
+    reader.onerror = () => {
+      toast.error("The uploaded file was invalid. Please try again.");
+      setUploadedFileContent(null);
+    };
+    reader.readAsText(selectedFile);
+  };
+
+  const sendUploadedFile = async () => {
+    setIsPending(true);
+    const uploadObj = { supervisors: uploadedFileContent };
+    api
+      .post(`/api/assignment/${selectedAssignment._id}/supervisor/bulk`, uploadObj, { successToasts: true })
+      .then((resp) => {
+        refreshData();
+      })
+      .finally(() => {
+        setIsPending(false);
+        if (fileUploadRef.current) fileUploadRef.current.value = "";
+      });
+  };
+
   const refreshData = () => {
     setSupervisorsList([]);
     setIsLoading(true);
@@ -139,7 +177,7 @@ function AssignmentSupervisors() {
         </Col>
       </Row>
 
-      <Row className="mb-4">
+      <Row className="mb-4 gy-4">
         <Col lg={8} sm={12}>
           <Card>
             <Card.Header>Supervisors</Card.Header>
@@ -169,6 +207,16 @@ function AssignmentSupervisors() {
                   >
                     <div className="text-break me-3">
                       <span className="fw-bold">{supervisor.displayName}</span>
+                      {supervisor.role === "placeholder" && (
+                        <OverlayTrigger
+                          placement="right"
+                          overlay={<Tooltip>Name will update when the user first logs in.</Tooltip>}
+                        >
+                          <span className="ms-2 text-secondary">
+                            <HourglassSplit />
+                          </span>
+                        </OverlayTrigger>
+                      )}
                       <br />
                       {teamsHelpText(supervisor.teams)}
                     </div>
@@ -204,8 +252,7 @@ function AssignmentSupervisors() {
         <Col lg={4} sm={12}>
           <h3>Add supervisors</h3>
           <p>
-            Add supervisors one at a time with their email addresses, or in bulk
-            by uploading a text file with one email address per line.
+            Add supervisors one at a time with their email addresses...
           </p>
 
           <InputGroup>
@@ -229,6 +276,21 @@ function AssignmentSupervisors() {
             </Button>
           </InputGroup>
           <p className="mt-1 text-danger">{errors?.newSupervisor?.message}</p>
+          
+          <p>
+            ...or upload a text file with one email address per line to add them in
+            bulk.
+          </p>
+          <InputGroup>
+          <Form.Control type="file" accept=".txt" onChange={handleFileUpload} ref={fileUploadRef}/>
+          <Button
+              onClick={sendUploadedFile}
+              variant="primary"
+              disabled={pending || !uploadedFileContent}
+            >
+              Add
+            </Button>
+          </InputGroup>
         </Col>
       </Row>
 

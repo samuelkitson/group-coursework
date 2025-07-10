@@ -18,6 +18,7 @@ router.put("/:assignment/staff", requireLoggedIn(), asyncHandler(assignmentC.set
 router.get("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.getSupervisors));
 router.put("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.setSupervisors));
 router.post("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.addSupervisor));
+router.post("/:assignment/supervisor/bulk", requireLoggedIn(), asyncHandler(assignmentC.bulkAddSupervisors));
 router.patch("/:assignment/supervisor/:supervisor", requireLoggedIn(), asyncHandler(assignmentC.changeSupervisorTeams));
 router.delete("/:assignment/supervisor/:supervisor", requireLoggedIn(), asyncHandler(assignmentC.removeSupervisor));
 
