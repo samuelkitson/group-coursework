@@ -151,7 +151,7 @@ exports.autoAllocateSupervisors = async (req, res) => {
   const teamsWithoutSupervisors = await teamModel.find({
     assignment: req.body.assignment,
     supervisors: [],
-  });
+  }).sort({ "teamNumber": 1 });
   if (teamsWithoutSupervisors.length === 0)
     throw new InvalidParametersError("All teams have a supervisor already.");
   const supervisors = assignment.supervisors ?? [];
