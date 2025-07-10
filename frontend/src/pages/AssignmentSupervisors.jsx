@@ -51,10 +51,13 @@ function AssignmentSupervisors() {
 
   const saveSupervisorTeams = () => {
     const { supervisorEditTeams } = getValues();
-    const updateObj = { teams: supervisorEditTeams, };
+    const updateObj = { 
+      assignment: selectedAssignment._id,
+      teams: supervisorEditTeams, 
+    };
     setIsLoading(true);
     api
-      .patch(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
+      .patch(`/api/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
       .then((resp) => {
         setSupervisorToEdit(null);
         setActiveModal(null);
@@ -74,7 +77,7 @@ function AssignmentSupervisors() {
     const newSupervisorsList = supervisorsList.filter(s => s._id !== supervisorToDelete._id);
     setIsLoading(true);
     api
-      .delete(`/api/assignment/${selectedAssignment._id}/supervisor/${supervisorToDelete._id}`, { successToasts: true })
+      .delete(`/api/supervisor/${supervisorToDelete._id}?assignment=${selectedAssignment._id}`, { successToasts: true })
       .then((resp) => {
         setActiveModal(null);
         setSupervisorToDelete(null);
@@ -90,9 +93,12 @@ function AssignmentSupervisors() {
     const { newSupervisor } = getValues();
     if (newSupervisor.trim() === "") return;
     setIsPending(true);
-    const updateObj = { supervisor: newSupervisor.trim() };
+    const updateObj = {
+      assignment: selectedAssignment._id,
+      supervisor: newSupervisor.trim(),
+    };
     api
-      .post(`/api/assignment/${selectedAssignment._id}/supervisor`, updateObj, { successToasts: true })
+      .post(`/api/supervisor`, updateObj, { successToasts: true })
       .then((resp) => {
         fetchAssignments(true);
       })
@@ -124,9 +130,12 @@ function AssignmentSupervisors() {
 
   const sendUploadedFile = async () => {
     setIsPending(true);
-    const uploadObj = { supervisors: uploadedFileContent };
+    const uploadObj = {
+      assignment: selectedAssignment._id,
+      supervisors: uploadedFileContent,
+    };
     api
-      .post(`/api/assignment/${selectedAssignment._id}/supervisor/bulk`, uploadObj, { successToasts: true })
+      .post(`/api/supervisor/bulk`, uploadObj, { successToasts: true })
       .then((resp) => {
         refreshData();
       })
@@ -142,7 +151,7 @@ function AssignmentSupervisors() {
     setIsLoading(true);
     reset(defaultValues);
     api
-      .get(`/api/assignment/${selectedAssignment._id}/supervisor`)
+      .get(`/api/supervisor?assignment=${selectedAssignment._id}`)
       .then((resp) => {
         return resp.data;
       })
