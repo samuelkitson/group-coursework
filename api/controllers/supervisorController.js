@@ -43,6 +43,8 @@ exports.addSupervisor = async (req, res) => {
   await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
   if (!req.body.supervisor)
     throw new InvalidParametersError("Please provide a supervisor email address.");
+  if (!isValidEmail(req.body.supervisor))
+    throw new InvalidParametersError("Invalid supervisor email address. Make sure you're using an allowed email domain.");
   const assignment = await assignmentModel.findById(req.body.assignment);
   // Check that the user exists
   let user = await userModel.findOne({ email: req.body.supervisor });
