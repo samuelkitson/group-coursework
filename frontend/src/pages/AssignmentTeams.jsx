@@ -266,7 +266,7 @@ function AssignmentTeams() {
                     <>
                       <span>Team {group.teamNumber}</span>
                       <Dropdown>
-                        <Dropdown.Toggle variant="light" size="sm" disabled={moveMode > 0}>
+                        <Dropdown.Toggle variant="light" size="sm" disabled={moveMode > 0} className="no-caret">
                           <ThreeDotsVertical />
                         </Dropdown.Toggle>
                         <Dropdown.Menu>

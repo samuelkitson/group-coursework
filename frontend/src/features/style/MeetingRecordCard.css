@@ -1,6 +1,6 @@
 /* https://stackoverflow.com/a/69639789 */
 
-.dropdown-toggle::after {
+.dropdown-toggle.no-caret::after {
   display: none !important; 
 }
 
