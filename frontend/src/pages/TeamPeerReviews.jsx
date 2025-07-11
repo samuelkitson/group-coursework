@@ -6,6 +6,7 @@ import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { ArrowLeftShort, CursorFill, QuestionCircleFill } from "react-bootstrap-icons";
+import WorkloadBalanceChart from "@/features/peerReviews/WorkloadBalanceChart";
 
 function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
@@ -21,20 +22,26 @@ function TeamPeerReviews() {
   const currentOption = peerReviewPoints[selectedIndex];
   const currentStudent = studentOptions[selectedStudentIndex];
 
-  const handlePrevious = () => {
+  const handlePreviousReview = () => {
     if (selectedIndex <= 0) return;
     setSelectedIndex((prevIndex) => prevIndex - 1);
   };
-
-  const handleNext = () => {
+  const handleNextReview = () => {
     if (selectedIndex >= peerReviewPoints.length - 1) return;
     setSelectedIndex((prevIndex) => prevIndex + 1);
   };
-
-  const handleSelectOption = (index) => {
+  const handleSelectReview = (index) => {
     setSelectedIndex(index);
   };
 
+  const handlePreviousStudent = () => {
+    if (selectedStudentIndex <= 0) return setSelectedStudentIndex(studentOptions.length - 1);
+    setSelectedStudentIndex((prevIndex) => prevIndex - 1);
+  };
+  const handleNextStudent = () => {
+    if (selectedStudentIndex >= studentOptions.length - 1) return setSelectedStudentIndex(0);
+    setSelectedStudentIndex((prevIndex) => prevIndex + 1);
+  };
   const handleSelectStudent = (index) => {
     setSelectedStudentIndex(index);
   };
@@ -140,15 +147,13 @@ function TeamPeerReviews() {
             Find peer reviews submitted in:
           </p>
           <InputGroup>
-            <Button variant="outline-primary" onClick={handlePrevious}>
+            <Button variant="outline-primary" onClick={handlePreviousReview}>
               &lt;
             </Button>
-
-            <Dropdown onSelect={(eventKey) => handleSelectOption(parseInt(eventKey))}>
+            <Dropdown onSelect={(eventKey) => handleSelectReview(parseInt(eventKey))}>
               <Dropdown.Toggle variant="outline-primary" className="px-4">
                 {`${currentOption?.periodStart} - ${currentOption?.periodEnd} (${currentOption?.type})`}
               </Dropdown.Toggle>
-
               <Dropdown.Menu className="shadow">
                 {peerReviewPoints.map((prp, index) => (
                   <Dropdown.Item
@@ -161,8 +166,7 @@ function TeamPeerReviews() {
                 ))}
               </Dropdown.Menu>
             </Dropdown>
-
-            <Button variant="outline-primary" onClick={handleNext}>
+            <Button variant="outline-primary" onClick={handleNextReview}>
               &gt;
             </Button>
           </InputGroup>
@@ -170,27 +174,42 @@ function TeamPeerReviews() {
         { currentPeerReview &&
           <Col xs={12} md={6}>
             <p className="text-muted mb-1">
-              Focus on results for:
+              Show results for:
             </p>
-            <Dropdown onSelect={handleSelectStudent} disabled={studentOptions.length === 0}>
-              <Dropdown.Toggle variant="outline-primary">
-                { currentStudent ?? "Select a student" }
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu className="shadow">
-                {studentOptions.map((s, index) => (
-                  <Dropdown.Item
-                    key={index}
-                    eventKey={index}
-                    active={index === selectedStudentIndex}
-                  >
-                    {s}
-                  </Dropdown.Item>
-                ))}
-              </Dropdown.Menu>
-            </Dropdown>
+            <InputGroup>
+              <Button variant="outline-primary" onClick={handlePreviousStudent}>
+                &lt;
+              </Button>
+              <Dropdown onSelect={(eventKey) => handleSelectStudent(parseInt(eventKey))}>
+                <Dropdown.Toggle variant="outline-primary" className="px-4">
+                  { currentStudent ?? "Select a student" }
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="shadow">
+                  {studentOptions.map((s, index) => (
+                    <Dropdown.Item
+                      key={index}
+                      eventKey={index}
+                      active={index === selectedStudentIndex}
+                    >
+                      {s}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+              <Button variant="outline-primary" onClick={handleNextStudent}>
+                &gt;
+              </Button>
+            </InputGroup>
           </Col>
         }
+      </Row>
+      }
+
+      { currentPeerReview && 
+      <Row className="mt-3">
+        <Col md={4}>
+          <WorkloadBalanceChart netScores={currentPeerReview?.netScores} currentStudent={currentStudent} />
+        </Col>
       </Row>
       }
     </>
