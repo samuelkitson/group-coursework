@@ -5,15 +5,21 @@ import { Button, Card, Col, Container, Dropdown, InputGroup, Row } from "react-b
 import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { ArrowLeftShort, QuestionCircleFill } from "react-bootstrap-icons";
+import { ArrowLeftShort, CursorFill, QuestionCircleFill } from "react-bootstrap-icons";
 
 function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
 
   const [peerReviewPoints, setPeerReviewPoints] = useState([]);
-
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [currentPeerReview, setCurrentPeerReview] = useState(null);
+  const [studentOptions, setStudentOptions] = useState([]);
+  const [selectedStudentIndex, setSelectedStudentIndex] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const currentOption = peerReviewPoints[selectedIndex];
+  const currentStudent = studentOptions[selectedStudentIndex];
 
   const handlePrevious = () => {
     if (selectedIndex <= 0) return;
@@ -29,9 +35,40 @@ function TeamPeerReviews() {
     setSelectedIndex(index);
   };
 
-  const currentOption = peerReviewPoints[selectedIndex];
+  const handleSelectStudent = (index) => {
+    setSelectedStudentIndex(index);
+  };
+
+  const loadCurrentPeerReview = () => {
+    setCurrentPeerReview(null);
+    setIsLoading(true);
+    if (!currentOption) return;
+    api
+      .get(`/api/checkin/response?peerReview=${currentOption?._id}&team=${selectedTeam._id}`, {genericErrorToasts: false})
+      .then((resp) => {
+        return resp.data;
+      })
+      .then((data) => {
+        setCurrentPeerReview(data);
+        const studentOptions = Object.keys(data?.netScores ?? {});
+        setStudentOptions(studentOptions);
+      })
+      .catch(() => {
+        setCurrentPeerReview(null);
+        setSelectedStudentIndex(null);
+        setStudentOptions([]);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }
 
   const refreshData = () => {
+    setSelectedIndex(0);
+    setCurrentPeerReview(null);
+    setSelectedStudentIndex(null);
+    setStudentOptions([]);
+    setIsLoading(true);
     // Get the current setup
     api
       .get(`/api/peer-review?assignment=${selectedAssignment._id}&pastOnly=true`)
@@ -46,11 +83,21 @@ function TeamPeerReviews() {
           return {...p, periodStart: format(startISO, "dd MMM"), periodEnd: format(endISO, "dd MMM"), };
         });
         setPeerReviewPoints(formatted);
+        if (existing.length > 0) {
+          setSelectedIndex(existing.length - 1);
+        } else {
+          setSelectedIndex(0);
+        }
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
   
   // Refresh data on page load
   useEffect(refreshData, [selectedTeam]);
+  // Refresh current peer review data when it changes
+  useEffect(loadCurrentPeerReview, [selectedIndex]);
 
   return (
     <>
@@ -87,15 +134,18 @@ function TeamPeerReviews() {
       }
 
       { peerReviewPoints.length > 0 &&
-      <Row>
-        <Col xs="auto">
+      <Row className="gy-2">
+        <Col xs={12} md={6}>
+          <p className="text-muted mb-1">
+            Find peer reviews submitted in:
+          </p>
           <InputGroup>
-            <Button variant="outline-secondary" onClick={handlePrevious}>
+            <Button variant="outline-primary" onClick={handlePrevious}>
               &lt;
             </Button>
 
-            <Dropdown as={InputGroup.Append} onSelect={(eventKey) => handleSelectOption(parseInt(eventKey))}>
-              <Dropdown.Toggle variant="outline-secondary" id="dropdown-basic" className="px-4">
+            <Dropdown onSelect={(eventKey) => handleSelectOption(parseInt(eventKey))}>
+              <Dropdown.Toggle variant="outline-primary" className="px-4">
                 {`${currentOption?.periodStart} - ${currentOption?.periodEnd} (${currentOption?.type})`}
               </Dropdown.Toggle>
 
@@ -112,11 +162,35 @@ function TeamPeerReviews() {
               </Dropdown.Menu>
             </Dropdown>
 
-            <Button variant="outline-secondary" onClick={handleNext}>
+            <Button variant="outline-primary" onClick={handleNext}>
               &gt;
             </Button>
           </InputGroup>
         </Col>
+        { currentPeerReview &&
+          <Col xs={12} md={6}>
+            <p className="text-muted mb-1">
+              Focus on results for:
+            </p>
+            <Dropdown onSelect={handleSelectStudent} disabled={studentOptions.length === 0}>
+              <Dropdown.Toggle variant="outline-primary">
+                { currentStudent ?? "Select a student" }
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu className="shadow">
+                {studentOptions.map((s, index) => (
+                  <Dropdown.Item
+                    key={index}
+                    eventKey={index}
+                    active={index === selectedStudentIndex}
+                  >
+                    {s}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+          </Col>
+        }
       </Row>
       }
     </>
