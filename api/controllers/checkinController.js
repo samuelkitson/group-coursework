@@ -2,9 +2,10 @@ const { Types } = require("mongoose");
 const checkinModel = require("../models/checkin");
 const teamModel = require("../models/team");
 const peerReviewModel = require("../models/peerReview");
-const { checkinStatistics } = require("../utility/maths");
+const { checkinStatistics, peerReviewSkillsStatistics } = require("../utility/maths");
 const { checkTeamRole } = require("../utility/auth");
-const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError } = require("../errors/errors");
+const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
+const checkin = require("../models/checkin");
 
 exports.getCheckinStateStudent = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "member");
@@ -147,4 +148,59 @@ exports.getCheckInHistory = async (req, res) => {
   }));
 
   return res.json({ checkins: simplifiedStats, });
+};
+
+// Fetch by peer review point and team.
+exports.getCheckInResponse = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.query.peerReview))
+    throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  if (!Types.ObjectId.isValid(req.query.team))
+    throw new InvalidObjectIdError("The provided team ID is invalid.");
+  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
+  // Get team and check-in data
+  // TODO: also get users who have since left the team
+  const team = await teamModel
+    .findById(req.query.team)
+    .populate("members", "displayName")
+    .select("assignment members")
+    .lean();
+  const idsToNames = team.members.reduce((acc, member) => {
+    acc[member._id] = member.displayName;
+    return acc;
+  }, {});
+  const checkIns = await checkinModel.find({
+    peerReview: req.query.peerReview,
+    team: req.query.team,
+  }).select("_id reviewer effortPoints reviews").lean();
+  console.log(checkIns);
+  // Generate the summaries
+  const {netScores, totalScores} = checkinStatistics(checkIns);
+  const skillsRatingsSummary = peerReviewSkillsStatistics(checkIns);
+  const reviewComments = [];
+  // Add names in and gather review comments together
+  const checkInsNames = checkIns.map(c => {
+    const reviewer = idsToNames[c.reviewer];
+    const effortPoints = Object.keys(c.effortPoints).reduce((acc, recipient) => {
+      acc[idsToNames[recipient] ?? "Unknown student"] = c.effortPoints[recipient];
+      return acc;
+    }, {});
+    if (c.reviews) reviewComments.push(...Object.keys(c.reviews).map(forId => ({
+      fromId: c.reviewer,
+      fromName: reviewer,
+      forId,
+      forName: idsToNames[forId] ?? "Unknown student",
+      comment: c.reviews[forId].comment,
+    })));
+    return { _id: c._id, reviewer, effortPoints, };
+  });
+  const netScoresNames = Object.keys(netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: netScores[id] }), {});
+  const totalScoresNames = Object.keys(totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: totalScores[id] }), {});
+  const skillRatingsNames = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {});
+  if (checkIns.length === 0)
+    throw new GenericNotFoundError("No peer review data could be found for those search parameters.");
+  if (reviewComments.length === 0) {
+    return res.json({ checkIns: checkInsNames, netScores: netScoresNames, totalScores: totalScoresNames});
+  } else {
+    return res.json({ skillRatings: skillRatingsNames, reviewComments, checkIns: checkInsNames, netScores: netScoresNames, totalScores: totalScoresNames});
+  }
 };
