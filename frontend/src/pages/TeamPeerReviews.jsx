@@ -8,6 +8,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { ArrowLeftShort, CursorFill, QuestionCircleFill } from "react-bootstrap-icons";
 import WorkloadBalanceChart from "@/features/peerReviews/WorkloadBalanceChart";
 import SkillRatingsChart from "@/features/peerReviews/SkillRatingsChart";
+import ReviewComments from "@/features/peerReviews/ReviewComments";
 
 function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
@@ -225,10 +226,11 @@ function TeamPeerReviews() {
 
       { currentPeerReview && 
       <Row className="mt-3 gy-3">
+        <Col md={8}>
+          <ReviewComments reviewComments={currentPeerReview?.reviewComments} currentStudent={currentStudent} />
+        </Col>
         <Col md={4}>
           <WorkloadBalanceChart netScores={currentPeerReview?.netScores} currentStudent={currentStudent} />
-        </Col>
-        <Col md={6}>
           <SkillRatingsChart skillRatings={currentPeerReview?.skillRatings} currentStudent={currentStudent} />
         </Col>
       </Row>
