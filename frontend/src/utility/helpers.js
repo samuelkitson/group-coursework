@@ -17,7 +17,7 @@ export function extractNameParts(fullName) {
 }
 
 export function calculateAverage(numbers) {
-  return numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
+  return (numbers.reduce((sum, num) => sum + num, 0) / numbers.length).toFixed(2);
 }
 
 export const ASSIGNMENT_STATES = [
