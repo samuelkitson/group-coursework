@@ -13,26 +13,26 @@ function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
 
-  const [peerReviewPoints, setPeerReviewPoints] = useState([]);
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const [currentPeerReview, setCurrentPeerReview] = useState(null);
-  const [studentOptions, setStudentOptions] = useState([]);
-  const [selectedStudentIndex, setSelectedStudentIndex] = useState(null);
+  const [peerReviewPoints, setPeerReviewPoints] = useState([]); // Generic details of all previous review points
+  const [selectedReviewIndex, setSelectedReviewIndex] = useState(0); // The index of the selected review point
+  const [studentOptions, setStudentOptions] = useState([]); // The list of student names for the selected review point
+  const [selectedStudentIndex, setSelectedStudentIndex] = useState(null); // The ID of the selected student
+  const [currentPeerReview, setCurrentPeerReview] = useState(null); // The full submissions of the selected review point
   const [isLoading, setIsLoading] = useState(true);
 
-  const currentOption = peerReviewPoints[selectedIndex];
+  const currentReviewPoint = peerReviewPoints[selectedReviewIndex];
   const currentStudent = studentOptions[selectedStudentIndex];
 
   const handlePreviousReview = () => {
-    if (selectedIndex <= 0) return;
-    setSelectedIndex((prevIndex) => prevIndex - 1);
+    if (selectedReviewIndex <= 0) return;
+    setSelectedReviewIndex((prevIndex) => prevIndex - 1);
   };
   const handleNextReview = () => {
-    if (selectedIndex >= peerReviewPoints.length - 1) return;
-    setSelectedIndex((prevIndex) => prevIndex + 1);
+    if (selectedReviewIndex >= peerReviewPoints.length - 1) return;
+    setSelectedReviewIndex((prevIndex) => prevIndex + 1);
   };
   const handleSelectReview = (index) => {
-    setSelectedIndex(index);
+    setSelectedReviewIndex(index);
   };
 
   const handlePreviousStudent = () => {
@@ -50,9 +50,9 @@ function TeamPeerReviews() {
   const loadCurrentPeerReview = () => {
     setCurrentPeerReview(null);
     setIsLoading(true);
-    if (!currentOption) return;
+    if (!currentReviewPoint) return;
     api
-      .get(`/api/checkin/response?peerReview=${currentOption?._id}&team=${selectedTeam._id}`, {genericErrorToasts: false})
+      .get(`/api/checkin/response?peerReview=${currentReviewPoint?._id}&team=${selectedTeam._id}`, {genericErrorToasts: false})
       .then((resp) => {
         return resp.data;
       })
@@ -72,7 +72,7 @@ function TeamPeerReviews() {
   }
 
   const refreshData = () => {
-    setSelectedIndex(0);
+    setSelectedReviewIndex(0);
     setCurrentPeerReview(null);
     setSelectedStudentIndex(null);
     setStudentOptions([]);
@@ -92,9 +92,9 @@ function TeamPeerReviews() {
         });
         setPeerReviewPoints(formatted);
         if (existing.length > 0) {
-          setSelectedIndex(existing.length - 1);
+          setSelectedReviewIndex(existing.length - 1);
         } else {
-          setSelectedIndex(0);
+          setSelectedReviewIndex(0);
         }
       })
       .finally(() => {
@@ -105,7 +105,7 @@ function TeamPeerReviews() {
   // Refresh data on page load
   useEffect(refreshData, [selectedTeam]);
   // Refresh current peer review data when it changes
-  useEffect(loadCurrentPeerReview, [selectedIndex]);
+  useEffect(loadCurrentPeerReview, [selectedReviewIndex]);
 
   return (
     <>
@@ -154,14 +154,14 @@ function TeamPeerReviews() {
             </Button>
             <Dropdown onSelect={(eventKey) => handleSelectReview(parseInt(eventKey))}>
               <Dropdown.Toggle variant="outline-primary" size="sm" className="px-4">
-                {`${currentOption?.periodStart} - ${currentOption?.periodEnd} (${currentOption?.type})`}
+                {`${currentReviewPoint?.periodStart} - ${currentReviewPoint?.periodEnd} (${currentReviewPoint?.type})`}
               </Dropdown.Toggle>
               <Dropdown.Menu className="shadow">
                 {peerReviewPoints.map((prp, index) => (
                   <Dropdown.Item
                     key={prp._id}
                     eventKey={index}
-                    active={index === selectedIndex}
+                    active={index === selectedReviewIndex}
                   >
                     {`${prp?.periodStart} - ${prp?.periodEnd} (${prp?.type})`}
                   </Dropdown.Item>
@@ -209,7 +209,7 @@ function TeamPeerReviews() {
       </Row>
       }
 
-      { (currentOption && !currentPeerReview && !isLoading) &&
+      { (currentReviewPoint && !currentPeerReview && !isLoading) &&
         <Card className="mt-4">
           <Card.Body>
             <Card.Title className="d-flex align-items-center">
