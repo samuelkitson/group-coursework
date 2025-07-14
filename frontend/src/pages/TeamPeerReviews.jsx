@@ -7,6 +7,7 @@ import { format, parseISO } from "date-fns";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { ArrowLeftShort, CursorFill, QuestionCircleFill } from "react-bootstrap-icons";
 import WorkloadBalanceChart from "@/features/peerReviews/WorkloadBalanceChart";
+import SkillRatingsChart from "@/features/peerReviews/SkillRatingsChart";
 
 function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
@@ -118,9 +119,8 @@ function TeamPeerReviews() {
         <Col md={9}>
           <h1>Peer reviews (Team {selectedTeam?.teamNumber})</h1>
           <p className="text-muted">
-            Use these tools to monitor Team {selectedTeam?.teamNumber}'s peer
-            reviews and check-ins. You should moderate any outstanding peer
-            review comments and may add your own private comments.
+            Monitor and moderate Team {selectedTeam?.teamNumber}'s peer
+            reviews and check-ins. You can also add private notes.
           </p>
         </Col>
       </Row>
@@ -141,17 +141,19 @@ function TeamPeerReviews() {
       }
 
       { peerReviewPoints.length > 0 &&
-      <Row className="gy-2">
-        <Col xs={12} md={6}>
-          <p className="text-muted mb-1">
-            Find peer reviews submitted in:
+      <Row className="gy-1">
+        <Col xs={12} md={6} lg="auto">
+          <p className="text-muted mb-0 mb-md-1">
+            Review period:
           </p>
+        </Col>
+        <Col xs={12} md={6} lg={4}>
           <InputGroup>
-            <Button variant="outline-primary" onClick={handlePreviousReview}>
+            <Button variant="outline-primary" size="sm" onClick={handlePreviousReview}>
               &lt;
             </Button>
             <Dropdown onSelect={(eventKey) => handleSelectReview(parseInt(eventKey))}>
-              <Dropdown.Toggle variant="outline-primary" className="px-4">
+              <Dropdown.Toggle variant="outline-primary" size="sm" className="px-4">
                 {`${currentOption?.periodStart} - ${currentOption?.periodEnd} (${currentOption?.type})`}
               </Dropdown.Toggle>
               <Dropdown.Menu className="shadow">
@@ -166,22 +168,24 @@ function TeamPeerReviews() {
                 ))}
               </Dropdown.Menu>
             </Dropdown>
-            <Button variant="outline-primary" onClick={handleNextReview}>
+            <Button variant="outline-primary" size="sm" onClick={handleNextReview}>
               &gt;
             </Button>
           </InputGroup>
         </Col>
-        { currentPeerReview &&
-          <Col xs={12} md={6}>
+        { currentPeerReview && <>
+          <Col xs={12} md={6} lg="auto">
             <p className="text-muted mb-1">
-              Show results for:
+              Team member: 
             </p>
+          </Col>
+          <Col xs={12} md={6} lg={4}>
             <InputGroup>
-              <Button variant="outline-primary" onClick={handlePreviousStudent}>
+              <Button variant="outline-primary" size="sm" onClick={handlePreviousStudent}>
                 &lt;
               </Button>
               <Dropdown onSelect={(eventKey) => handleSelectStudent(parseInt(eventKey))}>
-                <Dropdown.Toggle variant="outline-primary" className="px-4">
+                <Dropdown.Toggle variant="outline-primary" size="sm" className="px-4">
                   { currentStudent ?? "Select a student" }
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="shadow">
@@ -196,19 +200,36 @@ function TeamPeerReviews() {
                   ))}
                 </Dropdown.Menu>
               </Dropdown>
-              <Button variant="outline-primary" onClick={handleNextStudent}>
+              <Button variant="outline-primary" size="sm" onClick={handleNextStudent}>
                 &gt;
               </Button>
             </InputGroup>
           </Col>
-        }
+        </>}
       </Row>
       }
 
+      { (currentOption && !currentPeerReview && !isLoading) &&
+        <Card className="mt-4">
+          <Card.Body>
+            <Card.Title className="d-flex align-items-center">
+              <QuestionCircleFill className="me-2" /> No submissions
+            </Card.Title>
+            <p className="text-muted mb-0">
+              None of the students in Team {selectedTeam.teamNumber} completed
+              their check-in for the selected week.
+            </p>
+          </Card.Body>
+        </Card>
+      }
+
       { currentPeerReview && 
-      <Row className="mt-3">
+      <Row className="mt-3 gy-3">
         <Col md={4}>
           <WorkloadBalanceChart netScores={currentPeerReview?.netScores} currentStudent={currentStudent} />
+        </Col>
+        <Col md={6}>
+          <SkillRatingsChart skillRatings={currentPeerReview?.skillRatings} currentStudent={currentStudent} />
         </Col>
       </Row>
       }
