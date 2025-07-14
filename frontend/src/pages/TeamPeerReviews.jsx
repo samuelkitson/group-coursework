@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/authStore";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Card, Col, Container, Dropdown, InputGroup, Row } from "react-bootstrap";
+import { Button, Card, Col, Container, Dropdown, InputGroup, Placeholder, Row, Spinner } from "react-bootstrap";
 import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
 import { useBoundStore } from "@/store/dataBoundStore";
@@ -133,7 +133,7 @@ function TeamPeerReviews() {
         </Col>
       </Row>
 
-      { peerReviewPoints.length === 0 &&
+      { (peerReviewPoints.length === 0 && !isLoading) &&
         <Card className="my-2">
           <Card.Body>
             <Card.Title className="d-flex align-items-center">
@@ -181,44 +181,42 @@ function TeamPeerReviews() {
             </Button>
           </InputGroup>
         </Col>
-        { currentPeerReview && <>
-          <Col xs={12} md={4} xl="auto">
-            <p className="text-muted mb-1">
-              Team member: 
-            </p>
-          </Col>
-          <Col xs={12} md={8} xl={4}>
-            <InputGroup>
-              <Button variant="outline-primary" size="sm" onClick={handlePreviousStudent}>
-                &lt;
-              </Button>
-              <Dropdown onSelect={(eventKey) => handleSelectStudent(parseInt(eventKey))}>
-                <Dropdown.Toggle variant="outline-primary" size="sm" className="px-4">
-                  { currentStudent ?? "Select a student" }
-                </Dropdown.Toggle>
-                <Dropdown.Menu className="shadow">
-                  {studentOptions.map((s, index) => (
-                    <Dropdown.Item
-                      key={index}
-                      eventKey={index}
-                      active={index === selectedStudentIndex}
-                    >
-                      {s}
-                    </Dropdown.Item>
-                  ))}
-                </Dropdown.Menu>
-              </Dropdown>
-              <Button variant="outline-primary" size="sm" onClick={handleNextStudent}>
-                &gt;
-              </Button>
-            </InputGroup>
-          </Col>
-        </>}
+        <Col xs={12} md={4} xl="auto">
+          <p className="text-muted mb-1">
+            Team member: 
+          </p>
+        </Col>
+        <Col xs={12} md={8} xl={4}>
+          <InputGroup>
+            <Button variant="outline-primary" size="sm" onClick={handlePreviousStudent} disabled={!currentPeerReview}>
+              &lt;
+            </Button>
+            <Dropdown onSelect={(eventKey) => handleSelectStudent(parseInt(eventKey))}>
+              <Dropdown.Toggle variant="outline-primary" size="sm" className="px-4" disabled={!currentPeerReview}>
+                { currentStudent ?? "Select a student" }
+              </Dropdown.Toggle>
+              <Dropdown.Menu className="shadow">
+                {studentOptions.map((s, index) => (
+                  <Dropdown.Item
+                    key={index}
+                    eventKey={index}
+                    active={index === selectedStudentIndex}
+                  >
+                    {s}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+            <Button variant="outline-primary" size="sm" onClick={handleNextStudent} disabled={!currentPeerReview}>
+              &gt;
+            </Button>
+          </InputGroup>
+        </Col>
       </Row>
       }
 
       { (currentReviewPoint && !currentPeerReview && !isLoading) &&
-        <Card className="mt-4">
+        <Card className="mt-4 shadow">
           <Card.Body>
             <Card.Title className="d-flex align-items-center">
               <QuestionCircleFill className="me-2" /> No submissions
@@ -229,6 +227,13 @@ function TeamPeerReviews() {
             </p>
           </Card.Body>
         </Card>
+      }
+
+      { isLoading &&
+        <div className="mt-4 d-flex align-items-center text-muted">
+          <Spinner className="me-3" />
+          Loading...
+        </div>
       }
 
       { currentPeerReview && 

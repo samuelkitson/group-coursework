@@ -3,25 +3,19 @@ import { PersonCircle, QuestionCircle, QuestionCircleFill } from "react-bootstra
 
 const ReviewComments = ({reviewComments, currentStudent}) => {
   if (!reviewComments || !currentStudent) {
-    return (<Card>
-              <Card.Body>
-                <Card.Title className="d-flex align-items-center">
-                  <QuestionCircleFill className="me-2" /> Workload balance only
-                </Card.Title>
-                <p className="text-muted mb-0">
-                  This week was configured as a "simple" check-in and students
-                  were only asked to rate the workload balance.
-                </p>
-              </Card.Body>
-            </Card>);
-
-    return (<>
-    
-      <p className="text-muted">
-        This week was configured as a "simple" check-in, and students were only
-        asked to rate the workload balance.
-      </p>
-    </>);
+    return (
+      <Card className="shadow">
+        <Card.Body>
+          <Card.Title className="d-flex align-items-center">
+            <QuestionCircleFill className="me-2" /> Workload balance only
+          </Card.Title>
+          <p className="text-muted mb-0">
+            This week was configured as a "simple" check-in and students
+            were only asked to rate the workload balance.
+          </p>
+        </Card.Body>
+      </Card>
+    );
   }
 
   const receivedComments = reviewComments.filter(c => c.forName === currentStudent);
@@ -32,7 +26,7 @@ const ReviewComments = ({reviewComments, currentStudent}) => {
         <QuestionCircle className="me-2" />
         None of {currentStudent}'s team members submitted peer reviews.
       </div>}
-      <ListGroup>
+      <ListGroup className="shadow">
         {receivedComments.map((comment, idx) => (
           <ListGroup.Item key={`review-comment-${idx}`}>
             <Row>
