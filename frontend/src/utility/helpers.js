@@ -16,6 +16,10 @@ export function extractNameParts(fullName) {
   return parts[0];
 }
 
+export function calculateAverage(numbers) {
+  return numbers.reduce((sum, num) => sum + num, 0) / numbers.length;
+}
+
 export const ASSIGNMENT_STATES = [
   {
     id: "pre-allocation",
