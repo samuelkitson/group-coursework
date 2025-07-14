@@ -35,7 +35,7 @@ function WithNavigation() {
   return (
     <>
       <Navigation>
-        <Container className="mt-3">
+        <Container className="mx-1 mt-3" fluid>
           <Outlet />
         </Container>
       </Navigation>
