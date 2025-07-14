@@ -35,7 +35,7 @@ function WithNavigation() {
   return (
     <>
       <Navigation>
-        <Container className="mt-4">
+        <Container className="mt-3">
           <Outlet />
         </Container>
       </Navigation>
