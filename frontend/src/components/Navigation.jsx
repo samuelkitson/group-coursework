@@ -82,14 +82,14 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
   };
 
   return (
-    <Nav className={isSidebar ? "flex-column p-3 me-5" : "flex-column"} style={{ whiteSpace: 'nowrap' }}>
+    <Nav className={isSidebar ? "flex-column p-3" : "flex-column"} style={{ whiteSpace: 'nowrap' }}>
       <Nav.Link as={Link} to="/dashboard" onClick={hideOffcanvas} className={collapsed ? "text-center px-0" : ""}>
-        <HouseDoor />
-        {!collapsed && " Dashboard"}
+        <HouseDoor className="me-2" />
+        {!collapsed && "Dashboard"}
       </Nav.Link>
       <Nav.Link as={Link} to="/profile" onClick={hideOffcanvas} className={collapsed ? "text-center px-0" : ""}>
-        <PersonCircle />
-        {!collapsed && " Profile"}
+        <PersonCircle className="me-2" />
+        {!collapsed && "Profile"}
       </Nav.Link>
 
       <div className="border-top my-2" />
@@ -135,8 +135,8 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
                         key={index}
                       >
                         <div className="d-flex align-items-center">
-                          <option.icon />
-                          <span className="ms-2">{option.label}</span>
+                          <option.icon className="me-2" />
+                          <span>{option.label}</span>
                         </div>
                         { option.badge && 
                           <Badge className="rounded-pill" bg="danger">1</Badge>
@@ -153,12 +153,12 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
       }
 
       <Nav.Link as={Link} to="/help" onClick={hideOffcanvas} className={collapsed ? "text-center px-0" : ""}>
-        <InfoCircle />
-        {!collapsed && " Help"}
+        <InfoCircle className="me-2" />
+        {!collapsed && "Help"}
       </Nav.Link>
       { !collapsed &&
       <Nav.Link onClick={logoutAndHide} className={collapsed ? "text-center px-0" : ""}>
-        <BoxArrowRight />
+        <BoxArrowRight className="me-2" />
         Logout
       </Nav.Link>
       }
@@ -212,13 +212,12 @@ const Navigation = ({ children }) => {
       <Container fluid className="d-flex flex-column vh-100">
         <Row className="flex-grow-1">
           {/* Large devices - sidebar with navigation, toggleable */}
-          <Col 
-            lg={sidebarCollapsed ? "1" : "3"} 
+          <Col
             className="d-none d-lg-block bg-light h-100 position-relative"
             style={{ 
               transition: 'all 0.3s ease',
               minWidth: sidebarCollapsed ? '70px' : '250px',
-              maxWidth: sidebarCollapsed ? '60px' : '250px',
+              maxWidth: sidebarCollapsed ? '70px' : '325px',
               overflow: 'hidden'
             }}
           >
