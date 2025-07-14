@@ -37,32 +37,29 @@ const SkillRatingsChart = ({skillRatings, currentStudent}) => {
   const skillsCount = Object.keys(skillRatings[currentStudent]).length;
 
   return (
-    <Card className="pt-3 shadow-sm">
-      <h5 className="text-center mb-1">Skill ratings</h5>
-      <ResponsiveContainer width="100%" height={skillsCount*50 + 50}>
-        <BarChart
-          layout="vertical" 
-          data={chartData}
-          margin={{
-            top: 15,
-            right: 15,
-            left: 100,
-            bottom: 15,
-          }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis type="number" dataKey="Peer rating" domain={[0, 5]}/> 
-          <YAxis type="category" dataKey="Skill" axisLine={{ strokeWidth: 0 }} /> 
-          <Tooltip cursor={false} />
-          <Bar dataKey="Peer rating">
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={barColours[index]} />
-            ))}
-          </Bar>
-          <ReferenceLine x={0} stroke="#666" />
-        </BarChart>
-      </ResponsiveContainer>
-    </Card>
+    <ResponsiveContainer width="100%" height={skillsCount*50 + 50}>
+      <BarChart
+        layout="vertical" 
+        data={chartData}
+        margin={{
+          top: 15,
+          right: 15,
+          left: 100,
+          bottom: 15,
+        }}
+      >
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis type="number" dataKey="Peer rating" domain={[0, 5]}/> 
+        <YAxis type="category" dataKey="Skill" axisLine={{ strokeWidth: 0 }} /> 
+        <Tooltip cursor={false} />
+        <Bar dataKey="Peer rating">
+          {chartData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={barColours[index]} />
+          ))}
+        </Bar>
+        <ReferenceLine x={0} stroke="#666" />
+      </BarChart>
+    </ResponsiveContainer>
   );
 };
 

@@ -33,9 +33,15 @@ function TeamPeerReviews() {
     setSelectedReviewIndex((prevIndex) => prevIndex + 1);
   };
   const handleSelectReview = (index) => {
-    setSelectedReviewIndex(index);
+    setSelectedReviewIndex(index)
   };
 
+  const setDefaultStudent = () => {
+    // If no student selected, just choose the first one
+    if (!selectedStudentIndex) {
+      setSelectedStudentIndex(0);
+    }
+  };
   const handlePreviousStudent = () => {
     if (selectedStudentIndex <= 0) return setSelectedStudentIndex(studentOptions.length - 1);
     setSelectedStudentIndex((prevIndex) => prevIndex - 1);
@@ -61,6 +67,7 @@ function TeamPeerReviews() {
         setCurrentPeerReview(data);
         const studentOptions = Object.keys(data?.netScores ?? {});
         setStudentOptions(studentOptions);
+        setDefaultStudent();
       })
       .catch(() => {
         setCurrentPeerReview(null);
@@ -127,7 +134,7 @@ function TeamPeerReviews() {
       </Row>
 
       { peerReviewPoints.length === 0 &&
-        <Card className="my-3">
+        <Card className="my-2">
           <Card.Body>
             <Card.Title className="d-flex align-items-center">
               <QuestionCircleFill className="me-2" /> No data
@@ -143,12 +150,12 @@ function TeamPeerReviews() {
 
       { peerReviewPoints.length > 0 &&
       <Row className="gy-1">
-        <Col xs={12} md={6} lg="auto">
+        <Col xs={12} md={4} xl="auto">
           <p className="text-muted mb-0 mb-md-1">
             Review period:
           </p>
         </Col>
-        <Col xs={12} md={6} lg={4}>
+        <Col xs={12} md={8} xl={4}>
           <InputGroup>
             <Button variant="outline-primary" size="sm" onClick={handlePreviousReview}>
               &lt;
@@ -175,12 +182,12 @@ function TeamPeerReviews() {
           </InputGroup>
         </Col>
         { currentPeerReview && <>
-          <Col xs={12} md={6} lg="auto">
+          <Col xs={12} md={4} xl="auto">
             <p className="text-muted mb-1">
               Team member: 
             </p>
           </Col>
-          <Col xs={12} md={6} lg={4}>
+          <Col xs={12} md={8} xl={4}>
             <InputGroup>
               <Button variant="outline-primary" size="sm" onClick={handlePreviousStudent}>
                 &lt;

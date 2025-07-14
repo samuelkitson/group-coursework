@@ -44,10 +44,9 @@ const WorkloadBalanceChart = ({netScores, currentStudent}) => {
   };
 
   return (
-    <Card className="pt-3 shadow-sm">
-      <h5 className="text-center mb-1">Workload balance</h5>
+    <div>
       <p className="text-muted text-center mb-0 px-3">{helperText()}</p>
-      <ResponsiveContainer width="100%" height={200}>
+      <ResponsiveContainer width="100%" height={150}>
         <BarChart
           data={chartData}
           margin={{
@@ -69,7 +68,7 @@ const WorkloadBalanceChart = ({netScores, currentStudent}) => {
           <ReferenceLine y={0} stroke="#666" />
         </BarChart>
       </ResponsiveContainer>
-    </Card>
+    </div>
   );
 };
 

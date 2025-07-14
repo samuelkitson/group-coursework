@@ -1,9 +1,27 @@
-import { Col, ListGroup, Row } from "react-bootstrap";
-import { PersonCircle, QuestionCircle } from "react-bootstrap-icons";
+import { Card, Col, ListGroup, Row } from "react-bootstrap";
+import { PersonCircle, QuestionCircle, QuestionCircleFill } from "react-bootstrap-icons";
 
 const ReviewComments = ({reviewComments, currentStudent}) => {
   if (!reviewComments || !currentStudent) {
-    return <></>;
+    return (<Card>
+              <Card.Body>
+                <Card.Title className="d-flex align-items-center">
+                  <QuestionCircleFill className="me-2" /> Workload balance only
+                </Card.Title>
+                <p className="text-muted mb-0">
+                  This week was configured as a "simple" check-in and students
+                  were only asked to rate the workload balance.
+                </p>
+              </Card.Body>
+            </Card>);
+
+    return (<>
+    
+      <p className="text-muted">
+        This week was configured as a "simple" check-in, and students were only
+        asked to rate the workload balance.
+      </p>
+    </>);
   }
 
   const receivedComments = reviewComments.filter(c => c.forName === currentStudent);
