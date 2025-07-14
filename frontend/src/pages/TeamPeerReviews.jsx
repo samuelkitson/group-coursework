@@ -87,7 +87,7 @@ function TeamPeerReviews() {
     setIsLoading(true);
     // Get the current setup
     api
-      .get(`/api/peer-review?assignment=${selectedAssignment._id}&pastOnly=true`)
+      .get(`/api/peer-review?assignment=${selectedAssignment._id}&pastOnly=true&ignoreNone=true`)
       .then((resp) => {
         return resp.data;
       })

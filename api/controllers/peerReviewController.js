@@ -10,6 +10,8 @@ exports.getPeerReviewStructure = async (req, res) => {
     query.periodEnd = { $lte: new Date() };
   if (req.query.futureOnly)
     query.periodStart = { $gte: new Date() };
+  if (req.query.ignoreNone)
+    query.type = { $in: ["simple", "full"] };
   // Extract all peer review points for this assignment
   const peerReviews = await peerReviewModel
     .find(query)
