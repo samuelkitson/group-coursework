@@ -190,6 +190,7 @@ exports.getCheckInResponse = async (req, res) => {
       forId,
       forName: idsToNames[forId] ?? "Unknown student",
       comment: c.reviews[forId].comment,
+      originalComment: c.reviews[forId]?.originalComment,
     })));
     return { _id: c._id, reviewer, effortPoints, };
   });
@@ -203,4 +204,42 @@ exports.getCheckInResponse = async (req, res) => {
   } else {
     return res.json({ skillRatings: skillRatingsNames, reviewComments, checkIns: checkInsNames, netScores: netScoresNames, totalScores: totalScoresNames});
   }
+};
+
+exports.moderateResponse = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.body.peerReview))
+    throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  if (!Types.ObjectId.isValid(req.body.team))
+    throw new InvalidObjectIdError("The provided team ID is invalid.");
+  if (!Types.ObjectId.isValid(req.body.reviewer))
+    throw new InvalidObjectIdError("The provided reviewer ID is invalid.");
+  if (!Types.ObjectId.isValid(req.body.recipient))
+    throw new InvalidObjectIdError("The provided recipient ID is invalid.");
+  const moderatedComment = req.body.moderatedComment ?? undefined;
+  await checkTeamRole(req.body.team, req.session.userId, "supervisor/lecturer");
+  // Find the check-in
+  const checkIn = await checkinModel.findOne({
+    peerReview: req.body.peerReview,
+    team: req.body.team,
+    reviewer: req.body.reviewer,
+  });
+  if (!checkIn)
+    throw new GenericNotFoundError("Unable to find the specified check-in submission.");
+  // Make sure it's a full check-in, and that the given recipient appears
+  if (!checkIn.reviews)
+    throw new InvalidParametersError("This is a simple check-in, and has no review comments to edit.")
+  let edited = false;
+  Object.keys(checkIn.reviews).forEach(r => {
+    if (r === req.body.recipient) {
+      edited = true;
+      if (!checkIn.reviews[r].originalComment)
+        checkIn.reviews[r].originalComment = checkIn.reviews[r].comment;
+      checkIn.reviews[r].comment = moderatedComment;
+    }
+  });
+  if (!edited)
+    throw new GenericNotFoundError("The review comment for that user couldn't be found.");
+  checkIn.markModified("reviews");
+  await checkIn.save();
+  return res.json({ message: "Review comment moderated successfully. "});
 };
