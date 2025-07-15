@@ -12,6 +12,7 @@ const meetingRoutes = require("./meetingRoutes");
 const checkinRoutes = require("./checkinRoutes");
 const peerReviewRoutes = require("./peerReviewRoutes");
 const supervisorRoutes = require("./supervisorRoutes");
+const reportRoutes = require("./reportRoutes");
 const testDataRoutes = require("./testDataRoutes");
 
 const router = express.Router();
@@ -28,6 +29,7 @@ router.use("/checkin", checkinRoutes);
 router.use("/meeting", meetingRoutes);
 router.use("/peer-review", peerReviewRoutes);
 router.use("/supervisor", supervisorRoutes);
+router.use("/report", reportRoutes);
 router.use("/test", testDataRoutes);
 
 // Heartbeat endpoint to check session status
