@@ -172,7 +172,6 @@ exports.getCheckInResponse = async (req, res) => {
     peerReview: req.query.peerReview,
     team: req.query.team,
   }).select("_id reviewer effortPoints reviews").lean();
-  console.log(checkIns);
   // Generate the summaries
   const {netScores, totalScores} = checkinStatistics(checkIns);
   const skillsRatingsSummary = peerReviewSkillsStatistics(checkIns);
@@ -232,9 +231,21 @@ exports.moderateResponse = async (req, res) => {
   Object.keys(checkIn.reviews).forEach(r => {
     if (r === req.body.recipient) {
       edited = true;
-      if (!checkIn.reviews[r].originalComment)
+      console.log(checkIn.reviews[r].originalComment == moderatedComment);
+      if (!checkIn.reviews[r].originalComment) {
+        // First time comment has been edited
         checkIn.reviews[r].originalComment = checkIn.reviews[r].comment;
-      checkIn.reviews[r].comment = moderatedComment;
+        checkIn.reviews[r].comment = moderatedComment;
+      } else {
+        if (checkIn.reviews[r].originalComment == moderatedComment) {
+          // Resetting back to unmoderated state
+          delete checkIn.reviews[r].originalComment;
+          checkIn.reviews[r].comment = moderatedComment;
+        } else {
+          // Comment has been edited before
+          checkIn.reviews[r].comment = moderatedComment;
+        }
+      }
     }
   });
   if (!edited)
