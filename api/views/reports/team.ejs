@@ -3,11 +3,148 @@
 <head>
   <title>Team progress report</title>
   <%- include('../partials/head'); %>
+  <style>
+    @media print {
+      .container-fluid { max-width: 100% !important; }
+      .card { break-inside: avoid; }
+      .table { break-inside: avoid; }
+      .shadow-sm { box-shadow: none !important; }
+      .bg-light { background-color: white !important; }
+      body { font-size: 12px !important; }
+      .display-5 { font-size: 2rem !important; }
+      .btn, .badge { -webkit-print-color-adjust: exact; }
+    }
+    
+    .compact-metric {
+      padding: 0.75rem !important;
+    }
+    
+    .compact-table td, .compact-table th {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.875rem;
+    }
+    
+    .team-member-item {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .team-member-item:last-child {
+      border-bottom: none;
+    }
+    
+    .progress-sm {
+      height: 16px !important;
+      font-size: 0.7rem;
+    }
+  </style>
 </head>
-<body>
-  <div class="card">
-    <div class="card-body">
-      Team report
+<body class="bg-light p-2">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-2">
+      <div class="col-12">
+        <h4 class="mb-0 text-dark fw-bold">Team <%= teamNumber %></h4>
+        <small class="text-muted">Progress Dashboard</small>
+      </div>
+    </div>
+
+    <!-- Team Members Section - Compressed -->
+    <div class="row mb-2">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-secondary text-white py-1">
+            <h6 class="mb-0 small"><i class="bi bi-people-fill me-1"></i>Team Members</h6>
+          </div>
+          <div class="card-body py-1">
+            <% teamMembers.forEach(function(member, index) { %>
+              <div class="team-member-item">
+                <div class="fw-semibold small"><%= member.displayName %></div>
+                <div class="text-muted" style="font-size: 0.7rem;"><%= member.email %></div>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meetings Overview - Compressed -->
+    <div class="row mb-2">
+      <div class="col-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center compact-metric">
+            <div class="display-5 text-primary fw-bold mb-0"><%= meetings.count %></div>
+            <div class="text-muted small">Meetings</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center compact-metric">
+            <div class="display-5 text-info fw-bold mb-0"><%= meetings.avgDaysBetween %></div>
+            <div class="text-muted small">Avg Days</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Table - Compressed -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white py-1">
+            <h6 class="mb-0 small"><i class="bi bi-bar-chart-fill me-1"></i>Attendance Overview</h6>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0 compact-table">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" class="fw-semibold">Member</th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-check-circle-fill text-success"></i>
+                    </th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-slash-circle-fill text-warning"></i>
+                    </th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-x-circle-fill text-danger"></i>
+                    </th>
+                    <th scope="col" class="text-center">Attendance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% Object.keys(attendance).forEach(member => { %>
+                  <tr>
+                    <td class="fw-semibold"><%= member %></td>
+                    <td class="text-center">
+                      <span class="badge bg-success rounded-pill px-2 py-1"><%= attendance[member].attended %></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-warning rounded-pill px-2 py-1"><%= attendance[member].apologies %></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-danger rounded-pill px-2 py-1"><%= attendance[member].absent %></span>
+                    </td>
+                    <td class="text-center">
+                      <div class="progress progress-sm">
+                        <div class="progress-bar <%= attendance[member].rate >= 80 ? 'bg-success' : attendance[member].rate >= 60 ? 'bg-warning' : 'bg-danger' %>" 
+                             role="progressbar" 
+                             style="width: <%= attendance[member].rate %>%;" 
+                             aria-valuenow="<%= attendance[member].rate %>" 
+                             aria-valuemin="0" aria-valuemax="100">
+                          <span class="fw-semibold"><%= attendance[member].rate %>%</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </body>

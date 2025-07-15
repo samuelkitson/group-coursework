@@ -124,6 +124,15 @@ exports.daysSince = (timestamp, numeric=true) => {
   return `${daysDifference} days ago`;
 }
 
+exports.daysBetween = (timestamp1, timestamp2) => {
+  const date1 = new Date(timestamp1);
+  const date2 = new Date(timestamp2);
+  const differenceInMilliseconds = Math.abs(date2.getTime() - date1.getTime());
+  const millisecondsInDay = 1000 * 60 * 60 * 24;
+  const differenceInDays = differenceInMilliseconds / millisecondsInDay;
+  return Math.floor(differenceInDays);
+}
+
 exports.hoursSince = (timestamp) => {
   const now = new Date();
   const date = new Date(timestamp);
