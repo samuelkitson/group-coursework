@@ -109,7 +109,7 @@ function TeamPeerReviews() {
         setIsLoading(false);
       });
   };
-  
+
   // Refresh data on page load
   useEffect(refreshData, [selectedTeam]);
   // Refresh current peer review data when it changes
@@ -239,7 +239,13 @@ function TeamPeerReviews() {
       { currentPeerReview && 
       <Row className="mt-3 gy-3">
         <Col md={8}>
-          <ReviewComments reviewComments={currentPeerReview?.reviewComments} currentStudent={currentStudent} />
+          <ReviewComments
+            peerReviewId={currentReviewPoint._id}
+            teamId={selectedTeam._id}
+            reviewComments={currentPeerReview?.reviewComments}
+            currentStudent={currentStudent}
+            reloadReview={loadCurrentPeerReview}
+          />
         </Col>
         <Col md={4}>
           <WorkloadBalanceChart netScores={currentPeerReview?.netScores} currentStudent={currentStudent} />
