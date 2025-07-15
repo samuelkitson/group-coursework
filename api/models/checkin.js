@@ -6,6 +6,7 @@ const fullReviewSchema = new Schema(
   {
     skills: { type: Object, of: Number, required: true, },
     comment: { type: String, required: true, },
+    originalComment: { type: String, required: false, },
   },
   { _id: false, },
 );

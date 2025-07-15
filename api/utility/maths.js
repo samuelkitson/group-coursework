@@ -77,6 +77,43 @@ exports.checkinStatistics = (reviews) => {
   return {netScores, totalScores};
 };
 
+/**
+ * Generates a summary of the peer-reviewed skills from a set of data. Supply a
+ * lean set of checkin objects for a single peer review point. Outputs an object
+ * with recipient IDs as keys, and values being another object with the list of
+ * received skill ratings for each skill area. For example:
+ * 
+ * {
+    "685575d4dd782a2174c0b3e0": {
+      "Communication": [3, 5, 5],
+      "Willingness to help": [1, 2, 4],
+      "Java programming": [2, 4, 3],
+      "Writing": [2, 4, 5]
+    }, ... and so on
+ */
+exports.peerReviewSkillsStatistics = (checkins) => {
+  const reviewsByRecipients = {};
+  // Iterate through each of the checkins (each submitted by a different person)
+  checkins.forEach(checkin => {
+    // For each checkin, iterate through the reviews they gave to others
+    if (!checkin.reviews) return;
+    Object.keys(checkin.reviews).forEach(recipient => {
+      if (!reviewsByRecipients.hasOwnProperty(recipient)) {
+        reviewsByRecipients[recipient] = {};
+      }
+      const givenSkills = checkin.reviews[recipient].skills
+      Object.keys(givenSkills).forEach(skill => {
+        if (reviewsByRecipients[recipient].hasOwnProperty(skill)) {
+          reviewsByRecipients[recipient][skill].push(givenSkills[skill]);
+        } else {
+          reviewsByRecipients[recipient][skill] = [givenSkills[skill]];
+        }
+      });
+    });
+  });
+  return reviewsByRecipients;
+};
+
 exports.daysSince = (timestamp, numeric=true) => {
   const now = new Date();
   const date = new Date(timestamp);

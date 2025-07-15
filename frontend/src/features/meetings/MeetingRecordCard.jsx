@@ -72,7 +72,7 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
 
           { (editAllowed || disputeAllowed) &&
             <Dropdown>
-              <Dropdown.Toggle variant="light" size="sm">
+              <Dropdown.Toggle variant="light" size="sm" className="no-caret">
                 <ThreeDotsVertical />
               </Dropdown.Toggle>
 
