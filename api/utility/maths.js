@@ -21,6 +21,10 @@ exports.calculateStats = (values) => {
   const median = values[midPoint];
 };
 
+exports.calculateAverage = (numbers) => {
+  return (numbers.reduce((sum, num) => sum + num, 0) / numbers.length).toFixed(2);
+}
+
 exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
   if (skills.length === 0) return "Skills not rated";
   const result =  Object.entries(skills).reduce(([prevSkill, prevRating], [skill, rating]) => {
@@ -91,7 +95,7 @@ exports.checkinStatistics = (reviews) => {
       "Writing": [2, 4, 5]
     }, ... and so on
  */
-exports.peerReviewSkillsStatistics = (checkins) => {
+exports.peerReviewSkillsStatistics = (checkins, averages=false) => {
   const reviewsByRecipients = {};
   // Iterate through each of the checkins (each submitted by a different person)
   checkins.forEach(checkin => {
@@ -111,7 +115,18 @@ exports.peerReviewSkillsStatistics = (checkins) => {
       });
     });
   });
-  return reviewsByRecipients;
+  if (averages) {
+    const reviewsAverages = {};
+    Object.keys(reviewsByRecipients).forEach(recipient => {
+      reviewsAverages[recipient] = Object.keys(reviewsByRecipients[recipient]).reduce((acc, skill) => {
+        acc[skill] = this.calculateAverage(reviewsByRecipients[recipient][skill]);
+        return acc;
+      }, {});
+    });
+    return reviewsAverages
+  } else {
+    return reviewsByRecipients;
+  }
 };
 
 exports.daysSince = (timestamp, numeric=true) => {

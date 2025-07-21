@@ -10,12 +10,9 @@
       .table { break-inside: avoid; }
       .shadow-sm { box-shadow: none !important; }
       .bg-light { background-color: white !important; }
-      body { font-size: 12px !important; }
       .display-5 { font-size: 2rem !important; }
       .btn, .badge { -webkit-print-color-adjust: exact; }
-    }
 
-    @media print {
       .collapse.print-show {
         display: block !important;
         height: auto !important;
@@ -44,6 +41,11 @@
       .progress {
         background-color: #e9ecef !important;
       }
+
+      .new-page-after {
+        break-after: page;
+        margin-top: 1em;
+      }
     }
     
     .compact-metric {
@@ -67,6 +69,18 @@
     .progress-sm {
       height: 16px !important;
       font-size: 0.7rem;
+    }
+
+    .fake-bullet-point::before {
+      content: "• ";
+    }
+
+    .review-comment::before {
+      content: open-quote;
+    }
+
+    .review-comment::after {
+      content: close-quote;
     }
   </style>
 </head>
@@ -96,21 +110,21 @@
     <div class="row my-2">
       <div class="col-12">
         <div class="card border-0 shadow-sm">
-          <div class="card-header bg-dark text-white py-1">
-            <h6 class="mb-0 small"><i class="bi bi-person-badge-fill me-1"></i>Student Profiles</h6>
+          <div class="card-header bg-dark text-white p-1">
+            <h6 class="mb-0 small"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
           </div>
 
-          <div class="card-body p-1">
+          <div class="card-body p-0 pb-1">
             <div class="accordion accordion-flush" id="studentAccordion">
               <% teamMembers.forEach(function(member, index) { %>
-                <div class="accordion-item">
+                <div class="accordion-item new-page-after student-details-item">
                   <h2 class="accordion-header" id="heading<%= index %>">
                     <button class="accordion-button collapsed py-1 px-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
                       <%= member.displayName %> <small class="ms-2 text-muted">(<%= member.email %>)</small>
                     </button>
                   </h2>
                   <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" aria-labelledby="heading<%= index %>" data-bs-parent="#studentAccordion">
-                    <div class="accordion-body py-1 small">
+                    <div class="accordion-body py-1 px-2 small">
                       <div class="row gx-3">
                         <!-- Attendance Summary -->
                         <div class="col-md-6 col-12 mb-2">
@@ -128,31 +142,33 @@
                         <!-- Skills Summary -->
                         <div class="col-md-6 col-12 mb-2">
                           <div class="fw-semibold text-dark mb-1">Skills</div>
-                          <% if (member.skills && Object.keys(member.skills).length > 0) { %>
-                            <% Object.entries(member.skills).forEach(([skill, value]) => { %>
-                              <div class="d-flex justify-content-between align-items-center">
-                                <span class="text-muted"><%= skill %></span>
-                                <div class="progress progress-sm flex-grow-1 ms-2">
-                                  <div class="progress-bar bg-info" style="width: <%= value %>%;">
-                                    <%= value %>%
-                                  </div>
+                          <% Object.entries(skillRatings[member.displayName]).forEach(([skill, value]) => { %>
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="text-muted"><%= skill %></span>
+                              <div class="progress progress-sm flex-grow-1 ms-2">
+                                <div class="progress-bar bg-info" style="width: <%= (value / 5 * 100) %>%;">
+                                  <%= value %> stars
                                 </div>
                               </div>
-                            <% }) %>
-                          <% } else { %>
-                            <div class="text-muted">No skill ratings</div>
-                          <% } %>
+                            </div>
+                          <% }) %>
                         </div>
                       </div>
 
                       <!-- Review -->
                       <div class="mt-2">
-                        <div class="fw-semibold text-dark mb-1">Review</div>
-                        <div class="text-muted">
-                          <%= member.review || "No comments provided." %>
+                        <div class="fw-semibold text-dark mb-1">Peer review comments</div>
+                        <% if ((reviewComments[member.displayName] ?? []).length > 0) { %>
+                          <% reviewComments[member.displayName].forEach(function(comment, index) { %>
+                          <div class="fake-bullet-point mb-1">
+                            <span class="text-dark review-comment"><%= comment.comment || "[Comment removed]" %></span> <span class="text-muted ms-1">- <%= comment.by %></span>
+                          </div>
+                          <% }); %>
+                        <% } else { %>
+                          <div class="text-muted">No review comments received</div>
+                        <% } %>
                         </div>
                       </div>
-                    </div>
 
                   </div>
                 </div>

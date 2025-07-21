@@ -6,7 +6,7 @@ const checkinModel = require("../models/checkin");
 const peerReviewModel = require("../models/peerReview");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError, ConfigurationError } = require("../errors/errors");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
-const { daysBetween } = require("../utility/maths");
+const { daysBetween, peerReviewSkillsStatistics, calculateAverage } = require("../utility/maths");
 const { summariseMeetingAttendance } = require("./meetingController");
 const ejs = require("ejs");
 const archiver = require("archiver");
@@ -34,11 +34,7 @@ summariseTeamData = async (team, assignment, peerReview) => {
   // Add report generation date
   currentDate = new Date();
   renderObj.generatedDate = format(currentDate, "dd/MM/yyyy");
-  // Add peer review point details
-  if (peerReview) {
-    renderObj.peerReview = {};
-    renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
-  }
+  // Add in assignment name and supervisors list
   renderObj.assignmentName = assignment?.name ?? "Unknown assignment";
   renderObj.supervisors = (team?.supervisors ?? []).map(s => s.displayName);
   // Make a helper for mapping user IDs to names for this team
@@ -61,13 +57,36 @@ summariseTeamData = async (team, assignment, peerReview) => {
   renderObj.meetings = meetingData;
   renderObj.attendance = summariseMeetingAttendance(teamMeetings, "displayName");
   // Pull out the check-in/peer review data
-  const checkins = await checkinModel.find({
-    team: new Types.ObjectId(team._id),
-  }).select("reviewer peerReview effortPoints").lean();
-  const peerReviewPoints = await peerReviewModel.find({
-    assignment: assignment._id,
-    periodEnd: { $lt: new Date() },
-  }).sort({ "periodStart": 1 }).lean();
+  // const checkins = await checkinModel.find({
+  //   team: new Types.ObjectId(team._id),
+  // }).select("reviewer peerReview effortPoints").lean();
+  // If fetching details of a specific peer review, pull out skills & comments
+  if (peerReview) {
+    renderObj.peerReview = {};
+    renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
+    const fullReviews = await checkinModel.find({
+      team: new Types.ObjectId(team._id),
+      peerReview: peerReview._id,
+    }).select("_id reviewer effortPoints reviews");
+    // Add in comments
+    const commentsByRecipient = {};
+    for (const review of fullReviews) {
+      const reviewerName = idsToNames[review.reviewer] ?? "[Ex-team member]";
+      Object.keys(review?.reviews ?? {}).forEach(forId => {
+        const recipientName = idsToNames[forId] ?? "[Ex-team member]";
+        const comment = review.reviews[forId].comment;
+        if (!commentsByRecipient.hasOwnProperty(recipientName)) {
+          commentsByRecipient[recipientName] = [{"comment": comment, "by": reviewerName}];
+        } else {
+          commentsByRecipient[recipientName].push({"comment": comment, "by": reviewerName});
+        }
+      });
+    }
+    renderObj.reviewComments = commentsByRecipient;
+    // Add in skill ratings
+    const skillsRatingsSummary = peerReviewSkillsStatistics(fullReviews, averages=true);
+    renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {});
+  }
   return renderObj;
 };
 
