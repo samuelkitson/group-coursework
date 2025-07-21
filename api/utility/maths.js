@@ -21,6 +21,10 @@ exports.calculateStats = (values) => {
   const median = values[midPoint];
 };
 
+exports.calculateAverage = (numbers) => {
+  return (numbers.reduce((sum, num) => sum + num, 0) / numbers.length).toFixed(2);
+}
+
 exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
   if (skills.length === 0) return "Skills not rated";
   const result =  Object.entries(skills).reduce(([prevSkill, prevRating], [skill, rating]) => {
@@ -91,7 +95,7 @@ exports.checkinStatistics = (reviews) => {
       "Writing": [2, 4, 5]
     }, ... and so on
  */
-exports.peerReviewSkillsStatistics = (checkins) => {
+exports.peerReviewSkillsStatistics = (checkins, averages=false) => {
   const reviewsByRecipients = {};
   // Iterate through each of the checkins (each submitted by a different person)
   checkins.forEach(checkin => {
@@ -111,7 +115,18 @@ exports.peerReviewSkillsStatistics = (checkins) => {
       });
     });
   });
-  return reviewsByRecipients;
+  if (averages) {
+    const reviewsAverages = {};
+    Object.keys(reviewsByRecipients).forEach(recipient => {
+      reviewsAverages[recipient] = Object.keys(reviewsByRecipients[recipient]).reduce((acc, skill) => {
+        acc[skill] = this.calculateAverage(reviewsByRecipients[recipient][skill]);
+        return acc;
+      }, {});
+    });
+    return reviewsAverages
+  } else {
+    return reviewsByRecipients;
+  }
 };
 
 exports.daysSince = (timestamp, numeric=true) => {
@@ -122,6 +137,15 @@ exports.daysSince = (timestamp, numeric=true) => {
   if (daysDifference === 0) return "today";
   if (daysDifference === 1) return "yesterday";
   return `${daysDifference} days ago`;
+}
+
+exports.daysBetween = (timestamp1, timestamp2) => {
+  const date1 = new Date(timestamp1);
+  const date2 = new Date(timestamp2);
+  const differenceInMilliseconds = Math.abs(date2.getTime() - date1.getTime());
+  const millisecondsInDay = 1000 * 60 * 60 * 24;
+  const differenceInDays = differenceInMilliseconds / millisecondsInDay;
+  return Math.floor(differenceInDays);
 }
 
 exports.hoursSince = (timestamp) => {

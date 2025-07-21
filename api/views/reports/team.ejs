@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Team <%= teamNumber %> - <%= assignmentName %> (progress report)</title>
+  <%- include('../partials/head'); %>
+  <style>
+    @media print {
+      .container-fluid { max-width: 100% !important; }
+      .card { break-inside: avoid; }
+      .table { break-inside: avoid; }
+      .shadow-sm { box-shadow: none !important; }
+      .bg-light { background-color: white !important; }
+      .display-5 { font-size: 2rem !important; }
+      .btn, .badge { -webkit-print-color-adjust: exact; }
+
+      .collapse.print-show {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
+      }
+
+      .accordion-button::after {
+        display: none !important;
+      }
+
+      .accordion-collapse.print-show {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
+      }
+
+      .accordion-button.collapsed {
+        background-color: #f8f9fa !important;
+      }
+
+      .progress-bar, .progress {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .progress {
+        background-color: #e9ecef !important;
+      }
+
+      .new-page-after {
+        break-after: page;
+        margin-top: 1em;
+      }
+    }
+    
+    .compact-metric {
+      padding: 0.75rem !important;
+    }
+    
+    .compact-table td, .compact-table th {
+      padding: 0.25rem 0.5rem !important;
+      font-size: 0.875rem;
+    }
+    
+    .team-member-item {
+      padding: 0.25rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .team-member-item:last-child {
+      border-bottom: none;
+    }
+    
+    .progress-sm {
+      height: 16px !important;
+      font-size: 0.7rem;
+    }
+
+    .fake-bullet-point::before {
+      content: "• ";
+    }
+
+    .review-comment::before {
+      content: open-quote;
+    }
+
+    .review-comment::after {
+      content: close-quote;
+    }
+
+    .skill-bar { height: 6px; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-light p-2">
+  <div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-2">
+      <div class="col-12">
+        <h4 class="mb-0 text-dark fw-bold">Team <%= teamNumber %> - <%= assignmentName %></h4>
+        <% if (supervisors.length > 0) { %>
+        <small class="text-muted">Supervised by: <%= supervisors.join(", ") %></small>
+        <br />
+        <% } else { %>
+        <small class="text-muted">No team supervisor</small>
+        <br />
+        <% } %>
+        <small class="text-muted">
+          Generated on <%= generatedDate %>
+          <% if (typeof peerReview !== "undefined") { %>
+          for the peer review week beginning <%= peerReview?.periodStart %>
+          <% } %>
+        </small>
+      </div>
+    </div>
+
+    <!-- Student Detail Accordion -->
+    <div class="row my-2">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-dark text-white p-1">
+            <h6 class="mb-0 small"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
+          </div>
+
+          <div class="card-body p-0 pb-1">
+            <div class="accordion accordion-flush" id="studentAccordion">
+              <% teamMembers.forEach(function(member, index) { %>
+                <div class="accordion-item new-page-after student-details-item">
+                  <h2 class="accordion-header" id="heading<%= index %>">
+                    <button class="accordion-button collapsed py-1 px-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
+                      <%= member.displayName %> <small class="ms-2 text-muted">(<%= member.email %>)</small>
+                    </button>
+                  </h2>
+                  <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" aria-labelledby="heading<%= index %>" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body py-1 px-2 small">
+                      <div class="row gx-3">
+                        <!-- Attendance Summary -->
+                        <div class="col-md-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark mb-1">Meetings to date</div>
+                          <div class="progress progress-sm mt-1">
+                            <div class="progress-bar 
+                              <%= (attendance[member.displayName]?.rate || 0) >= 80 ? 'bg-success' : 
+                                  (attendance[member.displayName]?.rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
+                                style="width: <%= attendance[member.displayName]?.rate || 0 %>%;">
+                              <%= attendance[member.displayName]?.rate || 0 %>% attendance
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Skills Summary -->
+                        <div class="col-md-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark mb-1">Skills</div>
+                          <% Object.entries(skillRatings[member.displayName]).forEach(([skill, value]) => { %>
+                            <% 
+                              const rating = parseFloat(value);
+                              const widthPercentage = (rating / 5) * 100;
+                              let barColorClass = "";
+
+                              if (rating <= 2) {
+                                barColorClass = "bg-danger";
+                              } else if (rating <= 3.5) {
+                                barColorClass = "bg-warning";
+                              } else {
+                                barColorClass = "bg-success";
+                              }
+                            %>
+                            <div class="mb-2">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted"><%= skill %></span>
+                                <span class="small fw-medium d-flex align-items-center text-muted"><%= value %> <i class="bi bi-star-fill small ms-1"></i></span>
+                              </div>
+                              <div class="progress skill-bar">
+                                <div class="progress-bar bg-primary <%= barColorClass %>" style="width: <%= widthPercentage %>%;"></div>
+                              </div>
+                            </div>
+                          <% }) %>
+                        </div>
+                      </div>
+
+                      <!-- Review -->
+                      <div class="mt-2">
+                        <div class="fw-semibold text-dark mb-1">Peer review comments</div>
+                        <% if ((reviewComments[member.displayName] ?? []).length > 0) { %>
+                          <% reviewComments[member.displayName].forEach(function(comment, index) { %>
+                          <div class="fake-bullet-point mb-1">
+                            <span class="text-dark review-comment"><%= comment.comment || "[Comment removed]" %></span> <span class="text-muted ms-1">- <%= comment.by %></span>
+                          </div>
+                          <% }); %>
+                        <% } else { %>
+                          <div class="text-muted">No review comments received</div>
+                        <% } %>
+                        </div>
+                      </div>
+
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meetings Overview - Compressed -->
+    <div class="row mb-2">
+      <div class="col-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center compact-metric">
+            <div class="display-5 text-primary fw-bold mb-0"><%= meetings.count %></div>
+            <div class="text-muted small">Meetings</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body text-center compact-metric">
+            <div class="display-5 text-info fw-bold mb-0"><%= meetings.avgDaysBetween %></div>
+            <div class="text-muted small">Avg Days</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Table - Compressed -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white py-1">
+            <h6 class="mb-0 small"><i class="bi bi-bar-chart-fill me-1"></i>Attendance Overview</h6>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0 compact-table">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col" class="fw-semibold">Member</th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-check-circle-fill text-success"></i>
+                    </th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-slash-circle-fill text-warning"></i>
+                    </th>
+                    <th scope="col" class="text-center">
+                      <i class="bi bi-x-circle-fill text-danger"></i>
+                    </th>
+                    <th scope="col" class="text-center">Attendance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% Object.keys(attendance).forEach(member => { %>
+                  <tr>
+                    <td class="fw-semibold"><%= member %></td>
+                    <td class="text-center">
+                      <span class="badge bg-success rounded-pill px-2 py-1"><%= attendance[member].attended %></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-warning rounded-pill px-2 py-1"><%= attendance[member].apologies %></span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-danger rounded-pill px-2 py-1"><%= attendance[member].absent %></span>
+                    </td>
+                    <td class="text-center">
+                      <div class="progress progress-sm">
+                        <div class="progress-bar <%= attendance[member].rate >= 80 ? 'bg-success' : attendance[member].rate >= 60 ? 'bg-warning' : 'bg-danger' %>" 
+                             role="progressbar" 
+                             style="width: <%= attendance[member].rate %>%;" 
+                             aria-valuenow="<%= attendance[member].rate %>" 
+                             aria-valuemin="0" aria-valuemax="100">
+                          <span class="fw-semibold"><%= attendance[member].rate %>%</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

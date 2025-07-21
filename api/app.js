@@ -16,6 +16,9 @@ const app = express();
 // Allow cookies to pass through nginx proxy
 app.set("trust proxy", "loopback");
 
+// Use EJS as a templating engine (for exportable reports)
+app.set("view engine", "ejs");
+
 // JSON middleware setup
 app.use(express.json({ limit: "1mb" }));
 

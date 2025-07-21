@@ -7,6 +7,48 @@ const { checkTeamRole } = require("../utility/auth");
 const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
 const checkin = require("../models/checkin");
 
+exports.checkInHistoryHelper = async (teamId) => {
+  // As a helper, also get the user ID => display name mapping
+  const team = await teamModel
+    .findById(teamId)
+    .populate("members", "displayName")
+    .select("assignment members")
+    .lean();
+  const idsToNames = team.members.reduce((acc, member) => {
+    acc[member._id] = member.displayName;
+    return acc;
+  }, {});
+
+  // Get all of the relevant check-ins, and group them together by the peer
+  // review points
+  const checkins = await checkinModel.find({
+    team: new Types.ObjectId(teamId),
+  }).select("reviewer peerReview effortPoints").lean();
+  const peerReviewPoints = await peerReviewModel.find({
+    assignment: team.assignment,
+    periodEnd: { $lt: new Date() },
+  }).sort({ "periodStart": 1 }).lean();
+
+  // For each peer review point, get the relevant check-ins from the team
+  // members and calculate the net and total scores
+  const checkinsGrouped = peerReviewPoints.map(p => {
+    const relevantCheckins = checkins.filter(c => p._id.equals(c.peerReview)) ?? [];
+    const {netScores, totalScores} = checkinStatistics(relevantCheckins);
+    return {...p, checkins: relevantCheckins, netScores, totalScores};
+  });
+
+  // Replace user IDs with names, and remove other unnecessary data
+  const simplifiedStats = checkinsGrouped.map(c => ({
+    periodStart: c.periodStart,
+    periodEnd: c.periodEnd,
+    type: c.type,
+    netScores: Object.keys(c.netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.netScores[id] }), {}),
+    totalScores: Object.keys(c.totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.totalScores[id] }), {}),
+  }));
+
+  return simplifiedStats;
+};
+
 exports.getCheckinStateStudent = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "member");
   // Get the current peer review state from the peer review collection
@@ -112,42 +154,8 @@ exports.submitCheckIn = async (req, res) => {
 
 exports.getCheckInHistory = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
-  // As a helper, also get the user ID => display name mapping
-  const team = await teamModel
-    .findById(req.query.team)
-    .populate("members", "displayName")
-    .select("assignment members")
-    .lean();
-  const idsToNames = team.members.reduce((acc, member) => {
-    acc[member._id] = member.displayName;
-    return acc;
-  }, {});
-
-  // Get all of the relevant check-ins, and group them together by the peer
-  // review points
-  const checkins = await checkinModel.find({
-    team: new Types.ObjectId(req.query.team),
-  }).select("reviewer peerReview effortPoints").lean();
-  const peerReviewPoints = await peerReviewModel.find({
-    assignment: team.assignment,
-    periodEnd: { $lt: new Date() },
-  }).sort({ "periodStart": 1 }).lean();
-
-  const checkinsGrouped = peerReviewPoints.map(p => {
-    const relevantCheckins = checkins.filter(c => p._id.equals(c.peerReview)) ?? [];
-    const {netScores, totalScores} = checkinStatistics(relevantCheckins);
-    return {...p, checkins: relevantCheckins, netScores, totalScores};
-  });
-
-  const simplifiedStats = checkinsGrouped.map(c => ({
-    periodStart: c.periodStart,
-    periodEnd: c.periodEnd,
-    type: c.type,
-    netScores: Object.keys(c.netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.netScores[id] }), {}),
-    totalScores: Object.keys(c.totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.totalScores[id] }), {}),
-  }));
-
-  return res.json({ checkins: simplifiedStats, });
+  const checkins = await this.checkInHistoryHelper(req.query.team);
+  return res.json({ checkins });
 };
 
 // Fetch by peer review point and team.
