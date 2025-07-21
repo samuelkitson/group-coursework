@@ -82,6 +82,8 @@
     .review-comment::after {
       content: close-quote;
     }
+
+    .skill-bar { height: 6px; border-radius: 3px; }
   </style>
 </head>
 <body class="bg-light p-2">
@@ -143,12 +145,26 @@
                         <div class="col-md-6 col-12 mb-2">
                           <div class="fw-semibold text-dark mb-1">Skills</div>
                           <% Object.entries(skillRatings[member.displayName]).forEach(([skill, value]) => { %>
-                            <div class="d-flex justify-content-between align-items-center">
-                              <span class="text-muted"><%= skill %></span>
-                              <div class="progress progress-sm flex-grow-1 ms-2">
-                                <div class="progress-bar bg-info" style="width: <%= (value / 5 * 100) %>%;">
-                                  <%= value %> stars
-                                </div>
+                            <% 
+                              const rating = parseFloat(value);
+                              const widthPercentage = (rating / 5) * 100;
+                              let barColorClass = "";
+
+                              if (rating <= 2) {
+                                barColorClass = "bg-danger";
+                              } else if (rating <= 3.5) {
+                                barColorClass = "bg-warning";
+                              } else {
+                                barColorClass = "bg-success";
+                              }
+                            %>
+                            <div class="mb-2">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted"><%= skill %></span>
+                                <span class="small fw-medium d-flex align-items-center text-muted"><%= value %> <i class="bi bi-star-fill small ms-1"></i></span>
+                              </div>
+                              <div class="progress skill-bar">
+                                <div class="progress-bar bg-primary <%= barColorClass %>" style="width: <%= widthPercentage %>%;"></div>
                               </div>
                             </div>
                           <% }) %>
