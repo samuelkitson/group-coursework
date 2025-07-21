@@ -11,14 +11,20 @@ const ejs = require("ejs");
 const archiver = require("archiver");
 const path = require("path");
 const { Readable } = require("stream");
+const { parseISO, format } = require("date-fns");
 
-generateTeamReportData = async (teamId) => {
+generateTeamReportData = async (teamId, peerReviewId) => {
   // Placeholder for the rendering object
   const renderObj = {};
+  // Add report generation date
+  currentDate = new Date();
+  renderObj.generatedDate = format(currentDate, "EEEE do MMMM yyyy");
   // Extract team details
-  const team = await teamModel.findById(teamId).populate("members", "displayName email").lean();
+  const team = await teamModel.findById(teamId).populate("members supervisors", "displayName email").populate("assignment", "name").lean();
   if (!team)
     throw new GenericNotFoundError("Unable to find the specified team.");
+  renderObj.assignmentName = team?.assignment?.name ?? "Unknown assignment";
+  renderObj.supervisors = (team?.supervisors ?? []).map(s => s.displayName);
   // Make a helper for mapping user IDs to names for this team
   const idsToNames = team.members.reduce((acc, member) => {
     acc[member._id] = member.displayName;
@@ -55,7 +61,35 @@ generateTeamReportData = async (teamId) => {
  */
 exports.generateTeamReports = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
-  const teamReportData = await generateTeamReportData(req.query.team);
+  const teamInfo = await teamModel.findById(req.query.team).select("assignment").lean();
+  // If a peer review point has been specified use that, otherwise use the most
+  // recent full review available
+  let peerReviewDetails;
+  if (req.query.peerReview) {
+    if (!Types.ObjectId.isValid(req.query.peerReview))
+      throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+    const foundReviews = await peerReviewModel.find({
+      _id: new Types.ObjectId(req.query.peerReview),
+      assignment: teamInfo.assignment,
+      periodEnd: { $lte: new Date() },
+    });
+    if (foundReviews.length === 0)
+      throw new GenericNotFoundError("The peer review could not be found for this assignment.");
+    peerReviewDetails = foundReviews[0];
+  } else {
+    const foundReviews = await peerReviewModel.find({
+      assignment: teamInfo.assignment,
+      periodEnd: { $lte: new Date() },
+      type: "full",
+    }).sort({ periodStart: -1, }).lean();
+    if (foundReviews.length === 0) {
+      peerReviewDetails = null;
+    } else {
+      peerReviewDetails = foundReviews[0];
+    }
+  }
+  console.log(peerReviewDetails);
+  const teamReportData = await generateTeamReportData(req.query.team, peerReviewDetails);
   return res.render("reports/team", teamReportData);
 };
 

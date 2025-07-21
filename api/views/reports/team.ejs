@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Team progress report</title>
+  <title>Team <%= teamNumber %> - <%= assignmentName %> (progress report)</title>
   <%- include('../partials/head'); %>
   <style>
     @media print {
@@ -13,6 +13,37 @@
       body { font-size: 12px !important; }
       .display-5 { font-size: 2rem !important; }
       .btn, .badge { -webkit-print-color-adjust: exact; }
+    }
+
+    @media print {
+      .collapse.print-show {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
+      }
+
+      .accordion-button::after {
+        display: none !important;
+      }
+
+      .accordion-collapse.print-show {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
+      }
+
+      .accordion-button.collapsed {
+        background-color: #f8f9fa !important;
+      }
+
+      .progress-bar, .progress {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .progress {
+        background-color: #e9ecef !important;
+      }
     }
     
     .compact-metric {
@@ -44,25 +75,84 @@
     <!-- Header -->
     <div class="row mb-2">
       <div class="col-12">
-        <h4 class="mb-0 text-dark fw-bold">Team <%= teamNumber %></h4>
-        <small class="text-muted">Progress Dashboard</small>
+        <h4 class="mb-0 text-dark fw-bold">Team <%= teamNumber %> - <%= assignmentName %></h4>
+        <% if (supervisors.length > 0) { %>
+        <small class="text-muted">Supervised by: <%= supervisors.join(", ") %></small>
+        <br />
+        <% } else { %>
+        <small class="text-muted">No team supervisor</small>
+        <br />
+        <% } %>
+        <small class="text-muted">Report generated on <%= generatedDate %></small>
       </div>
     </div>
 
-    <!-- Team Members Section - Compressed -->
-    <div class="row mb-2">
+    <!-- Student Detail Accordion -->
+    <div class="row my-2">
       <div class="col-12">
         <div class="card border-0 shadow-sm">
-          <div class="card-header bg-secondary text-white py-1">
-            <h6 class="mb-0 small"><i class="bi bi-people-fill me-1"></i>Team Members</h6>
+          <div class="card-header bg-dark text-white py-1">
+            <h6 class="mb-0 small"><i class="bi bi-person-badge-fill me-1"></i>Student Profiles</h6>
           </div>
-          <div class="card-body py-1">
-            <% teamMembers.forEach(function(member, index) { %>
-              <div class="team-member-item">
-                <div class="fw-semibold small"><%= member.displayName %></div>
-                <div class="text-muted" style="font-size: 0.7rem;"><%= member.email %></div>
-              </div>
-            <% }); %>
+
+          <div class="card-body p-1">
+            <div class="accordion accordion-flush" id="studentAccordion">
+              <% teamMembers.forEach(function(member, index) { %>
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="heading<%= index %>">
+                    <button class="accordion-button collapsed py-1 px-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
+                      <%= member.displayName %> <small class="ms-2 text-muted">(<%= member.email %>)</small>
+                    </button>
+                  </h2>
+                  <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" aria-labelledby="heading<%= index %>" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body py-1 small">
+                      <div class="row gx-3">
+                        <!-- Attendance Summary -->
+                        <div class="col-md-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark mb-1">Meetings to date</div>
+                          <div class="progress progress-sm mt-1">
+                            <div class="progress-bar 
+                              <%= (attendance[member.displayName].rate || 0) >= 80 ? 'bg-success' : 
+                                  (attendance[member.displayName].rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
+                                style="width: <%= attendance[member.displayName].rate || 0 %>%;">
+                              <%= attendance[member.displayName].rate || 0 %>% attendance
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Skills Summary -->
+                        <div class="col-md-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark mb-1">Skills</div>
+                          <% if (member.skills && Object.keys(member.skills).length > 0) { %>
+                            <% Object.entries(member.skills).forEach(([skill, value]) => { %>
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted"><%= skill %></span>
+                                <div class="progress progress-sm flex-grow-1 ms-2">
+                                  <div class="progress-bar bg-info" style="width: <%= value %>%;">
+                                    <%= value %>%
+                                  </div>
+                                </div>
+                              </div>
+                            <% }) %>
+                          <% } else { %>
+                            <div class="text-muted">No skill ratings</div>
+                          <% } %>
+                        </div>
+                      </div>
+
+                      <!-- Review -->
+                      <div class="mt-2">
+                        <div class="fw-semibold text-dark mb-1">Review</div>
+                        <div class="text-muted">
+                          <%= member.review || "No comments provided." %>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              <% }); %>
+            </div>
           </div>
         </div>
       </div>
@@ -146,6 +236,7 @@
         </div>
       </div>
     </div>
+
   </div>
 </body>
 </html>
