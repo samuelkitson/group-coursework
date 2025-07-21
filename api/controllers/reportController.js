@@ -1,4 +1,5 @@
 const { Types } = require("mongoose");
+const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const checkinModel = require("../models/checkin");
@@ -13,7 +14,21 @@ const path = require("path");
 const { Readable } = require("stream");
 const { parseISO, format } = require("date-fns");
 
-generateTeamReportData = async (teamId, peerReview) => {
+/**
+ * Helper function to generate the summary data required to render the team.ejs
+ * report template. The object returned from this function will be sufficient to
+ * render a report.
+ * 
+ * team: a lean Mongoose object for the relevant team. Ensure both members and
+ *   supervisors are populated with email and displayName.
+ * assignment: a lean Mongoose object for the relevant assignment. Should only
+ *   need the name field.
+ * peerReview: a lean Mongoose object for the relevant peer review point to
+ *   generate the summary report for. If not provided (e.g. if peer reviews are
+ *   not enabled for this assignment), a report of the other data can still be
+ *   generated.
+ */
+summariseTeamData = async (team, assignment, peerReview) => {
   // Placeholder for the rendering object
   const renderObj = {};
   // Add report generation date
@@ -24,11 +39,7 @@ generateTeamReportData = async (teamId, peerReview) => {
     renderObj.peerReview = {};
     renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
   }
-  // Extract team details
-  const team = await teamModel.findById(teamId).populate("members supervisors", "displayName email").populate("assignment", "name").lean();
-  if (!team)
-    throw new GenericNotFoundError("Unable to find the specified team.");
-  renderObj.assignmentName = team?.assignment?.name ?? "Unknown assignment";
+  renderObj.assignmentName = assignment?.name ?? "Unknown assignment";
   renderObj.supervisors = (team?.supervisors ?? []).map(s => s.displayName);
   // Make a helper for mapping user IDs to names for this team
   const idsToNames = team.members.reduce((acc, member) => {
@@ -38,7 +49,7 @@ generateTeamReportData = async (teamId, peerReview) => {
   renderObj.teamNumber = team.teamNumber;
   renderObj.teamMembers = team.members;
   // Pull out meetings data
-  const teamMeetings = await meetingModel.find({ team: teamId })
+  const teamMeetings = await meetingModel.find({ team: team._id })
     .populate("attendance.attended attendance.apologies attendance.absent", "displayName")
     .sort({ "dateTime": 1 }).lean();
   const meetingData = { count: teamMeetings.length };
@@ -51,39 +62,55 @@ generateTeamReportData = async (teamId, peerReview) => {
   renderObj.attendance = summariseMeetingAttendance(teamMeetings, "displayName");
   // Pull out the check-in/peer review data
   const checkins = await checkinModel.find({
-    team: new Types.ObjectId(teamId),
+    team: new Types.ObjectId(team._id),
   }).select("reviewer peerReview effortPoints").lean();
   const peerReviewPoints = await peerReviewModel.find({
-    assignment: team.assignment,
+    assignment: assignment._id,
     periodEnd: { $lt: new Date() },
   }).sort({ "periodStart": 1 }).lean();
   return renderObj;
 };
 
 /**
- * Produces exportable HTML-formatted reports about teams. Provide either team
- * or assignment.
+ * Helper function to pre-load team and peer review point data before calling
+ * summariseTeamData for each team. Provide either assignmentId or teamID.
+ * Optionally provide peerReviewId, otherwise the most recent full review point
+ * will be used by default (or none if this doesn't exist). Returns an array of
+ * team data objects, each of which can be used to render a report.
  */
-exports.generateTeamReports = async (req, res) => {
-  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
-  const teamInfo = await teamModel.findById(req.query.team).select("assignment").lean();
-  // If a peer review point has been specified use that, otherwise use the most
-  // recent full review available
+generateDataForTeams = async ({ assignmentId, teamId, peerReviewId }) => {
+  const generatedReportObjects = [];
+  let teamQuery = {};
+  if (teamId) {
+    teamQuery = { _id: new Types.ObjectId(teamId) };
+  } else if (assignmentId) {
+    teamQuery = { assignment: new Types.ObjectId(assignmentId) };
+  } else {
+    throw new InvalidParametersError("Provide either an assignment or team ID to generate reports.");
+  }
+  // Fetch all of the required team details to reduce future database queries
+  const teams = await teamModel.find(teamQuery)
+    .populate("members supervisors", "displayName email").lean();
+  if (teams.length === 0)
+    throw new GenericNotFoundError("No teams found.");
+  // Fetch assignment info
+  const assignmentInfo = await assignmentModel.findById(assignmentId ?? teams[0].assignment).select("name").lean();
+  if (!assignmentInfo)
+    throw new GenericNotFoundError("Assignment not found.");
+  // Fetch peer review point data
   let peerReviewDetails;
-  if (req.query.peerReview) {
-    if (!Types.ObjectId.isValid(req.query.peerReview))
-      throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  if (peerReviewId) {
     const foundReviews = await peerReviewModel.find({
-      _id: new Types.ObjectId(req.query.peerReview),
-      assignment: teamInfo.assignment,
+      _id: new Types.ObjectId(peerReviewId),
+      assignment: assignmentInfo._id,
       periodEnd: { $lte: new Date() },
     });
     if (foundReviews.length === 0)
-      throw new GenericNotFoundError("The peer review could not be found for this assignment.");
+      throw new GenericNotFoundError("That peer review could not be found for this assignment.");
     peerReviewDetails = foundReviews[0];
   } else {
     const foundReviews = await peerReviewModel.find({
-      assignment: teamInfo.assignment,
+      assignment: assignmentInfo._id,
       periodEnd: { $lte: new Date() },
       type: "full",
     }).sort({ periodStart: -1, }).lean();
@@ -93,27 +120,46 @@ exports.generateTeamReports = async (req, res) => {
       peerReviewDetails = foundReviews[0];
     }
   }
-  console.log(peerReviewDetails);
-  const teamReportData = await generateTeamReportData(req.query.team, peerReviewDetails);
-  return res.render("reports/team", teamReportData);
+  // Now generate the reports for each team
+  for (const team of teams) {
+    const teamData = await summariseTeamData(team, assignmentInfo, peerReviewDetails);
+    generatedReportObjects.push(teamData);
+  }
+  return generatedReportObjects;
 };
 
+/**
+ * Produces exportable HTML-formatted reports about teams. Provide either team
+ * or assignment.
+ */
+exports.generateTeamReports = async (req, res) => {
+  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
+  if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
+    throw new InvalidObjectIdError("The provided peer review ID is invalid."); 
+  const teamReportData = await generateDataForTeams({ teamId: req.query.team, peerReviewId: req.query.peerReview });
+  return res.render("reports/team", teamReportData[0]);
+};
+
+/**
+ * Similar to above, but produces a ZIP of HTML reports, one for each team in a
+ * given assignment.
+ */
 exports.generateTeamReportsBulk = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
-  const teams = await teamModel.find({ assignment: req.query.assignment }).select("_id teamNumber").lean();
-  res.setHeader('Content-Type', 'application/zip');
-  res.setHeader('Content-Disposition', 'attachment; filename=reports.zip');
-  const archive = archiver('zip', { zlib: { level: 9 } });
-  archive.pipe(res); 
-  for (const team of teams) {
-    const teamData = await generateTeamReportData(team._id);
-    const html = await ejs.renderFile(
-      path.join(__dirname, '..', 'views', 'reports', 'team.ejs'),
-      teamData
-    );
-    const htmlBuffer = Buffer.from(html, 'utf-8');
+  if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
+    throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  // Setup zip response
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", "attachment; filename=reports.zip");
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  archive.pipe(res);
+  // Generate data about teams
+  const teamReportData = await generateDataForTeams({ assignmentId: req.query.assignment, peerReviewId: req.query.peerReview });
+  for (const report of teamReportData) {
+    const html = await ejs.renderFile(path.join(__dirname, "..", "views", "reports", "team.ejs"), report);
+    const htmlBuffer = Buffer.from(html, "utf-8");
     const stream = Readable.from(htmlBuffer);
-    archive.append(stream, { name: `team-${team.teamNumber}.html` });
+    archive.append(stream, { name: `team-${report.teamNumber}.html` });
   }
   archive.finalize();
 };
