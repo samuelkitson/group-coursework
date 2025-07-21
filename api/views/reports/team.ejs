@@ -113,7 +113,7 @@
       <div class="col-12">
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-dark text-white p-1">
-            <h6 class="mb-0 small"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
+            <h6 class="mb-0"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
           </div>
 
           <div class="card-body p-0 pb-1">
@@ -121,41 +121,57 @@
               <% teamMembers.forEach(function(member, index) { %>
                 <div class="accordion-item new-page-after student-details-item">
                   <h2 class="accordion-header" id="heading<%= index %>">
-                    <button class="accordion-button collapsed py-1 px-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
-                      <%= member.displayName %> <small class="ms-2 text-muted">(<%= member.email %>)</small>
+                    <button class="accordion-button collapsed py-1 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
+                      <div>
+                        <span class="text-dark"><%= member.displayName %></span>
+                        <small class="text-muted ms-2"><%= member.email %></small>
+                      </div>
                     </button>
                   </h2>
                   <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" aria-labelledby="heading<%= index %>" data-bs-parent="#studentAccordion">
-                    <div class="accordion-body py-1 px-2 small">
+                    <div class="accordion-body py-1 px-2">
                       <div class="row gx-3">
                         <!-- Attendance Summary -->
-                        <div class="col-md-6 col-12 mb-2">
-                          <div class="fw-semibold text-dark mb-1">Meetings to date</div>
-                          <div class="progress progress-sm mt-1">
-                            <div class="progress-bar 
-                              <%= (attendance[member.displayName]?.rate || 0) >= 80 ? 'bg-success' : 
-                                  (attendance[member.displayName]?.rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
-                                style="width: <%= attendance[member.displayName]?.rate || 0 %>%;">
-                              <%= attendance[member.displayName]?.rate || 0 %>% attendance
+                        <div class="col-sm-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark">Meetings to date</div>
+                          <%
+                            const attendanceRate = attendance[member.displayName]?.rate ?? 0;
+                            let attendanceBarColour = "";
+                            if (attendanceRate <= 50) {
+                              attendanceBarColour = "bg-danger";
+                            } else if (attendanceRate <= 80) {
+                              attendanceBarColour = "bg-warning";
+                            } else {
+                              attendanceBarColour = "bg-success";
+                            }
+                          %>
+                          <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Meeting attendance</span>
+                              <span class="small fw-medium d-flex align-items-center text-muted"><%= attendanceRate %>%</span>
+                            </div>
+                            <div class="progress skill-bar">
+                              <div class="progress-bar bg-primary <%= attendanceBarColour %>" style="width: <%= attendanceRate %>%;"></div>
                             </div>
                           </div>
                         </div>
 
                         <!-- Skills Summary -->
-                        <div class="col-md-6 col-12 mb-2">
-                          <div class="fw-semibold text-dark mb-1">Skills</div>
-                          <% Object.entries(skillRatings[member.displayName]).forEach(([skill, value]) => { %>
+                        <% if (typeof skillRatings !== "undefined") { %>
+                        <div class="col-sm-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark">Skills</div>
+                          <% Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => { %>
                             <% 
                               const rating = parseFloat(value);
-                              const widthPercentage = (rating / 5) * 100;
-                              let barColorClass = "";
+                              const widthPercentage = ((rating - 0.75) / 4.25) * 100;
+                              let barColourClass = "";
 
                               if (rating <= 2) {
-                                barColorClass = "bg-danger";
+                                barColourClass = "bg-danger";
                               } else if (rating <= 3.5) {
-                                barColorClass = "bg-warning";
+                                barColourClass = "bg-warning";
                               } else {
-                                barColorClass = "bg-success";
+                                barColourClass = "bg-success";
                               }
                             %>
                             <div class="mb-2">
@@ -164,27 +180,35 @@
                                 <span class="small fw-medium d-flex align-items-center text-muted"><%= value %> <i class="bi bi-star-fill small ms-1"></i></span>
                               </div>
                               <div class="progress skill-bar">
-                                <div class="progress-bar bg-primary <%= barColorClass %>" style="width: <%= widthPercentage %>%;"></div>
+                                <div class="progress-bar bg-primary <%= barColourClass %>" style="width: <%= widthPercentage %>%;"></div>
                               </div>
                             </div>
                           <% }) %>
                         </div>
+                        <% } %>
                       </div>
 
-                      <!-- Review -->
+                      <!-- Peer review comments -->
+                      <% if (typeof reviewComments !== "undefined") { %>
                       <div class="mt-2">
-                        <div class="fw-semibold text-dark mb-1">Peer review comments</div>
+                        <div class="fw-semibold text-dark">Peer review comments</div>
                         <% if ((reviewComments[member.displayName] ?? []).length > 0) { %>
                           <% reviewComments[member.displayName].forEach(function(comment, index) { %>
-                          <div class="fake-bullet-point mb-1">
-                            <span class="text-dark review-comment"><%= comment.comment || "[Comment removed]" %></span> <span class="text-muted ms-1">- <%= comment.by %></span>
+                          <div class="mb-2 small">
+                            <span class="text-dark review-comment"><%= comment.comment || "[Comment removed]" %></span>
+                            <span class="text-muted ms-1">- <%= comment.by %></span>
+                            <%= comment.originalComment %>
+                            <% if (comment.moderated) { %>
+                              <span class="text-danger ms-1"><i class="bi bi-exclamation-triangle"></i> Moderated</span>
+                            <% } %>
                           </div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-muted">No review comments received</div>
+                          <div class="text-muted">Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
                         </div>
                       </div>
+                      <% } %>
 
                   </div>
                 </div>

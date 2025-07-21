@@ -74,11 +74,12 @@ summariseTeamData = async (team, assignment, peerReview) => {
       const reviewerName = idsToNames[review.reviewer] ?? "[Ex-team member]";
       Object.keys(review?.reviews ?? {}).forEach(forId => {
         const recipientName = idsToNames[forId] ?? "[Ex-team member]";
-        const comment = review.reviews[forId].comment;
+        const commentObj = {"comment": review.reviews[forId].comment, "by": reviewerName, "moderated": false};
+        if (review.reviews[forId].originalComment) commentObj.moderated = true;
         if (!commentsByRecipient.hasOwnProperty(recipientName)) {
-          commentsByRecipient[recipientName] = [{"comment": comment, "by": reviewerName}];
+          commentsByRecipient[recipientName] = [commentObj];
         } else {
-          commentsByRecipient[recipientName].push({"comment": comment, "by": reviewerName});
+          commentsByRecipient[recipientName].push(commentObj);
         }
       });
     }
