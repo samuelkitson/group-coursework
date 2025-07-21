@@ -83,7 +83,12 @@
         <small class="text-muted">No team supervisor</small>
         <br />
         <% } %>
-        <small class="text-muted">Report generated on <%= generatedDate %></small>
+        <small class="text-muted">
+          Generated on <%= generatedDate %>
+          <% if (typeof peerReview !== "undefined") { %>
+          for the peer review week beginning <%= peerReview?.periodStart %>
+          <% } %>
+        </small>
       </div>
     </div>
 
@@ -112,10 +117,10 @@
                           <div class="fw-semibold text-dark mb-1">Meetings to date</div>
                           <div class="progress progress-sm mt-1">
                             <div class="progress-bar 
-                              <%= (attendance[member.displayName].rate || 0) >= 80 ? 'bg-success' : 
-                                  (attendance[member.displayName].rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
-                                style="width: <%= attendance[member.displayName].rate || 0 %>%;">
-                              <%= attendance[member.displayName].rate || 0 %>% attendance
+                              <%= (attendance[member.displayName]?.rate || 0) >= 80 ? 'bg-success' : 
+                                  (attendance[member.displayName]?.rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
+                                style="width: <%= attendance[member.displayName]?.rate || 0 %>%;">
+                              <%= attendance[member.displayName]?.rate || 0 %>% attendance
                             </div>
                           </div>
                         </div>

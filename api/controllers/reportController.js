@@ -13,12 +13,17 @@ const path = require("path");
 const { Readable } = require("stream");
 const { parseISO, format } = require("date-fns");
 
-generateTeamReportData = async (teamId, peerReviewId) => {
+generateTeamReportData = async (teamId, peerReview) => {
   // Placeholder for the rendering object
   const renderObj = {};
   // Add report generation date
   currentDate = new Date();
-  renderObj.generatedDate = format(currentDate, "EEEE do MMMM yyyy");
+  renderObj.generatedDate = format(currentDate, "dd/MM/yyyy");
+  // Add peer review point details
+  if (peerReview) {
+    renderObj.peerReview = {};
+    renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
+  }
   // Extract team details
   const team = await teamModel.findById(teamId).populate("members supervisors", "displayName email").populate("assignment", "name").lean();
   if (!team)
