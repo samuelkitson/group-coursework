@@ -184,7 +184,7 @@
                         <!-- Skills Summary -->
                         <% if (typeof skillRatings !== "undefined") { %>
                         <div class="col-sm-6 col-12 mb-2">
-                          <div class="fw-semibold text-dark">Skills</div>
+                          <div class="fw-semibold text-dark">Skills (rated by peers)</div>
                           <% Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => { %>
                             <% 
                               const rating = parseFloat(value);
@@ -211,6 +211,56 @@
                           <% }) %>
                         </div>
                         <% } %>
+
+                        <!-- Engagement Summary -->
+                        <div class="col-sm-6 col-12 mb-2">
+                          <div class="fw-semibold text-dark">Engagement</div>
+                          <%
+                            const engagementRate = 85;
+                            let engagementBarColour = "";
+                            let engagementLabel = "Good";
+                            if (engagementRate <= 50) {
+                              engagementBarColour = "bg-danger";
+                              engagementLabel = "Poor";
+                            } else if (engagementRate <= 80) {
+                              engagementBarColour = "bg-warning";
+                              engagementLabel = "Average";
+                            } else {
+                              engagementBarColour = "bg-success";
+                              engagementLabel = "Great";
+                            }
+
+                            const checkinsCompleted = 6;
+                            const checkinsTotal = 8;
+                            const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
+                            let checkinBarColour = "";
+                            if (checkinRate <= 50) {
+                              checkinBarColour = "bg-danger";
+                            } else if (checkinRate <= 90) {
+                              checkinBarColour = "bg-warning";
+                            } else {
+                              checkinBarColour = "bg-success";
+                            }
+                          %>
+                          <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Log in frequency</span>
+                              <span class="small fw-medium d-flex align-items-center text-muted"><%= engagementLabel %></span>
+                            </div>
+                            <div class="progress skill-bar">
+                              <div class="progress-bar bg-primary <%= engagementBarColour %>" style="width: <%= engagementRate %>%;"></div>
+                            </div>
+                          </div>
+                          <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Check-ins completed</span>
+                              <span class="small fw-medium d-flex align-items-center text-muted"><%= checkinsCompleted %>/<%= checkinsTotal %></span>
+                            </div>
+                            <div class="progress skill-bar">
+                              <div class="progress-bar bg-primary <%= checkinBarColour %>" style="width: <%= checkinRate %>%;"></div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Peer review comments -->
