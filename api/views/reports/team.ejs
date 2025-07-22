@@ -132,7 +132,7 @@
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted"><%= skill %></span>
-                                <span class="small fw-medium"><%= rating %>%</span>
+                                <span class="small fw-medium"><%= rating %> <i class="bi bi-star-fill small text-dark"></i></span>
                               </div>
                               <div class="progress compact-progress">
                                 <div class="progress-bar <%= skillBarColour %>" style="width: <%= skillWidth %>%"></div>
@@ -241,7 +241,7 @@
                           </div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-muted small">Nobody completed a peer review for <%= member.displayName %>.</div>
+                          <div class="text-muted small mb-2">Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
                         </div>
                       </div>
