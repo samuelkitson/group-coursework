@@ -7,7 +7,7 @@ const peerReviewModel = require("../models/peerReview");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError, ConfigurationError } = require("../errors/errors");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { daysBetween, peerReviewSkillsStatistics, calculateAverage } = require("../utility/maths");
-const { summariseMeetingAttendance } = require("./meetingController");
+const { summariseMeetingAttendance, summariseMeetingMinuteTakers, summariseMeetingActions } = require("./meetingController");
 const ejs = require("ejs");
 const archiver = require("archiver");
 const path = require("path");
@@ -46,7 +46,7 @@ summariseTeamData = async (team, assignment, peerReview) => {
   renderObj.teamMembers = team.members;
   // Pull out meetings data
   const teamMeetings = await meetingModel.find({ team: team._id })
-    .populate("attendance.attended attendance.apologies attendance.absent", "displayName")
+    .populate("attendance.attended attendance.apologies attendance.absent minuteTaker", "displayName")
     .sort({ "dateTime": 1 }).lean();
   const meetingData = { count: teamMeetings.length };
   if (teamMeetings.length >= 2) {
@@ -56,6 +56,9 @@ summariseTeamData = async (team, assignment, peerReview) => {
   }
   renderObj.meetings = meetingData;
   renderObj.attendance = summariseMeetingAttendance(teamMeetings, "displayName");
+  renderObj.minuteTakers = summariseMeetingMinuteTakers(teamMeetings, "displayName");
+  const actionOwnerStats = summariseMeetingActions(teamMeetings);
+  renderObj.actionOwners = Object.keys(actionOwnerStats).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: actionOwnerStats[id] }), {});
   // Pull out the check-in/peer review data
   // const checkins = await checkinModel.find({
   //   team: new Types.ObjectId(team._id),

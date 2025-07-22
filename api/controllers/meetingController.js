@@ -220,3 +220,41 @@ exports.summariseMeetingAttendance = (meetingLogs, embeddedField=null) => {
 
   return attendance;
 };
+
+exports.summariseMeetingMinuteTakers = (meetingLogs, embeddedField=null) => {
+  const minuteTakers = {};
+  meetingLogs.forEach(meeting => {
+    const studentId = embeddedField ? meeting.minuteTaker[embeddedField].toString() : meeting.minuteTaker;
+    if (!minuteTakers.hasOwnProperty(studentId)) {
+      minuteTakers[studentId] = 1;
+    } else {
+      minuteTakers[studentId] += 1;
+    }
+  });
+  return minuteTakers;
+};
+
+exports.summariseMeetingActions = (meetingLogs) => {
+  const actionOwners = {};
+  meetingLogs.forEach(meeting => {
+    (meeting.previousActions ?? []).forEach(action => {
+      action.assignees.forEach(assignee => {
+        if (!actionOwners.hasOwnProperty(assignee)) {
+          actionOwners[assignee] = { complete: 0, incomplete: 0, };
+        }
+        if (action.complete) {
+          actionOwners[assignee].complete += 1;
+        } else {
+          actionOwners[assignee].incomplete += 1;
+        }
+      });
+    });
+  });
+  Object.keys(actionOwners).forEach(student => {
+    const actionObj = actionOwners[student];
+    const actionRate = (actionObj.complete / (actionObj.complete + actionObj.incomplete)) ?? 0;
+    actionOwners[student].rate = Math.round(actionRate * 100);
+    actionOwners[student].total = actionObj.complete + actionObj.incomplete;
+  });
+  return actionOwners;
+};

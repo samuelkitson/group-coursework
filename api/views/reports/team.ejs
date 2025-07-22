@@ -144,6 +144,19 @@
                             } else {
                               attendanceBarColour = "bg-success";
                             }
+
+                            const minutesRecorded = minuteTakers[member.displayName] ?? 0;
+
+                            const actionRate = actionOwners[member.displayName]?.rate ?? 0;
+                            const actionsCount = actionOwners[member.displayName]?.total ?? 0; 
+                            let actionBarColour = "";
+                            if (actionRate <= 40) {
+                              actionBarColour = "bg-danger";
+                            } else if (actionRate <= 70) {
+                              actionBarColour = "bg-warning";
+                            } else {
+                              actionBarColour = "bg-success";
+                            }
                           %>
                           <div class="mb-2">
                             <div class="d-flex justify-content-between align-items-center">
@@ -153,6 +166,18 @@
                             <div class="progress skill-bar">
                               <div class="progress-bar bg-primary <%= attendanceBarColour %>" style="width: <%= attendanceRate %>%;"></div>
                             </div>
+                          </div>
+                          <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                              <span class="small text-muted">Assigned actions completed</span>
+                              <span class="small fw-medium d-flex align-items-center text-muted"><%= actionOwners[member.displayName]?.complete ?? 0 %>/<%= actionOwners[member.displayName]?.total ?? 0%></span>
+                            </div>
+                            <div class="progress skill-bar">
+                              <div class="progress-bar bg-primary <%= actionBarColour %>" style="width: <%= actionRate %>%;"></div>
+                            </div>
+                          </div>
+                          <div class="mb-2 small text-muted">
+                            Recorded minutes for <span class="fw-medium"><%= minutesRecorded %></span> meeting<% if (minutesRecorded !== 1) { %>s<% } %>
                           </div>
                         </div>
 
@@ -204,7 +229,7 @@
                           </div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-muted">Nobody completed a peer review for <%= member.displayName %>.</div>
+                          <div class="text-muted small">Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
                         </div>
                       </div>
