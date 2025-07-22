@@ -2,89 +2,8 @@
 <html lang="en">
 <head>
   <title>Team <%= teamNumber %> - <%= assignmentName %> (progress report)</title>
-  <%- include('../partials/head'); %>
-  <style>
-    @media print {
-      .container-fluid { max-width: 100% !important; }
-      .card { break-inside: avoid; }
-      .table { break-inside: avoid; }
-      .shadow-sm { box-shadow: none !important; }
-      .bg-light { background-color: white !important; }
-      .display-5 { font-size: 2rem !important; }
-      .btn, .badge { -webkit-print-color-adjust: exact; }
-
-      .collapse.print-show {
-        display: block !important;
-        height: auto !important;
-        visibility: visible !important;
-      }
-
-      .accordion-button::after {
-        display: none !important;
-      }
-
-      .accordion-collapse.print-show {
-        display: block !important;
-        height: auto !important;
-        visibility: visible !important;
-      }
-
-      .accordion-button.collapsed {
-        background-color: #f8f9fa !important;
-      }
-
-      .progress-bar, .progress {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-      }
-
-      .progress {
-        background-color: #e9ecef !important;
-      }
-
-      .new-page-after {
-        break-after: page;
-        margin-top: 1em;
-      }
-    }
-    
-    .compact-metric {
-      padding: 0.75rem !important;
-    }
-    
-    .compact-table td, .compact-table th {
-      padding: 0.25rem 0.5rem !important;
-      font-size: 0.875rem;
-    }
-    
-    .team-member-item {
-      padding: 0.25rem 0;
-      border-bottom: 1px solid #e9ecef;
-    }
-    
-    .team-member-item:last-child {
-      border-bottom: none;
-    }
-    
-    .progress-sm {
-      height: 16px !important;
-      font-size: 0.7rem;
-    }
-
-    .fake-bullet-point::before {
-      content: "• ";
-    }
-
-    .review-comment::before {
-      content: open-quote;
-    }
-
-    .review-comment::after {
-      content: close-quote;
-    }
-
-    .skill-bar { height: 6px; border-radius: 3px; }
-  </style>
+  <%- include("../partials/bootstraphead"); %>
+  <%- include("../partials/reportstyle"); %>
 </head>
 <body class="bg-light p-2">
   <div class="container-fluid">
@@ -113,78 +32,224 @@
       <div class="col-12">
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-dark text-white p-1">
-            <h6 class="mb-0 small"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
+            <h6 class="mb-0"><i class="bi bi-person-arms-up ms-1 me-2"></i>Team members</h6>
           </div>
 
-          <div class="card-body p-0 pb-1">
+          <div class="card-body p-0">
             <div class="accordion accordion-flush" id="studentAccordion">
               <% teamMembers.forEach(function(member, index) { %>
-                <div class="accordion-item new-page-after student-details-item">
-                  <h2 class="accordion-header" id="heading<%= index %>">
-                    <button class="accordion-button collapsed py-1 px-2 small" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>" aria-expanded="false" aria-controls="collapse<%= index %>">
-                      <%= member.displayName %> <small class="ms-2 text-muted">(<%= member.email %>)</small>
+                <div class="accordion-item">
+                  <div class="accordion-header" id="heading<%= index %>">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>">
+                      <div>
+                        <span class="fw-medium"><%= member.displayName %></span>
+                        <small class="text-muted ms-3"><%= member.email %></small>
+                      </div>
                     </button>
-                  </h2>
-                  <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" aria-labelledby="heading<%= index %>" data-bs-parent="#studentAccordion">
-                    <div class="accordion-body py-1 px-2 small">
-                      <div class="row gx-3">
+                  </div>
+
+                  <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" data-bs-parent="#studentAccordion">
+                    <div class="accordion-body px-3 py-1">
+                      <div class="row d-flex gx-3 gy-2">
                         <!-- Attendance Summary -->
-                        <div class="col-md-6 col-12 mb-2">
-                          <div class="fw-semibold text-dark mb-1">Meetings to date</div>
-                          <div class="progress progress-sm mt-1">
-                            <div class="progress-bar 
-                              <%= (attendance[member.displayName]?.rate || 0) >= 80 ? 'bg-success' : 
-                                  (attendance[member.displayName]?.rate || 0) >= 60 ? 'bg-warning' : 'bg-danger' %>"
-                                style="width: <%= attendance[member.displayName]?.rate || 0 %>%;">
-                              <%= attendance[member.displayName]?.rate || 0 %>% attendance
+                        <%
+                          const attendanceRate = attendance[member.displayName]?.rate ?? 0;
+                          let attendanceBarColour = "";
+                          if (attendanceRate <= 50) {
+                            attendanceBarColour = "progress-red";
+                          } else if (attendanceRate <= 80) {
+                            attendanceBarColour = "progress-yellow";
+                          } else {
+                            attendanceBarColour = "progress-green";
+                          }
+
+                          const minutesRecorded = minuteTakers[member.displayName] ?? 0;
+
+                          const actionRate = actionOwners[member.displayName]?.rate ?? 0;
+                          const actionsCount = actionOwners[member.displayName]?.total ?? 0; 
+                          let actionBarColour = "";
+                          if (actionRate <= 40) {
+                            actionBarColour = "progress-red";
+                          } else if (actionRate <= 70) {
+                            actionBarColour = "progress-yellow";
+                          } else {
+                            actionBarColour = "progress-green";
+                          }
+                        %>
+                        <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                          <div class="metric-card flex-fill">
+                            <div class="section-title">Meetings</div>
+                            
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Attendance</span>
+                                <span class="small fw-medium"><%= attendanceRate %>%</span>
+                              </div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= attendanceBarColour %>" style="width: <%= attendanceRate %>%"></div>
+                              </div>
+                            </div>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Actions completed</span>
+                                <span class="small fw-medium"><%= actionOwners[member.displayName]?.complete ?? 0 %>/<%= actionOwners[member.displayName]?.total ?? 0%></span>
+                              </div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= actionBarColour %>" style="width: <%= actionRate %>%"></div>
+                              </div>
+                            </div>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Minutes recorded</span>
+                                <span class="small fw-medium"><%= minutesRecorded %> meeting<% if (minutesRecorded !== 1) { %>s<% } %></span>
+                              </div>
                             </div>
                           </div>
                         </div>
 
                         <!-- Skills Summary -->
-                        <div class="col-md-6 col-12 mb-2">
-                          <div class="fw-semibold text-dark mb-1">Skills</div>
-                          <% Object.entries(skillRatings[member.displayName]).forEach(([skill, value]) => { %>
+                        <% if (typeof skillRatings !== "undefined") { %>
+                        <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                          <div class="metric-card flex-fill">
+                            <div class="section-title">Skills (rated by peers)</div>
+
+                            <% Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => { %>
                             <% 
                               const rating = parseFloat(value);
-                              const widthPercentage = (rating / 5) * 100;
-                              let barColorClass = "";
+                              const skillWidth = ((rating - 0.75) / 4.25) * 100;
+                              let skillBarColour = "";
 
                               if (rating <= 2) {
-                                barColorClass = "bg-danger";
+                                skillBarColour = "progress-red";
                               } else if (rating <= 3.5) {
-                                barColorClass = "bg-warning";
+                                skillBarColour = "progress-yellow";
                               } else {
-                                barColorClass = "bg-success";
+                                skillBarColour = "progress-green";
                               }
                             %>
-                            <div class="mb-2">
+                            <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted"><%= skill %></span>
-                                <span class="small fw-medium d-flex align-items-center text-muted"><%= value %> <i class="bi bi-star-fill small ms-1"></i></span>
+                                <span class="small fw-medium"><%= rating %> <i class="bi bi-star-fill small text-dark"></i></span>
                               </div>
-                              <div class="progress skill-bar">
-                                <div class="progress-bar bg-primary <%= barColorClass %>" style="width: <%= widthPercentage %>%;"></div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= skillBarColour %>" style="width: <%= skillWidth %>%"></div>
                               </div>
                             </div>
-                          <% }) %>
+                            <% }); %>
+                          </div>
+                        </div>
+                        <% } %>
+
+                        <!-- Engagement Summary -->
+                        <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                          <div class="metric-card flex-fill">
+                            <div class="section-title">Engagement</div>
+                            <% 
+                              const engagementRate = 85;
+                              let engagementBarColour = "";
+                              let engagementLabel = "Good";
+                              if (engagementRate <= 50) {
+                                engagementBarColour = "progress-red";
+                                engagementLabel = "Poor";
+                              } else if (engagementRate <= 80) {
+                                engagementBarColour = "progress-yellow";
+                                engagementLabel = "Average";
+                              } else {
+                                engagementBarColour = "progress-green";
+                                engagementLabel = "Great";
+                              }
+
+                              const checkinsCompleted = 6;
+                              const checkinsTotal = 8;
+                              const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
+                              let checkinBarColour = "";
+                              if (checkinRate <= 50) {
+                                checkinBarColour = "progress-red";
+                              } else if (checkinRate <= 90) {
+                                checkinBarColour = "progress-yellow";
+                              } else {
+                                checkinBarColour = "progress-green";
+                              }
+                            %>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Login frequency</span>
+                                <span class="small fw-medium"><%= engagementLabel %></span>
+                              </div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= engagementBarColour %>" style="width: <%= engagementRate %>%"></div>
+                              </div>
+                            </div>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Check-ins completed</span>
+                                <span class="small fw-medium"><%= checkinsCompleted %>/<%= checkinsTotal %></span>
+                              </div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= checkinBarColour %>" style="width: <%= checkinRate %>%"></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Workload balance summary -->
+                        <div class="col-12 col-sm-6 col-xl-3 d-flex">
+                          <div class="metric-card flex-fill">
+                            <div class="section-title">Workload balance</div>
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Self-perceived effort</span>
+                                <span class="small fw-medium">+2 (average)</span>
+                              </div>
+                              <div class="progress compact-progress progress-centred">
+                                <div class="progress-bar progress-left" style="width: 0%"></div>
+                                <div class="progress-bar progress-right progress-blue" style="width: 20%"></div>
+                                <div class="progress-bar-middle"></div>
+                              </div>
+                            </div>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Peer-reviewed effort</span>
+                                <span class="small fw-medium">-4 (low)</span>
+                              </div>
+                              <div class="progress compact-progress progress-centred">
+                                <div class="progress-bar progress-left progress-red" style="width: 30%"></div>
+                                <div class="progress-bar progress-right" style="width: 0%"></div>
+                                <div class="progress-bar-middle"></div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <!-- Review -->
-                      <div class="mt-2">
-                        <div class="fw-semibold text-dark mb-1">Peer review comments</div>
+                      <!-- Peer review comments -->
+                      <% if (typeof reviewComments !== "undefined") { %>
+                      <div class="mt-3">
+                        <div class="section-title">Peer review comments</div>
                         <% if ((reviewComments[member.displayName] ?? []).length > 0) { %>
                           <% reviewComments[member.displayName].forEach(function(comment, index) { %>
-                          <div class="fake-bullet-point mb-1">
-                            <span class="text-dark review-comment"><%= comment.comment || "[Comment removed]" %></span> <span class="text-muted ms-1">- <%= comment.by %></span>
+                          <div class="comment-item">
+                            <div class="small comment-text"><%= comment.comment || "[Comment removed]" %></div>
+                            <div class="text-muted small">
+                              — <%= comment.by %>
+                              <% if (comment.moderated) { %>
+                                <span class="text-danger ms-1"><i class="bi bi-exclamation-triangle"></i> Moderated</span>
+                              <% } %>
+                            </div>
                           </div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-muted">No review comments received</div>
+                          <div class="text-muted small mb-2">Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
                         </div>
                       </div>
+                      <% } %>
 
                   </div>
                 </div>
