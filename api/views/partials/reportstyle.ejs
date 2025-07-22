@@ -54,6 +54,36 @@
   .progress-blue { background: #17a2b8; }
   .progress-yellow { background: #ffc107; }
   .progress-red { background: #dc3545; }
+
+  .progress-centred {
+    position: relative;
+    overflow: visible;
+  }
+  
+  .progress-left, .progress-right {
+    position: absolute;
+    height: 100%;
+  }
+
+  .progress-left {
+    right: 50%;
+    transform-origin: right;
+    border-radius: 3px 0px 0px 3px;
+  }
+
+  .progress-right {
+    left: 50%;
+    transform-origin: left;
+    border-radius: 0px 3px 3px 0px;
+  }
+
+  .progress-bar-middle {
+    position: absolute;
+    height: 100%;
+    width: 1%;
+    left: 49.5%;
+    background-color: #495057;
+  }
   
   .comment-item {
     background: white;
