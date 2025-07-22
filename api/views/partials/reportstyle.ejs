@@ -1,0 +1,94 @@
+<style>
+  @media print {
+    .container-fluid { max-width: 100% !important; }
+    .card { break-inside: avoid; }
+    .shadow-sm { box-shadow: none !important; }
+    .bg-light { background-color: white !important; }
+    .collapse.print-show {
+      display: block !important;
+      height: auto !important;
+      visibility: visible !important;
+    }
+    .accordion-button::after { display: none !important; }
+    
+    .new-page-after {
+      break-after: page;
+      margin-top: 1em;
+    }
+    
+    .accordion-item:not(:first-child) {
+      break-before: page;
+    }
+    
+    .progress-bar, .progress {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+  
+  .accordion-button {
+    background: white;
+    border: none;
+    padding: 0.25rem 0.75rem;
+    font-weight: 500;
+  }
+  
+  .accordion-button:not(.collapsed) {
+    background: #e3f2fd !important;
+    color: #1565c0;
+    box-shadow: none;
+  }
+  
+  .accordion-body {
+    background: #fafafa;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .progress.compact-progress {
+    height: 6px;
+    border-radius: 3px;
+  }
+  
+  .progress-green { background: #28a745; }
+  .progress-blue { background: #17a2b8; }
+  .progress-yellow { background: #ffc107; }
+  .progress-red { background: #dc3545; }
+  
+  .comment-item {
+    background: white;
+    border-left: 3px solid #dee2e6;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 0.25rem 0.25rem 0;
+  }
+  
+  .section-title {
+    font-weight: 600;
+    color: #495057;
+    margin-top: 0.75rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .metric-row {
+    margin-bottom: 0.5rem;
+  }
+
+  .metric-row > .progress {
+    margin-top: 0.1rem;
+  }
+
+  .metric-row:last-child {
+    margin-bottom: 0rem;
+  }
+
+  .comment-item > .comment-text::before {
+    content: open-quote;
+  }
+
+  .comment-item > .comment-text::after {
+    content: close-quote;
+  }
+</style>
