@@ -28,7 +28,7 @@ const { parseISO, format } = require("date-fns");
  *   not enabled for this assignment), a report of the other data can still be
  *   generated.
  */
-summariseTeamData = async (team, assignment, peerReview, searchStartDate, searchEndDate) => {
+summariseTeamData = async (team, assignment, peerReview, periodStart, periodEnd) => {
   // Placeholder for the rendering object
   const renderObj = {};
   // Add report generation date
@@ -45,7 +45,7 @@ summariseTeamData = async (team, assignment, peerReview, searchStartDate, search
   renderObj.teamNumber = team.teamNumber;
   renderObj.teamMembers = team.members;
   // Pull out meetings data
-  const teamMeetings = await meetingModel.find({ team: team._id, dateTime: { $lte: searchEndDate, $gte: searchStartDate, } })
+  const teamMeetings = await meetingModel.find({ team: team._id, dateTime: { $lte: periodEnd, $gte: periodStart, } })
     .populate("attendance.attended attendance.apologies attendance.absent minuteTaker", "displayName")
     .sort({ "dateTime": 1 }).lean();
   const meetingData = { count: teamMeetings.length };
