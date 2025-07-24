@@ -28,7 +28,7 @@ const { parseISO, format } = require("date-fns");
  *   not enabled for this assignment), a report of the other data can still be
  *   generated.
  */
-summariseTeamData = async (team, assignment, peerReview) => {
+summariseTeamData = async (team, assignment, peerReview, searchStartDate, searchEndDate) => {
   // Placeholder for the rendering object
   const renderObj = {};
   // Add report generation date
@@ -45,7 +45,7 @@ summariseTeamData = async (team, assignment, peerReview) => {
   renderObj.teamNumber = team.teamNumber;
   renderObj.teamMembers = team.members;
   // Pull out meetings data
-  const teamMeetings = await meetingModel.find({ team: team._id })
+  const teamMeetings = await meetingModel.find({ team: team._id, dateTime: { $lte: searchEndDate, $gte: searchStartDate, } })
     .populate("attendance.attended attendance.apologies attendance.absent minuteTaker", "displayName")
     .sort({ "dateTime": 1 }).lean();
   const meetingData = { count: teamMeetings.length };
@@ -100,8 +100,24 @@ summariseTeamData = async (team, assignment, peerReview) => {
  * Optionally provide peerReviewId, otherwise the most recent full review point
  * will be used by default (or none if this doesn't exist). Returns an array of
  * team data objects, each of which can be used to render a report.
+ * 
+ * This can also be configured to return data for a specified period using
+ * periodStart and periodEnd. When neither is provided, the function defaults to
+ * fetching data from all time. When periodStart is left blank, it defaults to
+ * fetching data from the beginning of the assignment. When periodEnd is left
+ * blank, it defaults to fetching data up until today.
+ * 
+ * @param {ObjectId} assignmentId MongoDB ID for the assignment
+ * @param {ObjectId} teamId MongoDB ID for the team (required if assignmentId not provided)
+ * @param {ObjectId} peerReviewId MongoDB ID for the peer review point (optionalm, but must fall within the search period)
+ * @param {dateTime} startDate the start date of the report period
+ * @param {dateTime} endDate the end date of the report period
  */
-generateDataForTeams = async ({ assignmentId, teamId, peerReviewId }) => {
+generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart, periodEnd }) => {
+  // Set start and end dates for the search period
+  const searchStartDate = Date.parse(periodStart) || new Date(2020, 0, 1);
+  const searchEndDate = Date.parse(periodEnd) || new Date();
+  // Create a query object to search either by team or assignment
   const generatedReportObjects = [];
   let teamQuery = {};
   if (teamId) {
@@ -126,7 +142,8 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId }) => {
     const foundReviews = await peerReviewModel.find({
       _id: new Types.ObjectId(peerReviewId),
       assignment: assignmentInfo._id,
-      periodEnd: { $lte: new Date() },
+      periodStart: { $gte: searchStartDate, },
+      periodEnd: { $lte: searchEndDate, },
     });
     if (foundReviews.length === 0)
       throw new GenericNotFoundError("That peer review could not be found for this assignment.");
@@ -134,7 +151,8 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId }) => {
   } else {
     const foundReviews = await peerReviewModel.find({
       assignment: assignmentInfo._id,
-      periodEnd: { $lte: new Date() },
+      periodStart: { $gte: searchStartDate, },
+      periodEnd: { $lte: searchEndDate, },
       type: "full",
     }).sort({ periodStart: -1, }).lean();
     if (foundReviews.length === 0) {
@@ -145,7 +163,7 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId }) => {
   }
   // Now generate the reports for each team
   for (const team of teams) {
-    const teamData = await summariseTeamData(team, assignmentInfo, peerReviewDetails);
+    const teamData = await summariseTeamData(team, assignmentInfo, peerReviewDetails, searchStartDate, searchEndDate);
     generatedReportObjects.push(teamData);
   }
   return generatedReportObjects;
@@ -159,7 +177,7 @@ exports.generateTeamReports = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid."); 
-  const teamReportData = await generateDataForTeams({ teamId: req.query.team, peerReviewId: req.query.peerReview });
+  const teamReportData = await generateDataForTeams({ teamId: req.query.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
   return res.render("reports/team", teamReportData[0]);
 };
 
@@ -177,7 +195,7 @@ exports.generateTeamReportsBulk = async (req, res) => {
   const archive = archiver("zip", { zlib: { level: 9 } });
   archive.pipe(res);
   // Generate data about teams
-  const teamReportData = await generateDataForTeams({ assignmentId: req.query.assignment, peerReviewId: req.query.peerReview });
+  const teamReportData = await generateDataForTeams({ assignmentId: req.query.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
   for (const report of teamReportData) {
     const html = await ejs.renderFile(path.join(__dirname, "..", "views", "reports", "team.ejs"), report);
     const htmlBuffer = Buffer.from(html, "utf-8");
