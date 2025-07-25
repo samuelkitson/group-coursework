@@ -260,6 +260,15 @@ function ReportGenerator() {
           "Download report"
         }
       </Button>
+      <Row>
+        <Col md={6}>
+          <p className="text-muted small mt-3">
+            Reports are static HTML documents that can be saved locally, viewed
+            and shared without logging in. You'll still need an internet
+            connection. To view offline, open a report and print to a PDF.
+          </p>
+        </Col>
+      </Row>
     </>
   );
 }
