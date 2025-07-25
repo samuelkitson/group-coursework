@@ -89,9 +89,8 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     renderObj.reviewComments = commentsByRecipient;
     // Add in skill ratings
     const skillsRatingsSummary = peerReviewSkillsStatistics(fullReviews, averages=true);
-    renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {});
+    renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {}) ?? {};
     // Add in workload balance scores from check-ins
-    console.log(typeof periodStart);
     const allCheckins = await checkinModel.aggregate([
       { $match: { team: team._id }},
       { $lookup: { from: "peerreviews", localField: "peerReview", foreignField: "_id", as: "peerReviewFiltered", }},
@@ -126,7 +125,13 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     renderObj.selfNetScores = selfNetScoresEach;
     renderObj.checkinsSubmitted = checkinsSubmitted;
     renderObj.checkinThresholds = { min: -3*allCheckins.length, low: -1*allCheckins.length, high: 1*allCheckins.length, max: 3*allCheckins.length };
-    renderObj.peerReviewCount = peerReviewCount;
+    renderObj.peerReviewCount = peerReviewCount ?? 0;
+  } else {
+    renderObj.netScores = {};
+    renderObj.selfNetScores = {};
+    renderObj.checkinsSubmitted = {};
+    renderObj.checkinThresholds = { min: 0, low: 0, high: 0, max: 0, };
+    renderObj.peerReviewCount = 0;
   }
   return renderObj;
 };
@@ -198,9 +203,11 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
       periodEnd: searchEndDate,
       peerReviewCount: allPeerReviews.length
     });
+    console.log(teamData);
     generatedReportObjects.push(teamData);
   }
-  return generatedReportObjects;
+  const metadata = { assignmentName: assignmentInfo.name, teamNumbers: teams.map(t => t.teamNumber), };
+  return {reports: generatedReportObjects, metadata, };
 };
 
 /**
@@ -211,8 +218,11 @@ exports.generateTeamReports = async (req, res) => {
   await checkTeamRole(req.params.team, req.session.userId, "supervisor/lecturer");
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid."); 
-  const teamReportData = await generateDataForTeams({ teamId: req.params.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
-  return res.render("reports/team", teamReportData[0]);
+  const { reports, metadata } = await generateDataForTeams({ teamId: req.params.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
+  if (req.query.attachment) {
+    res.attachment(`Progress Report - ${metadata.assignmentName}, Team ${metadata.teamNumbers[0]}.html`);
+  }
+    return res.render("reports/team", reports[0]);
 };
 
 /**
@@ -223,18 +233,18 @@ exports.generateTeamReportsBulk = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  // Generate data about teams
+  const { reports, metadata } = await generateDataForTeams({ assignmentId: req.params.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
   // Setup zip response
   res.setHeader("Content-Type", "application/zip");
-  res.setHeader("Content-Disposition", "attachment; filename=reports.zip");
+  res.setHeader("Content-Disposition", `attachment; filename="Progress Reports - ${metadata.assignmentName}.zip"`);
   const archive = archiver("zip", { zlib: { level: 9 } });
   archive.pipe(res);
-  // Generate data about teams
-  const teamReportData = await generateDataForTeams({ assignmentId: req.params.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
-  for (const report of teamReportData) {
-    const html = await ejs.renderFile(path.join(__dirname, "..", "views", "reports", "team.ejs"), report);
+  for (let i=0; i < reports.length; i++) {
+    const html = await ejs.renderFile(path.join(__dirname, "..", "views", "reports", "team.ejs"), reports[i]);
     const htmlBuffer = Buffer.from(html, "utf-8");
     const stream = Readable.from(htmlBuffer);
-    archive.append(stream, { name: `team-${report.teamNumber}.html` });
+    archive.append(stream, { name: `Progress Report - ${metadata.assignmentName}, Team ${metadata.teamNumbers[i]}.html` });
   }
   archive.finalize();
 };

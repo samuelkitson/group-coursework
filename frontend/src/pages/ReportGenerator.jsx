@@ -7,7 +7,7 @@ import "./style/AssignmentOverview.css";
 import { Controller, useForm, useFormState } from "react-hook-form";
 import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
-import { Download } from "react-bootstrap-icons";
+import { BoxArrowUpRight, Download } from "react-bootstrap-icons";
 import toast from "react-hot-toast";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
@@ -16,7 +16,6 @@ function ReportGenerator() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
-  const [isLoading, setIsLoading] = useState(0); // 0 means loaded
   const [teamsList, setTeamsList] = useState([]);
   const [peerReviewsList, setPeerReviewsList] = useState([]);
   const [fullPeerReviews, setFullPeerReviews] = useState([]);
@@ -46,7 +45,7 @@ function ReportGenerator() {
   const endDateChecked = watch("endDateDefault");
   const startDateCustom = watch("startDateCustom");
 
-  const submitForm = () => {
+  const submitForm = ({ attachment=true }) => {
     const {allTeams, selectedTeam, peerReview, startDateDefault, startDateCustom, endDateDefault, endDateCustom} = getValues();
     let startDate;
     let endDate;
@@ -68,12 +67,23 @@ function ReportGenerator() {
       if (peerReviewEnd && endDate <= peerReviewEnd) return toast.error(`The report end date must be after the selected peer review ended (${selectedPeerReview.periodEndFormatted}).`);
     }
     if (startDate && endDate && startDate >= endDate) return toast.error("The start date must be before the end date.");
-    // Now actually generate the report
+    // Generate the report link
+    let reportUrl = `/api/report/`;
+    if (allTeams) {
+      reportUrl += `assignment/${selectedAssignment._id}`;
+    } else {
+      reportUrl += `team/${selectedTeam.value}`;
+    }
+    const queryParams = [];
+    if (selectedPeerReview) queryParams.push(`peerReview=${selectedPeerReview._id}`);
+    if (startDate) queryParams.push(`periodStart=${format(startDate, "yyyy-MM-dd")}`);
+    if (endDate) queryParams.push(`periodEnd=${format(endDate, "yyyy-MM-dd")}`);
+    if (attachment) queryParams.push("attachment=true");
+    if (queryParams.length > 0) reportUrl += "?" + queryParams.join("&");
+    window.open(reportUrl, "_blank").focus();
   };
 
   const refreshData = () => {
-    if (isLoading !== 0) return;
-    setIsLoading(2);
     reset(defaultValues);
     api
       .get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`)
@@ -83,9 +93,6 @@ function ReportGenerator() {
       .then((data) => {
         const teamsOptions = data.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
         setTeamsList(teamsOptions);
-      })
-      .finally(() => {
-        setIsLoading(isLoading - 1);
       });
     api
       .get(`/api/peer-review?assignment=${selectedAssignment._id}&pastOnly=true&ignoreNone=true`)
@@ -105,9 +112,6 @@ function ReportGenerator() {
         if (fullReviews.length > 0) {
           reset({ ...defaultValues, peerReview: fullReviews[fullReviews.length - 1] });
         }
-      })
-      .finally(() => {
-        setIsLoading(isLoading - 1);
       });
   };
 
@@ -247,19 +251,31 @@ function ReportGenerator() {
         </Col>
       </Form.Group>
 
-      <Button
-        disabled={!isValid}
-        variant="primary"
-        className="d-flex align-items-center"
-        onClick={submitForm}
-      >
-        <Download className="me-2" />
-        { allTeamsChecked ?
-          "Download .zip of reports"
-        :
-          "Download report"
+      <div className="d-flex align-items-center">
+        <Button
+          disabled={!isValid}
+          variant="primary"
+          className="d-flex align-items-center"
+          onClick={submitForm}
+        >
+          <Download className="me-2" />
+          { allTeamsChecked ?
+            "Download .zip of reports"
+          :
+            "Download report"
+          }
+        </Button>
+        { !allTeamsChecked &&
+          <Button
+            disabled={!isValid}
+            variant="link"
+            className="ms-2"
+            onClick={()=> submitForm({ attachment: false })}
+          >
+            Preview in browser
+          </Button>
         }
-      </Button>
+      </div>
       <Row>
         <Col md={6}>
           <p className="text-muted small mt-3">
