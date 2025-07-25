@@ -7,6 +7,7 @@ import {
   Tools,
   PersonCheck,
   Eyeglasses,
+  ClipboardData,
 } from "react-bootstrap-icons";
 
 /**
@@ -87,6 +88,12 @@ export const pageMap = [
     statesVisible: ["live"],
     needsTeam: true,
   },
+  { label: "Reports",
+    icon: ClipboardData,
+    link: "/assignment/reports",
+    rolesVisible: ["lecturer"],
+    statesVisible: ["live", "closed"],
+  },
 ];
 
 /**
@@ -123,9 +130,9 @@ export function isPageAllowed(path, assignmentState, userRole, includeHidden=tru
   const page = pageMap.find(p => p.link === path);
   if (page) {
     if (page?.needsTeam && !teamSet) return false;
-    if (!page.statesVisible.includes(assignmentState)) return false;
-    if (page.rolesVisible.includes(userRole)) return true;
-    if (includeHidden && page.rolesHidden.includes(userRole)) return true;
+    if (!page?.statesVisible?.includes(assignmentState)) return false;
+    if (page?.rolesVisible?.includes(userRole)) return true;
+    if (includeHidden && page?.rolesHidden?.includes(userRole)) return true;
   }
   return false;
 };
