@@ -208,10 +208,10 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
  * or assignment.
  */
 exports.generateTeamReports = async (req, res) => {
-  await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
+  await checkTeamRole(req.params.team, req.session.userId, "supervisor/lecturer");
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid."); 
-  const teamReportData = await generateDataForTeams({ teamId: req.query.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
+  const teamReportData = await generateDataForTeams({ teamId: req.params.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
   return res.render("reports/team", teamReportData[0]);
 };
 
@@ -220,7 +220,7 @@ exports.generateTeamReports = async (req, res) => {
  * given assignment.
  */
 exports.generateTeamReportsBulk = async (req, res) => {
-  await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
+  await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid.");
   // Setup zip response
@@ -229,7 +229,7 @@ exports.generateTeamReportsBulk = async (req, res) => {
   const archive = archiver("zip", { zlib: { level: 9 } });
   archive.pipe(res);
   // Generate data about teams
-  const teamReportData = await generateDataForTeams({ assignmentId: req.query.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
+  const teamReportData = await generateDataForTeams({ assignmentId: req.params.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
   for (const report of teamReportData) {
     const html = await ejs.renderFile(path.join(__dirname, "..", "views", "reports", "team.ejs"), report);
     const htmlBuffer = Buffer.from(html, "utf-8");
