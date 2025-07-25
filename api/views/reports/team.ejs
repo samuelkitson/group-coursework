@@ -51,7 +51,7 @@
                   <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" data-bs-parent="#studentAccordion">
                     <div class="accordion-body px-3 py-1">
                       <div class="row d-flex gx-3 gy-2">
-                        <!-- Attendance Summary -->
+                        <!-- Meeting Summary -->
                         <%
                           const attendanceRate = attendance[member.displayName]?.rate ?? 0;
                           let attendanceBarColour = "";
@@ -80,6 +80,7 @@
                           <div class="metric-card flex-fill">
                             <div class="section-title">Meetings</div>
                             
+                            <% if (meetings.count > 0) { %>
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Attendance</span>
@@ -106,6 +107,10 @@
                                 <span class="small fw-medium"><%= minutesRecorded %> meeting<% if (minutesRecorded !== 1) { %>s<% } %></span>
                               </div>
                             </div>
+                            
+                            <% } else { %>
+                            <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> No meetings recorded during this period.</div>
+                            <% } %>
                           </div>
                         </div>
 
@@ -115,8 +120,10 @@
                           <div class="metric-card flex-fill">
                             <div class="section-title">Skills (rated by peers)</div>
 
-                            <% Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => { %>
-                            <% 
+                            
+                            <% if (Object.keys(skillRatings).length > 0) {
+
+                              Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => {
                               const rating = parseFloat(value);
                               const skillWidth = ((rating - 0.75) / 4.25) * 100;
                               let skillBarColour = "";
@@ -138,7 +145,10 @@
                                 <div class="progress-bar <%= skillBarColour %>" style="width: <%= skillWidth %>%"></div>
                               </div>
                             </div>
-                            <% }); %>
+                            <% });
+                            } else { %>
+                            <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> Nobody completed a peer review for <%= member.displayName %>.</div>
+                            <% } %>
                           </div>
                         </div>
                         <% } %>
@@ -162,8 +172,8 @@
                                 engagementLabel = "Great";
                               }
 
-                              const checkinsCompleted = 6;
-                              const checkinsTotal = 8;
+                              const checkinsCompleted = checkinsSubmitted[member.displayName] ?? 0;
+                              const checkinsTotal = peerReviewCount ?? 0;
                               const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
                               let checkinBarColour = "";
                               if (checkinRate <= 50) {
@@ -201,14 +211,33 @@
                         <div class="col-12 col-sm-6 col-xl-3 d-flex">
                           <div class="metric-card flex-fill">
                             <div class="section-title">Workload balance</div>
+                            <% 
+                              const effortScoreToLabel = (score) => {
+                                if (score <= checkinThresholds.low) return "low";
+                                if (score >= checkinThresholds.high) return "high";
+                                return "average";
+                              };
+
+                              // Widths: -50% for full negative, +50% for full postive
+                              const netScore = netScores[member.displayName] ?? 0;
+                              const netScoreWidthL = Math.min(50, Math.max(0, netScore / checkinThresholds.min * 50));
+                              const netScoreWidthR = Math.min(50, Math.max(0, netScore / checkinThresholds.max * 50));
+                              const netScoreString = netScore > 0 ? "+"+netScore : netScore;
+                              
+                              const selfScore = selfNetScores[member.displayName] ?? 0;
+                              const selfScoreWidthL = Math.min(50, Math.max(0, selfScore / checkinThresholds.min * 50));
+                              const selfScoreWidthR = Math.min(50, Math.max(0, selfScore / checkinThresholds.max * 50));
+                              const selfScoreString = selfScore > 0 ? "+"+selfScore : selfScore;
+                            %>
+                            <% if (Object.keys(checkinsSubmitted ?? {}).length > 0) { %>
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Self-perceived effort</span>
-                                <span class="small fw-medium">+2 (average)</span>
+                                <span class="small fw-medium"><%= selfScoreString %> (<%= effortScoreToLabel(selfScore) %>)</span>
                               </div>
                               <div class="progress compact-progress progress-centred">
-                                <div class="progress-bar progress-left" style="width: 0%"></div>
-                                <div class="progress-bar progress-right progress-blue" style="width: 20%"></div>
+                                <div class="progress-bar progress-left progress-red" style="width: <%= selfScoreWidthL%>%"></div>
+                                <div class="progress-bar progress-right progress-green" style="width: <%= selfScoreWidthR%>%"></div>
                                 <div class="progress-bar-middle"></div>
                               </div>
                             </div>
@@ -216,14 +245,17 @@
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Peer-reviewed effort</span>
-                                <span class="small fw-medium">-4 (low)</span>
+                                <span class="small fw-medium"><%= netScoreString %> (<%= effortScoreToLabel(netScore) %>)</span>
                               </div>
                               <div class="progress compact-progress progress-centred">
-                                <div class="progress-bar progress-left progress-red" style="width: 30%"></div>
-                                <div class="progress-bar progress-right" style="width: 0%"></div>
+                                <div class="progress-bar progress-left progress-red" style="width: <%= netScoreWidthL%>%"></div>
+                                <div class="progress-bar progress-right progress-green" style="width: <%= netScoreWidthR%>%"></div>
                                 <div class="progress-bar-middle"></div>
                               </div>
                             </div>
+                            <% } else { %>
+                            <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> Nobody submitted a check-in during this period.</div>
+                            <% } %>
                           </div>
                         </div>
                       </div>
@@ -245,7 +277,7 @@
                           </div>
                           <% }); %>
                         <% } else { %>
-                          <div class="text-muted small mb-2">Nobody completed a peer review for <%= member.displayName %>.</div>
+                          <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
                         </div>
                       </div>
