@@ -90,17 +90,22 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     // Add in skill ratings
     const skillsRatingsSummary = peerReviewSkillsStatistics(fullReviews, averages=true);
     renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {}) ?? {};
-    // Add in workload balance scores from check-ins
-    const allCheckins = await checkinModel.aggregate([
-      { $match: { team: team._id }},
-      { $lookup: { from: "peerreviews", localField: "peerReview", foreignField: "_id", as: "peerReviewFiltered", }},
-      { $unwind: { path: "$peerReviewFiltered", preserveNullAndEmptyArrays: false, }},
-      { $match :{ "peerReviewFiltered.periodStart": { $gte: periodStart, $lte: periodEnd, }}},
-      { $project: { _id: 1, peerReview: "$peerReviewFiltered", effortPoints: 1, reviewer: 1, }}
-    ]);
-    // const allCheckins = await checkinModel.find({ team })
-    //   .populate({ path: "peerReview", match: { periodStart: { $gte: periodStart, $lte: periodEnd, }}, select: "_id periodStart"})
-    //   .where("peerReview").ne(null).lean();
+  } else {
+    renderObj.reviewComments = {};
+    renderObj.skillRatings = {};
+  }
+  // Add in workload balance scores from check-ins
+  const allCheckins = await checkinModel.aggregate([
+    { $match: { team: team._id }},
+    { $lookup: { from: "peerreviews", localField: "peerReview", foreignField: "_id", as: "peerReviewFiltered", }},
+    { $unwind: { path: "$peerReviewFiltered", preserveNullAndEmptyArrays: false, }},
+    { $match :{ "peerReviewFiltered.periodStart": { $gte: periodStart, $lte: periodEnd, }}},
+    { $project: { _id: 1, peerReview: "$peerReviewFiltered", effortPoints: 1, reviewer: 1, }}
+  ]);
+  // const allCheckins = await checkinModel.find({ team })
+  //   .populate({ path: "peerReview", match: { periodStart: { $gte: periodStart, $lte: periodEnd, }}, select: "_id periodStart"})
+  //   .where("peerReview").ne(null).lean();
+  if (allCheckins.length > 0) {
     const checkinsGrouped = {};
     const netScoresEach = {};
     const selfNetScoresEach = {};
