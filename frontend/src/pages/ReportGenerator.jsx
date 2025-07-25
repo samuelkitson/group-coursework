@@ -9,6 +9,7 @@ import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
 import { BoxArrowUpRight, Download } from "react-bootstrap-icons";
 import toast from "react-hot-toast";
+import { useSearchParams } from "react-router-dom";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -19,6 +20,7 @@ function ReportGenerator() {
   const [teamsList, setTeamsList] = useState([]);
   const [peerReviewsList, setPeerReviewsList] = useState([]);
   const [fullPeerReviews, setFullPeerReviews] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // Add your comparison date here (replace with actual UTC string)
   const comparisonDateUTC = selectedAssignment?.createdAt || null; // Replace with your actual date
@@ -85,7 +87,7 @@ function ReportGenerator() {
 
   const refreshData = () => {
     reset(defaultValues);
-    api
+    const teamPromise = api
       .get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`)
       .then((resp) => {
         return resp.data;
@@ -93,8 +95,9 @@ function ReportGenerator() {
       .then((data) => {
         const teamsOptions = data.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
         setTeamsList(teamsOptions);
-      });
-    api
+        return teamsOptions;
+    });
+    const peerReviewPromise = api
       .get(`/api/peer-review?assignment=${selectedAssignment._id}&pastOnly=true&ignoreNone=true`)
       .then((resp) => {
         return resp.data;
@@ -109,10 +112,26 @@ function ReportGenerator() {
         setPeerReviewsList(formatted);
         const fullReviews = formatted.filter(p => p.type == "full").map(p => ({ value: p._id, label: `${p.periodStartFormatted} - ${p.periodEndFormatted}`}));
         setFullPeerReviews(fullReviews);
-        if (fullReviews.length > 0) {
-          reset({ ...defaultValues, peerReview: fullReviews[fullReviews.length - 1] });
+        return fullReviews;
+    });
+    Promise.all([teamPromise, peerReviewPromise]).then(([teamData, fullReviews]) => {
+      const resetData = { ...defaultValues };
+      if (fullReviews.length > 0) {
+        resetData.peerReview = fullReviews[fullReviews.length - 1];
+      }
+      if (searchParams.get("team")) {
+        const matchedTeam = teamData.find(t => t.value == searchParams.get("team"));
+        if (matchedTeam) {
+          resetData.selectedTeam = matchedTeam;
+          resetData.allTeams = false;
+          setSearchParams({});
         }
-      });
+      }
+      if (selectedAssignment.role === "supervisor") {
+        resetData.allTeams = false;
+      }
+      reset(resetData);
+    });
   };
 
   useEffect(refreshData, [selectedAssignment]);
@@ -136,6 +155,7 @@ function ReportGenerator() {
           <Controller
             name="allTeams"
             control={control}
+            disabled={selectedAssignment.role !== "lecturer"}
             render={({ field }) => (
               <Form.Check
                 type="checkbox"

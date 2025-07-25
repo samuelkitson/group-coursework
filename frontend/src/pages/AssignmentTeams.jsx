@@ -6,7 +6,7 @@ import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
-import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp } from "react-bootstrap-icons";
+import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp, ClipboardData, Download } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
 import { useNavigate } from "react-router-dom";
@@ -64,6 +64,10 @@ function AssignmentTeams() {
         }
         setShowModal("checkins");
       });
+  };
+
+  const goToReportsPage = (groupid) => {
+    navigate(`/assignment/reports?team=${groupid}`);
   };
 
   const warningFlags = (student) => {
@@ -289,6 +293,11 @@ function AssignmentTeams() {
                             className="d-flex align-items-center"
                             onClick={() => viewPeerReviews(index)}>
                             <JournalText className="me-2" /> Peer reviews
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            className="d-flex align-items-center"
+                            onClick={() => goToReportsPage(group._id)}>
+                            <Download className="me-2" /> Progress report
                           </Dropdown.Item>
                         </Dropdown.Menu>
                       </Dropdown>

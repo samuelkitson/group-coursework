@@ -8,6 +8,7 @@ import {
   PersonCheck,
   Eyeglasses,
   ClipboardData,
+  Download,
 } from "react-bootstrap-icons";
 
 /**
@@ -89,9 +90,9 @@ export const pageMap = [
     needsTeam: true,
   },
   { label: "Reports",
-    icon: ClipboardData,
+    icon: Download,
     link: "/assignment/reports",
-    rolesVisible: ["lecturer"],
+    rolesVisible: ["lecturer", "supervisor"],
     statesVisible: ["live", "closed"],
   },
 ];
