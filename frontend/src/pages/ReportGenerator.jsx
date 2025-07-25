@@ -52,7 +52,7 @@ function ReportGenerator() {
     let startDate;
     let endDate;
     const today = new Date();
-    const selectedPeerReview = peerReviewsList.find(p => p._id == peerReview.value) ?? null;
+    const selectedPeerReview = peerReviewsList.find(p => p._id == peerReview?.value) ?? null;
     const peerReviewStart = selectedPeerReview ? new Date(selectedPeerReview?.periodStart) : null;
     const peerReviewEnd = selectedPeerReview ? new Date(selectedPeerReview?.periodEnd) : null;
     if (!allTeams && !selectedTeam) return toast.error("Please select a team to generate a report for.");
