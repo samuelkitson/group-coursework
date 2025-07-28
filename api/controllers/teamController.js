@@ -154,21 +154,15 @@ exports.getAllForAssignment = async (req, res) => {
       };
     })
   );
+  const teamIds = teams.map(t => t._id);
   // Add in check-in data
   const lastWeekDate = new Date();
   lastWeekDate.setDate(lastWeekDate.getDate() - 7);
   const peerReview = await peerReviewModel.findByAssignment(req.query.assignment, lastWeekDate);
-  if (!peerReview) {
-    // No check-in data - maybe peer reviews aren't enabled?
-    // TODO: use more than just last week's data
-    teamsWithLastMeeting.forEach(team => {
-      team.insights = [];
-    });
-  } else {
-    const teamIds = teams.map(t => t._id);
-    const checkins = await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints");
-    teamsWithLastMeeting.forEach(team => {
-      const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+  const checkins = peerReview ? await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints") : [];
+  teamsWithLastMeeting.forEach(team => {
+    const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+      if (teamCheckins.length > 0) {
       const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
       team.members.forEach(member => {
         member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
@@ -177,9 +171,9 @@ exports.getAllForAssignment = async (req, res) => {
         minNetScore: Math.min(...Object.values(checkinStats.netScores)),
         maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
       };
-      team.insights = generateTeamInsights(team);
-    });
-  }
+    }
+    team.insights = generateTeamInsights(team);
+  });
   return res.json({teams: teamsWithLastMeeting});
 };
 
