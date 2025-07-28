@@ -139,13 +139,13 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
   // Add in observation comments
   const observations = await observationModel
     .find({ team: team._id, createdAt: { $lte: periodEnd, $gte: periodStart, }})
-    .populate("observer students", "displayName")
+    .populate("observer", "displayName")
     .select("observer comment students createdAt")
     .sort({ createdAt: -1 }).lean();
   if (observations.length > 0) {
     const formattedObservations = observations.map(o => ({...o, createdAt: format(o.createdAt, "dd/MM/yyyy")}));
     renderObj.teamObservations = formattedObservations.filter(o => !o.students || o.students?.length === 0);
-    renderObj.individualObservations = {};
+    renderObj.individualObservations = formattedObservations.filter(o => o.students && o.students.length > 0);
   }
   return renderObj;
 };
