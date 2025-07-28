@@ -4,6 +4,7 @@ const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const checkinModel = require("../models/checkin");
 const peerReviewModel = require("../models/peerReview");
+const observationModel = require("../models/observation");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError, ConfigurationError } = require("../errors/errors");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { daysBetween, peerReviewSkillsStatistics, calculateAverage } = require("../utility/maths");
@@ -102,9 +103,6 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     { $match :{ "peerReviewFiltered.periodStart": { $gte: periodStart, $lte: periodEnd, }}},
     { $project: { _id: 1, peerReview: "$peerReviewFiltered", effortPoints: 1, reviewer: 1, }}
   ]);
-  // const allCheckins = await checkinModel.find({ team })
-  //   .populate({ path: "peerReview", match: { periodStart: { $gte: periodStart, $lte: periodEnd, }}, select: "_id periodStart"})
-  //   .where("peerReview").ne(null).lean();
   if (allCheckins.length > 0) {
     const checkinsGrouped = {};
     const netScoresEach = {};
@@ -137,6 +135,17 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     renderObj.checkinsSubmitted = {};
     renderObj.checkinThresholds = { min: 0, low: 0, high: 0, max: 0, };
     renderObj.peerReviewCount = 0;
+  }
+  // Add in observation comments
+  const observations = await observationModel
+    .find({ team: team._id, createdAt: { $lte: periodEnd, $gte: periodStart, }})
+    .populate("observer students", "displayName")
+    .select("observer comment students createdAt")
+    .sort({ createdAt: -1 }).lean();
+  if (observations.length > 0) {
+    const formattedObservations = observations.map(o => ({...o, createdAt: format(o.createdAt, "dd/MM/yyyy")}));
+    renderObj.teamObservations = formattedObservations.filter(o => !o.students || o.students?.length === 0);
+    renderObj.individualObservations = {};
   }
   return renderObj;
 };
