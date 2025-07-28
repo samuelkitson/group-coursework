@@ -10,7 +10,7 @@ exports.addObservation = async (req, res) => {
   if (!req.body.comment)
     throw new InvalidParametersError("You must provide an observation comment.");
   const observationObj = { team: req.body.team, comment: req.body.comment, observer: req.session.userId, }
-  if (req.body.students) {
+  if (req.body.students && req.body.students?.length > 0) {
     // If the observation is about specific student(s), check that they're
     // actually on this team.
     if (!req.body.students.every(s => Types.ObjectId.isValid(s))) {
