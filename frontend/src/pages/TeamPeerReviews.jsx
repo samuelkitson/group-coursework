@@ -5,10 +5,11 @@ import { Button, Card, Col, Container, Dropdown, InputGroup, Placeholder, Row, S
 import api from "@/services/apiMiddleware";
 import { format, parseISO } from "date-fns";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { ArrowLeftShort, CursorFill, QuestionCircleFill } from "react-bootstrap-icons";
+import { ArrowLeftShort, CursorFill, GraphUp, QuestionCircleFill } from "react-bootstrap-icons";
 import WorkloadBalanceChart from "@/features/peerReviews/WorkloadBalanceChart";
 import SkillRatingsChart from "@/features/peerReviews/SkillRatingsChart";
 import ReviewComments from "@/features/peerReviews/ReviewComments";
+import AllTimeWorkloadChart from "@/features/peerReviews/AllTimeWorkloadChart";
 
 function TeamPeerReviews() {
   const selectedAssignment = useBoundStore((state) => state.getSelectedAssignment());
@@ -20,6 +21,7 @@ function TeamPeerReviews() {
   const [selectedStudentIndex, setSelectedStudentIndex] = useState(null); // The ID of the selected student
   const [currentPeerReview, setCurrentPeerReview] = useState(null); // The full submissions of the selected review point
   const [isLoading, setIsLoading] = useState(true);
+  const [activeModal, setActiveModal] = useState(null);
 
   const currentReviewPoint = peerReviewPoints[selectedReviewIndex];
   const currentStudent = studentOptions[selectedStudentIndex];
@@ -79,6 +81,14 @@ function TeamPeerReviews() {
       });
   }
 
+  const showWorkloadChart = () => {
+    setActiveModal("all-time-workload");
+  };
+  
+  const hideModal = () => {
+    setActiveModal(null);
+  };
+
   const refreshData = () => {
     setSelectedReviewIndex(0);
     setCurrentPeerReview(null);
@@ -130,6 +140,17 @@ function TeamPeerReviews() {
             Monitor and moderate Team {selectedTeam?.teamNumber}'s peer
             reviews and check-ins. You can also add private notes.
           </p>
+        </Col>
+        <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
+          <div className="d-grid gap-2">
+            <Button
+              variant="primary"
+              className="d-flex align-items-center"
+              onClick={showWorkloadChart}
+            >
+              <GraphUp className="me-2" />Open workload chart
+            </Button>
+          </div>
         </Col>
       </Row>
 
@@ -253,6 +274,8 @@ function TeamPeerReviews() {
         </Col>
       </Row>
       }
+
+      <AllTimeWorkloadChart showModal={activeModal === "all-time-workload"} onHide={hideModal} />
     </>
   );
 }
