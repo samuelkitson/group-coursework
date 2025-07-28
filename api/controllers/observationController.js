@@ -33,6 +33,18 @@ exports.getObservations = async (req, res) => {
   const observations = await observationModel.find({ team: req.query.team })
     .populate("observer students", "displayName")
     .select("_id observer comment students createdAt")
-    .sort({ createdAt: 1 }).lean();
+    .sort({ createdAt: -1 }).lean();
   return res.json({ observations });
+};
+
+exports.deleteObservation = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.params.observation))
+    throw new InvalidObjectIdError("The provided observation ID is invalid.");
+  // Get the observation to check permissions
+  const observation = await observationModel.findById(req.params.observation);
+  if (!observation)
+    throw new GenericNotFoundError("The observation with that ID was not found.");
+  await checkTeamRole(observation.team, req.session.userId, "supervisor/lecturer");
+  await observationModel.deleteOne({ _id: observation._id });
+  return res.json({ message: "Observation deleted successfully. "});
 };

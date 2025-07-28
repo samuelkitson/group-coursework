@@ -29,8 +29,16 @@ function TeamObservations() {
   };
   
   const handleSubmitDelete = () => {
-    console.log("deleting");
-    hideModal();
+    api
+      .delete(`/api/observation/${obsToDelete._id}`, { successToasts: true, })
+      .then((resp) => {
+        return resp.data;
+      })
+      .then((data) => {
+        const updatedObsList = observations.filter(o => o._id != obsToDelete._id);
+        setObservations(updatedObsList);
+        hideModal();
+      });
   };
 
   const refreshData = () => {

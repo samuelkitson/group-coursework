@@ -7,5 +7,6 @@ const router = express.Router();
 
 router.post("/", requireLoggedIn(), asyncHandler(observationC.addObservation));
 router.get("/", requireLoggedIn(), asyncHandler(observationC.getObservations));
+router.delete("/:observation", requireLoggedIn(), asyncHandler(observationC.deleteObservation));
 
 module.exports = router;
