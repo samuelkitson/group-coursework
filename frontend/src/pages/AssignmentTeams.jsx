@@ -8,7 +8,6 @@ import toast from "react-hot-toast";
 import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
 import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp, ClipboardData, Download } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
-import { chartColours } from "@/utility/helpers";
 import { useNavigate } from "react-router-dom";
 
 function AssignmentTeams() {
@@ -46,24 +45,9 @@ function AssignmentTeams() {
     navigate("/assignment/peer-reviews");
   };
 
-  const viewCheckinHistory = (groupid) => {
-    api
-      .get(`/api/checkin/history?team=${groupid}`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        const checkinData = data.checkins.map(c => {
-          const endDate = new Date(c.periodEnd);
-          const niceEndDate = endDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
-          return {periodEnd: niceEndDate, ...c.netScores,}
-        });
-        setCheckinHistory(checkinData);
-        if (checkinData.length > 0) {
-          setCheckinStudents(Object.keys(checkinData[0]).filter(k => k !== "periodEnd"));
-        }
-        setShowModal("checkins");
-      });
+  const viewObservations = async (groupidx) => {
+    await setSelectedTeam(teams[groupidx]);
+    navigate("/assignment/observations");
   };
 
   const goToReportsPage = (groupid) => {
@@ -286,13 +270,13 @@ function AssignmentTeams() {
                           </Dropdown.Item>
                           <Dropdown.Item
                             className="d-flex align-items-center"
-                            onClick={() => viewCheckinHistory(group._id)}>
-                            <GraphUp className="me-2" /> Workload balance
+                            onClick={() => viewPeerReviews(index)}>
+                            <GraphUp className="me-2" /> Peer reviews
                           </Dropdown.Item>
                           <Dropdown.Item
                             className="d-flex align-items-center"
-                            onClick={() => viewPeerReviews(index)}>
-                            <JournalText className="me-2" /> Peer reviews
+                            onClick={() => viewObservations(index)}>
+                            <JournalText className="me-2" /> Observations
                           </Dropdown.Item>
                           <Dropdown.Item
                             className="d-flex align-items-center"
@@ -360,51 +344,6 @@ function AssignmentTeams() {
           )) : 
             <p className="text-muted">
               No meeting records found for this team.
-            </p>
-          }
-        </Modal.Body>
-      </Modal>
-
-      <Modal show={showModal === "checkins"} size="xl" onHide={() => setShowModal(null)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Check-in data</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          { checkinHistory?.length > 0 ?
-            <>
-            <p className="text-muted">
-              This chart shows how students in this team perceive the workload
-              balance. A score of 0 is ideal and means that student is seen to
-              be doing their fair share. A high score means they're doing more,
-              and a low score may indicate free-riding.
-            </p>
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart
-                data={checkinHistory}
-                margin={{
-                  left: 50,
-                  bottom: 50,
-                }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="periodEnd">
-                  <Label offset={20} position="bottom" value="Weeks (last day)" />
-                </XAxis>
-                <YAxis>
-                  <Label position="left" angle={-90} value="Relative workload" />
-                </YAxis>
-                <ReferenceArea y1={-4} y2={4} fill="#71d97f" opacity={0.3} alwaysShow />
-                <ChartTooltip />
-                <Legend align="right" verticalAlign="middle" layout="vertical" wrapperStyle={{ paddingLeft: "20px" }} />
-                {checkinStudents.map((student, index) => (
-                  <Line type="monotone" dataKey={student} stroke={chartColours[index % chartColours.length]} strokeWidth={2} />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-            </>
-            :
-            <p className="text-muted">
-              This team doesn't have any check-in data to show yet.
             </p>
           }
         </Modal.Body>

@@ -279,10 +279,29 @@
                         <% } else { %>
                           <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> Nobody completed a peer review for <%= member.displayName %>.</div>
                         <% } %>
-                        </div>
                       </div>
                       <% } %>
 
+                      <!-- Individual observation comments -->
+                      <% if (typeof individualObservations !== "undefined") {
+                        const studentObservations = (individualObservations ?? []).filter(o => {
+                          return (o?.students ?? []).some(s => member._id.equals(s));
+                        });
+                        if (studentObservations.length > 0) { %>
+                        <div class="mt-3">
+                          <div class="section-title">Supervisor/staff observations</div>
+                          <% studentObservations.forEach(function(observation, index) { %>
+                          <div class="comment-item">
+                            <div class="small comment-text"><%= observation?.comment %></div>
+                            <div class="text-muted small">
+                              — <%= observation?.observer?.displayName %>, <%= observation?.createdAt %>
+                            </div>
+                          </div>
+                          <% }); %>
+                        </div>
+                      <% }} %>
+                      
+                    </div>
                   </div>
                 </div>
               <% }); %>
@@ -311,6 +330,30 @@
         </div>
       </div>
     </div>
+
+    <!-- Whole team observations -->
+    <% if (typeof teamObservations !== "undefined" && teamObservations?.length > 0) { %> 
+    <div class="row my-2">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-dark text-white p-1">
+            <h6 class="mb-0"><i class="bi bi-eyeglasses ms-1 me-2"></i>Team observations</h6>
+          </div>
+
+          <div class="card-body p-2">
+            <% teamObservations.forEach(function(observation, index) { %>
+            <div class="comment-item">
+              <div class="small comment-text"><%= observation?.comment %></div>
+              <div class="text-muted small">
+                — <%= observation?.observer?.displayName %>, <%= observation?.createdAt %>
+              </div>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    </div>
+    <% } %>
 
     <!-- Attendance Table - Compressed -->
     <div class="row">

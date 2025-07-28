@@ -9,6 +9,7 @@ import {
   Eyeglasses,
   ClipboardData,
   Download,
+  Journal,
 } from "react-bootstrap-icons";
 
 /**
@@ -95,6 +96,12 @@ export const pageMap = [
     rolesVisible: ["lecturer", "supervisor"],
     statesVisible: ["live", "closed"],
   },
+  { label: "Observations",
+    icon: Eyeglasses,
+    link: "/assignment/observations",
+    rolesHidden: ["lecturer", "supervisor"],
+    statesVisible: ["live", "closed"],
+  },
 ];
 
 /**
@@ -107,13 +114,13 @@ export const pageMap = [
 export function getAllowedPages(assignmentState, userRole, includeHidden=false) {
   if (includeHidden) {
     return pageMap.filter(p =>
-      (p.rolesVisible.includes(userRole) || p?.rolesHidden?.includes(userRole)) &&
-      p.statesVisible.includes(assignmentState)
+      (p.rolesVisible?.includes(userRole) || p?.rolesHidden?.includes(userRole)) &&
+      p.statesVisible?.includes(assignmentState)
     );
   } else {
     return pageMap.filter(p =>
-      (p.rolesVisible.includes(userRole)) &&
-      p.statesVisible.includes(assignmentState)
+      (p.rolesVisible?.includes(userRole)) &&
+      p.statesVisible?.includes(assignmentState)
     );
   }
 };
