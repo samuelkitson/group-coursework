@@ -208,7 +208,6 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
       periodEnd: searchEndDate,
       peerReviewCount: allPeerReviews.length
     });
-    console.log(teamData);
     generatedReportObjects.push(teamData);
   }
   const metadata = { assignmentName: assignmentInfo.name, teamNumbers: teams.map(t => t.teamNumber), };
