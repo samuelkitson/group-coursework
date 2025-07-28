@@ -31,6 +31,7 @@ import AuthCallback from "./pages/AuthCallback";
 import TeamPeerReviews from "./pages/TeamPeerReviews";
 import ScrollToTop from "./utility/ScrollToTop";
 import ReportGenerator from "./pages/ReportGenerator";
+import TeamObservations from "./pages/TeamObservations";
 
 function WithNavigation() {
   return (
@@ -94,6 +95,9 @@ function App() {
             </Route>
             <Route path="/assignment/reports" element={<AssignmentRoute />}>
               <Route index element={<ReportGenerator />} />
+            </Route>
+            <Route path="/assignment/observations" element={<AssignmentRoute />}>
+              <Route index element={<TeamObservations />} />
             </Route>
           </Route>
         </Route>

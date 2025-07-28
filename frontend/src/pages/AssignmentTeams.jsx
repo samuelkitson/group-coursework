@@ -46,6 +46,11 @@ function AssignmentTeams() {
     navigate("/assignment/peer-reviews");
   };
 
+  const viewObservations = async (groupidx) => {
+    await setSelectedTeam(teams[groupidx]);
+    navigate("/assignment/observations");
+  };
+
   const viewCheckinHistory = (groupid) => {
     api
       .get(`/api/checkin/history?team=${groupid}`)
@@ -293,6 +298,11 @@ function AssignmentTeams() {
                             className="d-flex align-items-center"
                             onClick={() => viewPeerReviews(index)}>
                             <JournalText className="me-2" /> Peer reviews
+                          </Dropdown.Item>
+                          <Dropdown.Item
+                            className="d-flex align-items-center"
+                            onClick={() => viewObservations(index)}>
+                            <JournalText className="me-2" /> Observations
                           </Dropdown.Item>
                           <Dropdown.Item
                             className="d-flex align-items-center"
