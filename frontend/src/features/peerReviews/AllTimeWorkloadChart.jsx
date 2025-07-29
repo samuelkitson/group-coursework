@@ -9,6 +9,7 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [checkinStudents, setCheckinStudents] = useState([]);
+  const [thresholds, setThresholds] = useState({VERY_LOW: -1.5, LOW: -1, HIGH: 1, VERY_HIGH: 1.5});
 
   const loadData = (groupid) => {
     api
@@ -17,18 +18,19 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
         return resp.data;
       })
       .then((data) => {
-        let someData = false
+        let someData = false;
+        const students = new Set();
         const checkinData = data.checkins.map(c => {
           const endDate = new Date(c.periodEnd);
           const niceEndDate = endDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
-          if (Object.keys(c?.totalScores ?? {}).length > 0) someData = true;
-          return {periodEnd: niceEndDate, ...c.netScores,}
+          if (Object.keys(c?.normScores ?? {}).length > 0) someData = true;
+          Object.keys(c?.normScores ?? {}).forEach(student => students.add(student));
+          return {periodEnd: niceEndDate, ...c.normScores,}
         });
         if (!someData) return setCheckinHistory(null);
         setCheckinHistory(checkinData);
-        if (checkinData.length > 0) {
-          setCheckinStudents(Object.keys(checkinData[0]).filter(k => k !== "periodEnd"));
-        }
+        setCheckinStudents(Array.from(students));
+        setThresholds(data.thresholds);
       });
   };
 
@@ -61,16 +63,20 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
             >
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="periodEnd">
-                <Label offset={20} position="bottom" value="Weeks (last day)" />
+                <Label position="bottom" value="Weeks (last day)" />
               </XAxis>
-              <YAxis>
+              <YAxis domain={[-3, 3]} tickCount={7}>
                 <Label position="left" angle={-90} value="Relative workload" />
               </YAxis>
-              <ReferenceArea y1={-4} y2={4} fill="#71d97f" opacity={0.3} ifOverflow="extendDomain" />
+              <ReferenceArea y1={-3} y2={thresholds.VERY_LOW} fill="#f19898ff" opacity={0.2} />
+              <ReferenceArea y1={thresholds.VERY_LOW} y2={thresholds.LOW} fill="#dfe859ff" opacity={0.2} />
+              <ReferenceArea y1={thresholds.LOW} y2={thresholds.HIGH} fill="#71d97f" opacity={0.3} />
+              <ReferenceArea y1={thresholds.HIGH} y2={thresholds.VERY_HIGH} fill="#dfe859ff" opacity={0.2} />
+              <ReferenceArea y1={thresholds.VERY_HIGH} y2={3} fill="#f19898ff" opacity={0.2} />
               <Legend align="right" verticalAlign="middle" layout="vertical" wrapperStyle={{ paddingLeft: "20px" }} />
               <ChartTooltip />
               {checkinStudents.map((student, index) => (
-                <Line key={index} type="monotone" dataKey={student} stroke={chartColours[index % chartColours.length]} strokeWidth={2} />
+                <Line key={index} type="monotone" dataKey={student} stroke={chartColours[index % chartColours.length]} strokeWidth={2} connectNulls />
               ))}
             </LineChart>
           </ResponsiveContainer>

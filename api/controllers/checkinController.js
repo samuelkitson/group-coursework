@@ -6,6 +6,7 @@ const { checkinStatistics, peerReviewSkillsStatistics } = require("../utility/ma
 const { checkTeamRole } = require("../utility/auth");
 const { InvalidParametersError, GenericNotFoundError, AssignmentInvalidStateError, ConfigurationError, InvalidObjectIdError } = require("../errors/errors");
 const checkin = require("../models/checkin");
+const { CHECKIN_THRESHOLDS } = require("../config/constants");
 
 exports.checkInHistoryHelper = async (teamId) => {
   // As a helper, also get the user ID => display name mapping
@@ -33,8 +34,8 @@ exports.checkInHistoryHelper = async (teamId) => {
   // members and calculate the net and total scores
   const checkinsGrouped = peerReviewPoints.map(p => {
     const relevantCheckins = checkins.filter(c => p._id.equals(c.peerReview)) ?? [];
-    const {netScores, totalScores} = checkinStatistics(relevantCheckins);
-    return {...p, checkins: relevantCheckins, netScores, totalScores};
+    const {netScores, normScores, submitted} = checkinStatistics(relevantCheckins);
+    return {...p, checkins: relevantCheckins, netScores, normScores};
   });
 
   // Replace user IDs with names, and remove other unnecessary data
@@ -43,7 +44,7 @@ exports.checkInHistoryHelper = async (teamId) => {
     periodEnd: c.periodEnd,
     type: c.type,
     netScores: Object.keys(c.netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.netScores[id] }), {}),
-    totalScores: Object.keys(c.totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.totalScores[id] }), {}),
+    normScores: Object.keys(c.normScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: c.normScores[id] }), {}),
   }));
 
   return simplifiedStats;
@@ -155,7 +156,7 @@ exports.submitCheckIn = async (req, res) => {
 exports.getCheckInHistory = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
   const checkins = await this.checkInHistoryHelper(req.query.team);
-  return res.json({ checkins });
+  return res.json({ checkins, thresholds: CHECKIN_THRESHOLDS, });
 };
 
 // Fetch by peer review point and team.
@@ -181,7 +182,7 @@ exports.getCheckInResponse = async (req, res) => {
     team: req.query.team,
   }).select("_id reviewer effortPoints reviews").lean();
   // Generate the summaries
-  const {netScores, totalScores} = checkinStatistics(checkIns);
+  const {normScores, totalScores} = checkinStatistics(checkIns);
   const skillsRatingsSummary = peerReviewSkillsStatistics(checkIns);
   const reviewComments = [];
   // Add names in and gather review comments together
@@ -201,15 +202,15 @@ exports.getCheckInResponse = async (req, res) => {
     })));
     return { _id: c._id, reviewer, effortPoints, };
   });
-  const netScoresNames = Object.keys(netScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: netScores[id] }), {});
+  const normScoresNames = Object.keys(normScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: normScores[id] }), {});
   const totalScoresNames = Object.keys(totalScores).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: totalScores[id] }), {});
   const skillRatingsNames = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {});
   if (checkIns.length === 0)
     throw new GenericNotFoundError("No peer review data could be found for those search parameters.");
   if (reviewComments.length === 0) {
-    return res.json({ checkIns: checkInsNames, netScores: netScoresNames, totalScores: totalScoresNames});
+    return res.json({ checkIns: checkInsNames, normScores: normScoresNames, totalScores: totalScoresNames, thresholds: CHECKIN_THRESHOLDS, });
   } else {
-    return res.json({ skillRatings: skillRatingsNames, reviewComments, checkIns: checkInsNames, netScores: netScoresNames, totalScores: totalScoresNames});
+    return res.json({ skillRatings: skillRatingsNames, reviewComments, checkIns: checkInsNames, normScores: normScoresNames, totalScores: totalScoresNames, thresholds: CHECKIN_THRESHOLDS, });
   }
 };
 

@@ -9,6 +9,7 @@ const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/mat
 const { summariseMeetingAttendance } = require("./meetingController");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
+const { CHECKIN_THRESHOLDS, ATTENDANCE_THRESHOLDS } = require("../config/constants");
 
 const generateTeamInsights = (teamData) => {
   const insights = [];
@@ -37,12 +38,12 @@ const generateTeamInsights = (teamData) => {
   // Meeting attendance - only if there have been at least 2 meetings
   const attendanceRates = teamData.members.map(member => member.meetingAttendance.rate ?? 100);
   if (teamData.meetingCount >= 2) {
-    if (attendanceRates.some(r => r < 40)) {
+    if (attendanceRates.some(r => r <= ATTENDANCE_THRESHOLDS.VERY_LOW)) {
       insights.push({
         type: "severe",
         text: `Frequently absent members`,
       });
-    } else if (attendanceRates.some(r => r < 70)) {
+    } else if (attendanceRates.some(r => r <= ATTENDANCE_THRESHOLDS.LOW)) {
       insights.push({
         type: "warning",
         text: `Occasionally absent members`,
@@ -54,30 +55,61 @@ const generateTeamInsights = (teamData) => {
       });
     }
   }
-  // Check-in net scores
+  // Check-in scores (for the preceding week)
   if (teamData?.checkInStats) {
-    if (teamData?.checkInStats?.minNetScore <= -5 ) {
+    const checkInsCompleted = teamData.checkInStats?.completed ?? 0;
+    // Completion rate checks
+    if (checkInsCompleted === 0) {
       insights.push({
         type: "severe",
-        text: `Likely free-riding`,
+        text: `No check-ins completed last week`,
       });
-    } else if (teamData?.checkInStats?.minNetScore <= -4 ) {
+    } else if (checkInsCompleted / teamData.members.length < 0.4) {
       insights.push({
-        type: "warning",
-        text: `Potential free-riding`,
+        type: "severe",
+        text: `Very low check-in completion last week`,
       });
-    }
-    if (teamData?.checkInStats?.maxNetScore >= 5 ) {
-      insights.push({
-        type: "warning",
-        text: `One student doing most of the work`,
-      });
-    }
-    if (teamData?.checkInStats?.minNetScore >= -3 && teamData?.checkInStats?.maxNetScore <= 4 ) {
-      insights.push({
-        type: "positive",
-        text: `Good workload balance`,
-      });
+    } else {
+      if (checkInsCompleted / teamData.members.length < 0.6) {
+        insights.push({
+          type: "warning",
+          text: `Low check-in completion last week`,
+        });
+      }
+      if (checkInsCompleted == teamData.members.length) {
+        insights.push({
+          type: "positive",
+          text: `All check-ins completed last week`,
+        });
+      }
+      const minScore = teamData?.checkInStats?.minNetScore ?? 0;
+      const maxScore = teamData?.checkInStats?.maxNetScore ?? 0;
+      // Low score checks (indicates free-riding)
+      if (minScore <= checkInsCompleted * CHECKIN_THRESHOLDS.VERY_LOW ) {
+        insights.push({
+          type: "severe",
+          text: `Likely free-riding`,
+        });
+      } else if (minScore <= checkInsCompleted * CHECKIN_THRESHOLDS.LOW ) {
+        insights.push({
+          type: "warning",
+          text: `Potential free-riding`,
+        });
+      }
+      // High score checks (indicates one student overworking)
+      if (maxScore >= checkInsCompleted * CHECKIN_THRESHOLDS.VERY_HIGH ) {
+        insights.push({
+          type: "warning",
+          text: `One student doing most of the work`,
+        });
+      }
+      // Good balance check
+      if (minScore > checkInsCompleted * CHECKIN_THRESHOLDS.LOW && maxScore < checkInsCompleted * CHECKIN_THRESHOLDS.VERY_HIGH) {
+        insights.push({
+          type: "positive",
+          text: `Good workload balance`,
+        });
+      }
     }
   }
   // Check disputes
@@ -96,6 +128,28 @@ const generateTeamInsights = (teamData) => {
   // Show the most severe insights first
   const sortingOrder = { severe: 1, warning: 2, positive: 3 };
   return insights.sort((a, b) => (sortingOrder[a.type] || 4) - (sortingOrder[b.type] || 4));
+};
+
+const generateStudentFlags = (studentData, includeAttendance=true) => {
+  const flags = [];
+  // Check attendance
+  if (includeAttendance) {
+    const attendanceRate = studentData?.meetingAttendance?.rate ?? 100;
+    if (attendanceRate <= ATTENDANCE_THRESHOLDS.VERY_LOW) {
+      flags.push("Very low meeting attendance");
+    } else if (attendanceRate <= ATTENDANCE_THRESHOLDS.LOW) {
+      flags.push("Low meeting attendance");
+    }
+  }
+  // Check-in norm scores
+  if (studentData.checkinNormScore) {
+    if (studentData.checkinNormScore <= CHECKIN_THRESHOLDS.VERY_LOW) {
+      flags.push("Very low effort reported");
+    } else if (studentData.checkinNormScore <= CHECKIN_THRESHOLDS.VERY_LOW) {
+      flags.push("Low effort reported");
+    } 
+  }
+  return flags;
 };
 
 /**
@@ -162,17 +216,27 @@ exports.getAllForAssignment = async (req, res) => {
   const checkins = peerReview ? await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints") : [];
   teamsWithLastMeeting.forEach(team => {
     const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+    if (peerReview) {
       if (teamCheckins.length > 0) {
-      const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
-      team.members.forEach(member => {
-        member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
-      });
-      team.checkInStats = {
-        minNetScore: Math.min(...Object.values(checkinStats.netScores)),
-        maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
-      };
+        const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
+        team.members.forEach(member => {
+          member.checkinNormScore = checkinStats.normScores[member._id.toString()] ?? undefined;
+        });
+        team.checkInStats = {
+          minNetScore: Math.min(...Object.values(checkinStats.netScores)),
+          maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
+          completed: teamCheckins.length,
+        };
+      } else {
+        // There has been a peer review but no students completed it
+        team.checkInStats = { completed: teamCheckins.length, };
+      }
     }
     team.insights = generateTeamInsights(team);
+    team.members.forEach(member => {
+      const flags = generateStudentFlags(member, team.meetingCount >= 2);
+      if (flags.length > 0) member.flags = flags;
+    });
   });
   return res.json({teams: teamsWithLastMeeting});
 };

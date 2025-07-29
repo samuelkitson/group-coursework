@@ -20,6 +20,7 @@ function TeamPeerReviews() {
   const [studentOptions, setStudentOptions] = useState([]); // The list of student names for the selected review point
   const [selectedStudentIndex, setSelectedStudentIndex] = useState(null); // The ID of the selected student
   const [currentPeerReview, setCurrentPeerReview] = useState(null); // The full submissions of the selected review point
+  const [thresholds, setThresholds] = useState({VERY_LOW: -1.5, LOW: -1, HIGH: 1, VERY_HIGH: 1.5});
   const [isLoading, setIsLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(null);
 
@@ -67,9 +68,10 @@ function TeamPeerReviews() {
       })
       .then((data) => {
         setCurrentPeerReview(data);
-        const studentOptions = Object.keys(data?.netScores ?? {});
+        const studentOptions = Object.keys(data?.normScores ?? {});
         setStudentOptions(studentOptions);
         setDefaultStudent();
+        setThresholds(data.thresholds);
       })
       .catch(() => {
         setCurrentPeerReview(null);
@@ -269,7 +271,7 @@ function TeamPeerReviews() {
           />
         </Col>
         <Col md={4}>
-          <WorkloadBalanceChart netScores={currentPeerReview?.netScores} currentStudent={currentStudent} />
+          <WorkloadBalanceChart normScores={currentPeerReview?.normScores} currentStudent={currentStudent} thresholds={thresholds} />
           <SkillRatingsChart skillRatings={currentPeerReview?.skillRatings} currentStudent={currentStudent} />
         </Col>
       </Row>

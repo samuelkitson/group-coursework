@@ -17,13 +17,14 @@ import { calculateAverage } from "@/utility/helpers";
 
 const SkillRatingsChart = ({skillRatings, currentStudent}) => {
 
-  if (!skillRatings || !currentStudent) {
-    return <></>;
-  }
+  if (!skillRatings || !currentStudent) return <></>;
 
-  const chartData = Object.keys(skillRatings[currentStudent]).map(skill => ({
+  const studentRatings = skillRatings[currentStudent];
+  if (!studentRatings) return <></>;
+
+  const chartData = Object.keys(studentRatings).map(skill => ({
     "Skill": skill,
-    "Peer rating": calculateAverage(skillRatings[currentStudent][skill]),
+    "Peer rating": calculateAverage(studentRatings[skill]),
   }));
 
   const barColours = chartData.map(skill => {
@@ -34,7 +35,7 @@ const SkillRatingsChart = ({skillRatings, currentStudent}) => {
     return "#ccc";
   });
 
-  const skillsCount = Object.keys(skillRatings[currentStudent]).length;
+  const skillsCount = Object.keys(studentRatings).length;
 
   return (
     <ResponsiveContainer width="100%" height={skillsCount*50 + 50}>

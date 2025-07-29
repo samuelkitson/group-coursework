@@ -60,7 +60,10 @@ exports.checkinStatisticsOld = (effortPoints) => {
 
 /**
  * Generates a summary about a check-in from a set of data. Supply a lean set of
- * checkin objects for a single peer review point.
+ * checkin objects for a single peer review point. totalScores is the sum of
+ * received scores for each student, netScores similar but each score adjsuted
+ * to a baseline of 4. normScore is netScores but divided by the number of
+ * reviews, so is fixed between -3 and +3.
  * @param {*} reviews 
  */
 exports.checkinStatistics = (reviews) => {
@@ -78,7 +81,15 @@ exports.checkinStatistics = (reviews) => {
   for (const recipient in netScores) {
     netScores[recipient] -= expectedScore;
   }
-  return {netScores, totalScores};
+  const submitted = reviews.length;
+  let normScores = {};
+  if (submitted > 0) {
+    normScores = Object.keys(netScores).reduce((acc, cur) => {
+      acc[cur] = Math.round(netScores[cur] / submitted * 100) / 100;
+      return acc;
+    }, {});
+  }
+  return {netScores, totalScores, normScores, submitted};
 };
 
 /**
