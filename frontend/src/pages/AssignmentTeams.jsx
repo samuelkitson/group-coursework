@@ -15,6 +15,7 @@ function AssignmentTeams() {
     state.getSelectedAssignment(),
   );
   const { setSelectedTeam } = useBoundStore();
+  const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
@@ -173,6 +174,14 @@ function AssignmentTeams() {
 
   // Remove lefover toasts when the page is unloaded
   useEffect(() => {return toast.dismiss}, []);
+  
+  // After the teams list has loaded, scroll to the selected team
+  // useEffect(() => {
+  //   if (selectedTeam) {
+  //     const teamCard = document.getElementById(`team-card-${selectedTeam._id}`);
+  //     if (teamCard) teamCard.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [teams]);
 
   return (
     <>
@@ -239,7 +248,7 @@ function AssignmentTeams() {
             </Card>
           }
           {teams.map((group, index) => (
-            <Card key={index} className="my-3">
+            <Card key={index} className="my-3" id={`team-card-${group._id}`}>
               <Card.Body>
                 <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
                   { moveMode === 2 ? 
