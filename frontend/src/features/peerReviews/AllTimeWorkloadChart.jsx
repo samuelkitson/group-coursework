@@ -17,18 +17,18 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
         return resp.data;
       })
       .then((data) => {
-        let someData = false
+        let someData = false;
+        const students = new Set();
         const checkinData = data.checkins.map(c => {
           const endDate = new Date(c.periodEnd);
           const niceEndDate = endDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
           if (Object.keys(c?.totalScores ?? {}).length > 0) someData = true;
+          Object.keys(c?.netScores ?? {}).forEach(student => students.add(student));
           return {periodEnd: niceEndDate, ...c.netScores,}
         });
         if (!someData) return setCheckinHistory(null);
         setCheckinHistory(checkinData);
-        if (checkinData.length > 0) {
-          setCheckinStudents(Object.keys(checkinData[0]).filter(k => k !== "periodEnd"));
-        }
+        setCheckinStudents(Array.from(students));
       });
   };
 
