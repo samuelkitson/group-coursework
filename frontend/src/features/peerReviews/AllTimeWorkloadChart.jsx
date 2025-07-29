@@ -70,7 +70,7 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
               <Legend align="right" verticalAlign="middle" layout="vertical" wrapperStyle={{ paddingLeft: "20px" }} />
               <ChartTooltip />
               {checkinStudents.map((student, index) => (
-                <Line key={index} type="monotone" dataKey={student} stroke={chartColours[index % chartColours.length]} strokeWidth={2} />
+                <Line key={index} type="monotone" dataKey={student} stroke={chartColours[index % chartColours.length]} strokeWidth={2} connectNulls />
               ))}
             </LineChart>
           </ResponsiveContainer>
