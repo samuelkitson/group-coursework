@@ -83,7 +83,6 @@ function TeamObservations() {
           return {...o, createdAt: createdDate, };
         });
         setObservations(formatted);
-        console.log(formatted);
       })
       .finally(() => {
         setIsLoading(false);

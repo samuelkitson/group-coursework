@@ -325,29 +325,6 @@ function AssignmentTeams() {
           ))}
         </Col>
       </Row>
-
-      <Modal show={showModal === "meeting-history"} size="xl" onHide={() => setShowModal(null)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Meeting history</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-        { meetingHistory?.length > 0 ? meetingHistory?.map((meeting, meetingidx) => (
-            <MeetingRecordCard
-              meeting={meeting}
-              key={meetingidx}
-              meetingidx={meetingidx}
-              editAllowed={true}
-              disputeAllowed={false}
-              onEdit={(m) => console.log(m)}
-              onDelete={(m) => console.log(m)}
-            />
-          )) : 
-            <p className="text-muted">
-              No meeting records found for this team.
-            </p>
-          }
-        </Modal.Body>
-      </Modal>
     </>
   );
 }
