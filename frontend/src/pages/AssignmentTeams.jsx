@@ -5,7 +5,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
+import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, ToggleButton, ToggleButtonGroup, Tooltip } from "react-bootstrap";
 import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp, ClipboardData, Download } from "react-bootstrap-icons";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,8 @@ function AssignmentTeams() {
   const navigate = useNavigate();
 
   const [teams, setTeams] = useState([]);
+  const [currentFilter, setCurrentFilter] = useState("none");
+  const [filteredTeams, setFilteredTeams] = useState([]);
   const [meetingHistory, setMeetingHistory] = useState(null);
   const [checkinHistory, setCheckinHistory] = useState(null);
   const [checkinStudents, setCheckinStudents] = useState([]);
@@ -28,26 +30,26 @@ function AssignmentTeams() {
   const [showModal, setShowModal] = useState(null);
 
   const teamEmailLink = (groupidx) => {
-    const emailAddresses = teams[groupidx].members.map(s => s.email).filter(e => e && e != user.email).join(";");
+    const emailAddresses = filteredTeams[groupidx].members.map(s => s.email).filter(e => e && e != user.email).join(";");
     let ccSection = "";
-    if (teams[groupidx].supervisors?.length > 0) {
-      ccSection = "&cc=" + teams[groupidx].supervisors.map(s => s.email).filter(e => e && e != user.email).join(";");
+    if (filteredTeams[groupidx].supervisors?.length > 0) {
+      ccSection = "&cc=" + filteredTeams[groupidx].supervisors.map(s => s.email).filter(e => e && e != user.email).join(";");
     }
-    return `mailto:${emailAddresses}?subject=${selectedAssignment.name} - Team ${teams[groupidx].teamNumber}${ccSection}`;
+    return `mailto:${emailAddresses}?subject=${selectedAssignment.name} - Team ${filteredTeams[groupidx].teamNumber}${ccSection}`;
   };
 
   const viewMeetingHistory = async (groupidx) => {
-    await setSelectedTeam(teams[groupidx]);
+    await setSelectedTeam(filteredTeams[groupidx]);
     navigate("/assignment/meetings");
   };
 
   const viewPeerReviews = async (groupidx) => {
-    await setSelectedTeam(teams[groupidx]);
+    await setSelectedTeam(filteredTeams[groupidx]);
     navigate("/assignment/peer-reviews");
   };
 
   const viewObservations = async (groupidx) => {
-    await setSelectedTeam(teams[groupidx]);
+    await setSelectedTeam(filteredTeams[groupidx]);
     navigate("/assignment/observations");
   };
 
@@ -67,6 +69,43 @@ function AssignmentTeams() {
     }
     return;
   };
+
+  const getFilterText = (filter) => {
+    switch (filter) {
+      case "positive":
+        return <span className="d-inline-flex align-items-center me-1">
+          <HandThumbsUpFill className="me-2 text-success" />
+          Teams with no alerts
+        </span>;
+      case "alerts":
+        return <span className="d-inline-flex align-items-center me-1">
+          <ExclamationTriangleFill className="me-2 text-warning" />
+          Teams with alerts
+        </span>;
+      case "severe":
+        return <span className="d-inline-flex align-items-center me-1">
+          <ExclamationTriangleFill className="me-2 text-danger" />
+          Teams with severe alerts
+        </span>;
+      case "none":
+      default:
+        return <span className="me-1">All teams</span>;
+    }
+  };
+
+  const setFilter = (newFilter) => {
+    if (!["none", "positive", "alerts", "severe"].includes(newFilter)) return;
+    setCurrentFilter(newFilter);
+    if (newFilter == "positive") {
+      setFilteredTeams(teams.filter(t => !t.insights.some(i => ["warning", "severe"].includes(i.type))));
+    } else if (newFilter == "alerts") {
+      setFilteredTeams(teams.filter(t => t.insights.some(i => ["warning", "severe"].includes(i.type))));
+    } else if (newFilter == "severe") {
+      setFilteredTeams(teams.filter(t => t.insights.some(i => i.type == "severe")));
+    } else {
+      setFilteredTeams(teams);
+    } 
+  }
 
   const generateInsights = (insights) => {
     return (
@@ -148,6 +187,8 @@ function AssignmentTeams() {
       })
       .then((data) => {
         setTeams(data.teams);
+        setCurrentFilter("none");
+        setFilteredTeams(data.teams);
       });
   };
 
@@ -213,8 +254,32 @@ function AssignmentTeams() {
       </Row>
 
       <Row>
+        <Col md={4}>
+          <Dropdown>
+            <Dropdown.Toggle variant="light" size="sm" className="border">
+              {getFilterText(currentFilter)}
+            </Dropdown.Toggle>
+            <Dropdown.Menu size="sm">
+              <Dropdown.Item onClick={() => setFilter("none")}>
+                {getFilterText(null)}
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => setFilter("positive")} className="d-flex align-items-center">
+                {getFilterText("positive")}
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => setFilter("alerts")} className="d-flex align-items-center">
+                {getFilterText("alerts")}
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => setFilter("severe")} className="d-flex align-items-center">
+                {getFilterText("severe")}
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
+        </Col>
+      </Row>
+
+      <Row>
         <Col>
-          {teams.length === 0 && 
+          {(teams.length === 0 && currentFilter == "none") && 
             <Card className="my-3">
               <Card.Body>
                 <Card.Title className="d-flex align-items-center">
@@ -229,7 +294,19 @@ function AssignmentTeams() {
               </Card.Body>
             </Card>
           }
-          {teams.map((group, index) => (
+          {(filteredTeams.length === 0 && teams.length > 0) && 
+            <Card className="my-3">
+              <Card.Body>
+                <Card.Title className="d-flex align-items-center">
+                  <QuestionCircleFill className="me-2" /> No results
+                </Card.Title>
+                <p className="text-muted mb-0">
+                  No teams match the selected filter.
+                </p>
+              </Card.Body>
+            </Card>
+          }
+          {filteredTeams.map((group, index) => (
             <Card key={index} className="my-3" id={`team-card-${group._id}`}>
               <Card.Body>
                 <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
