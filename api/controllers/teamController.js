@@ -9,6 +9,7 @@ const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/mat
 const { summariseMeetingAttendance } = require("./meetingController");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
+const { CHECKIN_THRESHOLDS } = require("../config/constants");
 
 const generateTeamInsights = (teamData) => {
   const insights = [];
@@ -54,30 +55,61 @@ const generateTeamInsights = (teamData) => {
       });
     }
   }
-  // Check-in net scores
+  // Check-in scores (for the preceding week)
   if (teamData?.checkInStats) {
-    if (teamData?.checkInStats?.minNetScore <= -5 ) {
+    const checkInsCompleted = teamData.checkInStats?.completed ?? 0;
+    // Completion rate checks
+    if (checkInsCompleted === 0) {
       insights.push({
         type: "severe",
-        text: `Likely free-riding`,
+        text: `No check-ins completed last week`,
       });
-    } else if (teamData?.checkInStats?.minNetScore <= -4 ) {
+    } else if (checkInsCompleted / teamData.members.length < 0.4) {
       insights.push({
-        type: "warning",
-        text: `Potential free-riding`,
+        type: "severe",
+        text: `Very low check-in completion last week`,
       });
-    }
-    if (teamData?.checkInStats?.maxNetScore >= 5 ) {
-      insights.push({
-        type: "warning",
-        text: `One student doing most of the work`,
-      });
-    }
-    if (teamData?.checkInStats?.minNetScore >= -3 && teamData?.checkInStats?.maxNetScore <= 4 ) {
-      insights.push({
-        type: "positive",
-        text: `Good workload balance`,
-      });
+    } else {
+      if (checkInsCompleted / teamData.members.length < 0.6) {
+        insights.push({
+          type: "warning",
+          text: `Low check-in completion last week`,
+        });
+      }
+      if (checkInsCompleted == teamData.members.length) {
+        insights.push({
+          type: "positive",
+          text: `All check-ins completed last week`,
+        });
+      }
+      const minScore = teamData?.checkInStats?.minNetScore ?? 0;
+      const maxScore = teamData?.checkInStats?.maxNetScore ?? 0;
+      // Low score checks (indicates free-riding)
+      if (minScore <= checkInsCompleted * CHECKIN_THRESHOLDS.VERY_LOW ) {
+        insights.push({
+          type: "severe",
+          text: `Likely free-riding`,
+        });
+      } else if (minScore <= checkInsCompleted * CHECKIN_THRESHOLDS.LOW ) {
+        insights.push({
+          type: "warning",
+          text: `Potential free-riding`,
+        });
+      }
+      // High score checks (indicates one student overworking)
+      if (maxScore >= checkInsCompleted * CHECKIN_THRESHOLDS.VERY_HIGH ) {
+        insights.push({
+          type: "warning",
+          text: `One student doing most of the work`,
+        });
+      }
+      // Good balance check
+      if (minScore > checkInsCompleted * CHECKIN_THRESHOLDS.LOW && maxScore < checkInsCompleted * CHECKIN_THRESHOLDS.VERY_HIGH) {
+        insights.push({
+          type: "positive",
+          text: `Good workload balance`,
+        });
+      }
     }
   }
   // Check disputes
@@ -162,15 +194,21 @@ exports.getAllForAssignment = async (req, res) => {
   const checkins = peerReview ? await checkinModel.findByTeamsAndPeerReview(teamIds, peerReview._id, "reviewer team effortPoints") : [];
   teamsWithLastMeeting.forEach(team => {
     const teamCheckins = checkins.filter(c => c.team.equals(team._id)) ?? [];
+    if (peerReview) {
       if (teamCheckins.length > 0) {
-      const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
-      team.members.forEach(member => {
-        member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
-      });
-      team.checkInStats = {
-        minNetScore: Math.min(...Object.values(checkinStats.netScores)),
-        maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
-      };
+        const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
+        team.members.forEach(member => {
+          member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
+        });
+        team.checkInStats = {
+          minNetScore: Math.min(...Object.values(checkinStats.netScores)),
+          maxNetScore: Math.max(...Object.values(checkinStats.netScores)),
+          completed: teamCheckins.length,
+        };
+      } else {
+        // There has been a peer review but no students completed it
+        team.checkInStats = { completed: teamCheckins.length, };
+      }
     }
     team.insights = generateTeamInsights(team);
   });
