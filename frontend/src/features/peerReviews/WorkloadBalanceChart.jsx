@@ -11,35 +11,41 @@ import {
   Rectangle,
   Cell,
   ReferenceLine,
+  ReferenceArea,
 } from "recharts";
 import { Card } from "react-bootstrap";
 
-const WorkloadBalanceChart = ({netScores, currentStudent}) => {
-
-  if (!netScores || !currentStudent) {
+const WorkloadBalanceChart = ({normScores, currentStudent, thresholds}) => {
+  if (!normScores || !currentStudent) {
     return <></>;
   }
 
-  const barColours = Object.keys(netScores).map(name => {
+  const studentShortName = (currentStudent ?? " ").split(" ")[0];
+
+  const barColours = Object.keys(normScores).map(name => {
     if (name !== currentStudent) return "#ccc";
-    if (netScores[name] > 0) return "#38965a";
-    if (netScores[name] < 0) return "#963838";
+    if (normScores[name] > 0) return "#38965a";
+    if (normScores[name] < 0) return "#963838";
     return "#ccc";
   });
 
-  const chartData = Object.keys(netScores).map(name => ({
+  const chartData = Object.keys(normScores).map(name => ({
     "Student": name,
-    "Net score": netScores[name],
+    "Net score": normScores[name],
   }));
 
   const helperText = () => {
-    const score = netScores[currentStudent];
-    if (score < -3) {
-      return `${currentStudent}'s effort was too low`;
-    } else if (score > 3) {
-      return `${currentStudent}'s effort was too high`;
+    const score = normScores[currentStudent];
+    if (score <= thresholds.VERY_LOW) {
+      return `${studentShortName}'s effort was very low`;
+    } else if (score <= thresholds.LOW) {
+      return `${studentShortName}'s effort was too low`;
+    } else if (score >= thresholds.VERY_HIGH) {
+      return `${studentShortName}'s effort was far too high`;
+    } else if (score >= thresholds.HIGH) {
+      return `${studentShortName}'s effort was too high`;
     } else {
-      return `${currentStudent}'s effort was average`;
+      return `${studentShortName}'s effort was average`;
     }
   };
 
@@ -58,7 +64,7 @@ const WorkloadBalanceChart = ({netScores, currentStudent}) => {
         >
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="Student" tick={false} axisLine={{ strokeWidth: 0 }} />
-          <YAxis />
+          <YAxis domain={[-3, 3]} tickCount={3} />
           <Tooltip cursor={false} />  
           <Bar dataKey="Net score">
             { chartData.map((entry, index) => (
