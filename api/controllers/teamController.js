@@ -9,7 +9,7 @@ const { bestWorstSkill, checkinStatistics, daysSince } = require("../utility/mat
 const { summariseMeetingAttendance } = require("./meetingController");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
-const { CHECKIN_THRESHOLDS } = require("../config/constants");
+const { CHECKIN_THRESHOLDS, ATTENDANCE_THRESHOLDS } = require("../config/constants");
 
 const generateTeamInsights = (teamData) => {
   const insights = [];
@@ -38,12 +38,12 @@ const generateTeamInsights = (teamData) => {
   // Meeting attendance - only if there have been at least 2 meetings
   const attendanceRates = teamData.members.map(member => member.meetingAttendance.rate ?? 100);
   if (teamData.meetingCount >= 2) {
-    if (attendanceRates.some(r => r < 40)) {
+    if (attendanceRates.some(r => r <= ATTENDANCE_THRESHOLDS.VERY_LOW)) {
       insights.push({
         type: "severe",
         text: `Frequently absent members`,
       });
-    } else if (attendanceRates.some(r => r < 70)) {
+    } else if (attendanceRates.some(r => r <= ATTENDANCE_THRESHOLDS.LOW)) {
       insights.push({
         type: "warning",
         text: `Occasionally absent members`,
@@ -130,6 +130,28 @@ const generateTeamInsights = (teamData) => {
   return insights.sort((a, b) => (sortingOrder[a.type] || 4) - (sortingOrder[b.type] || 4));
 };
 
+const generateStudentFlags = (studentData, includeAttendance=true) => {
+  const flags = [];
+  // Check attendance
+  if (includeAttendance) {
+    const attendanceRate = studentData?.meetingAttendance?.rate ?? 100;
+    if (attendanceRate <= ATTENDANCE_THRESHOLDS.VERY_LOW) {
+      flags.push("Very low meeting attendance");
+    } else if (attendanceRate <= ATTENDANCE_THRESHOLDS.LOW) {
+      flags.push("Low meeting attendance");
+    }
+  }
+  // Check-in norm scores
+  if (studentData.checkinNormScore) {
+    if (studentData.checkinNormScore <= CHECKIN_THRESHOLDS.VERY_LOW) {
+      flags.push("Very low effort reported");
+    } else if (studentData.checkinNormScore <= CHECKIN_THRESHOLDS.VERY_LOW) {
+      flags.push("Low effort reported");
+    } 
+  }
+  return flags;
+};
+
 /**
  * By default, includes full details about each team (including insights and
  * meeting data). For a simple list of team IDs and numbers for an assignment,
@@ -198,7 +220,7 @@ exports.getAllForAssignment = async (req, res) => {
       if (teamCheckins.length > 0) {
         const checkinStats = checkinStatistics(teamCheckins) ?? {netScores: {}, totalScores: {}};
         team.members.forEach(member => {
-          member.checkinNetScore = checkinStats.netScores[member._id.toString()] ?? undefined;
+          member.checkinNormScore = checkinStats.normScores[member._id.toString()] ?? undefined;
         });
         team.checkInStats = {
           minNetScore: Math.min(...Object.values(checkinStats.netScores)),
@@ -211,6 +233,10 @@ exports.getAllForAssignment = async (req, res) => {
       }
     }
     team.insights = generateTeamInsights(team);
+    team.members.forEach(member => {
+      const flags = generateStudentFlags(member, team.meetingCount >= 2);
+      if (flags.length > 0) member.flags = flags;
+    });
   });
   return res.json({teams: teamsWithLastMeeting});
 };

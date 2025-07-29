@@ -55,29 +55,11 @@ function AssignmentTeams() {
     navigate(`/assignment/reports?team=${groupid}`);
   };
 
-  const warningFlags = (student) => {
-    let highSeverity = false;
-    let warnings = [];
-    if (student.meetingAttendance.rate < 40) {
-      highSeverity = true;
-      warnings.push(`Very low meeting attendance: ${student.meetingAttendance.rate}%`);
-    } else if (student.meetingAttendance.rate < 70) {
-      warnings.push(`Low meeting attendance: ${student.meetingAttendance.rate}%`);
-    }
-    if (student?.checkinNetScore <= -4 ) {
-      highSeverity = true;
-      warnings.push(`Check-ins indicate low effort`);
-    }
-    
-    if (warnings.length > 0) {
+  const warningFlags = (flags) => {
+    if (flags && flags.length > 0) {
       return (
-        <OverlayTrigger overlay={<Tooltip>
-          {warnings.map((warning, index) => (
-            <React.Fragment key={index}>
-              <Dot /> {warning}
-              {index < warnings.length - 1 && <br />}
-            </React.Fragment>
-          ))}
+        <OverlayTrigger overlay={<Tooltip style={{ whiteSpace: "pre-wrap" }}>
+          { flags.join("\n") }
         </Tooltip>}>
           <InfoCircle className="ms-2 text-danger"/>
         </OverlayTrigger>
@@ -314,7 +296,7 @@ function AssignmentTeams() {
                         :
                         <>
                           <li key={student._id}>{student.displayName}</li>
-                          { warningFlags(student) }
+                          { warningFlags(student?.flags) }
                         </>
                         }
                       </div>))}

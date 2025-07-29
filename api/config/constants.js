@@ -18,4 +18,8 @@ module.exports = {
     HIGH: 1,
     VERY_HIGH: 1.75,
   },
+  ATTENDANCE_THRESHOLDS: {
+    VERY_LOW: 40,
+    LOW: 70,
+  },
 };
