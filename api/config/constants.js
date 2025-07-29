@@ -13,9 +13,9 @@ module.exports = {
   COOKIE_NAME: "groups-auth",
   BCRYPT_ROUNDS: 12,
   CHECKIN_THRESHOLDS: {
-    VERY_LOW: -1.5,
+    VERY_LOW: -1.75,
     LOW: -1,
     HIGH: 1,
-    VERY_HIGH: 1.5,
+    VERY_HIGH: 1.75,
   },
 };
