@@ -95,6 +95,13 @@ exports.getAzureLoginLink = async (req, res) => {
   res.json({ authUrl });
 };
 
+/**
+ * This callback performs some UoS/ECS specific logic, and should be adjusted if
+ * the system is to be used outside of these restrictions. The AD groups allowed
+ * to log in are restricted by iSolutions, so it can be assumed that any user
+ * who gets to this stage is in a permitted group (currently fpStaff, fpStudent,
+ * or pjStudent for maths).
+ */
 exports.azureLoginCallback = async (req, res) => {
   const { OAUTH_REDIRECT_URI } = process.env;
   if (!OAUTH_REDIRECT_URI || !msalConfig) {
@@ -115,7 +122,16 @@ exports.azureLoginCallback = async (req, res) => {
   const tokenResponse = await msalConfig.acquireTokenByCode(tokenRequest);
   if (!tokenResponse)
     throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
-  // Login successful - now call Microsoft Graph to get data about them
+  // Login successful - now extract list of AD groups from token response
+  const msUserID = tokenResponse?.idTokenClaims?.oid;
+  if (!msUserID)
+    throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
+  const userGroups = tokenResponse?.idTokenClaims?.groups ?? [];
+  const isStaff = userGroups.includes("allStaff");
+  const isStudent = userGroups.includes("allStudent");
+  if (!isStaff && !isStudent)
+    throw new AuthenticationError("Your account isn't in either the staff or student groups. Are you using the correct account?");
+  // Now call MS Graph to fetch UPN and display name
   const graphResponse = await axios.get("https://graph.microsoft.com/v1.0/me?$select=userPrincipalName,jobTitle,department,employeeId,givenName,surname", {
     headers: { Authorization: `Bearer ${tokenResponse.accessToken}`, },
   });
@@ -124,7 +140,6 @@ exports.azureLoginCallback = async (req, res) => {
     throw new AuthenticationError("Authentication with Microsoft failed. Please try again.");
   // Extract the relevant user profile fields
   const email = userData.userPrincipalName;
-  const isStudent = (userData?.jobTitle ?? "").includes("(student)");
   const department = userData.department;
   const employeeId = userData.employeeId;
   const firstName = userData.givenName;
@@ -135,7 +150,7 @@ exports.azureLoginCallback = async (req, res) => {
   if (dbRecord) {
     // If the user state is "placeholder", set both the display name and role
     if (dbRecord.role === "placeholder") {
-      dbRecord.role = isStudent ? "student" : "staff";
+      dbRecord.role = isStaff ? "staff" : "student";
       dbRecord.displayName = displayName;
       await dbRecord.save();
     }
@@ -162,7 +177,7 @@ exports.azureLoginCallback = async (req, res) => {
     const createdAccount = await userModel.create({
       displayName,
       email,
-      role: isStudent ? "student" : "staff",
+      role: isStaff ? "staff" : "student",
     });
     if (!createdAccount)
       throw new AuthenticationError("Something went wrong creating your account. Please try again.");
