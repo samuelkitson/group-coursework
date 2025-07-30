@@ -376,8 +376,6 @@ exports.sendTestEmail = async (req, res) => {
     subject: "ECS Group Coursework [Testing]",
     html: `<h3>ECS Group Coursework</h3><p>This is a test email. Please do not reply.</p>`,
   };
-  const emailResult = await emailTransporter.sendMail(mailOptions);
-  if (!emailResult)
-    throw new ConfigurationError("Unable to send email.");
-  return res.json({ message: `Successfully sent email to ${req.query.email}.` });
+  emailTransporter.sendMail(mailOptions);
+  return res.json({ message: `Sent email to ${req.query.email}.` });
 };
