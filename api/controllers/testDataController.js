@@ -8,8 +8,8 @@ const bcrypt = require("bcryptjs");
 const { generateHash } = require("../utility/auth");
 const { testStudentIds, testAssignment1, testAssignment2, testMeetings, testMeetingMinutes, testMeetingActions } = require("../models/testdata");
 const { generateRandomString } = require("../utility/maths");
-const { emailsReady, emailTransporter } = require("../utility/emails");
-const { ConfigurationError, InvalidParametersError } = require("../errors/errors");
+const { emailsReady, emailTransporter, sendGenericEmail } = require("../utility/emails");
+const { ConfigurationError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
 const { SMTP_FROM_ADDRESS } = process.env;
 
 /*
@@ -369,13 +369,16 @@ exports.sendTestEmail = async (req, res) => {
   const emailsReadyFlag = await emailsReady;
   if (!emailsReadyFlag)
     throw new ConfigurationError("Email sending is not configured correctly.");
-  const mailOptions = {
-    from: SMTP_FROM_ADDRESS,
-    replyTo: req.session.email,
-    to: req.query.email,
-    subject: "ECS Group Coursework [Testing]",
-    html: `<h3>ECS Group Coursework</h3><p>This is a test email. Please do not reply.</p>`,
-  };
-  emailTransporter.sendMail(mailOptions);
+  const user = await userModel.findOne({email: req.query.email}).select("displayName").lean();
+  if (!user)
+    throw new GenericNotFoundError("The provided email address is not a known user.");
+  sendGenericEmail({
+    recipientEmail: req.query.email,
+    recipientName: user.displayName,
+    subject: "Group Courseworks - Test",
+    headerText: "Test email",
+    bodyText: "This is a test of the Group Coursework email system. If you can read this, it worked!<br />You don't need to do anything else and you can safely delete this email.",
+    replyToEmail: "S.Kitson@soton.ac.uk",
+  });
   return res.json({ message: `Sent email to ${req.query.email}.` });
 };

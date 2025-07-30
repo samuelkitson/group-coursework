@@ -1,5 +1,8 @@
 const nodemailer = require("nodemailer");
-const { SMTP_SERVER, SMTP_PORT, SMTP_SECURE, } = process.env;
+const { SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS } = process.env;
+const { InvalidParametersError } = require("../errors/errors");
+const ejs = require("ejs");
+const path = require("path");
 
 const transporter = nodemailer.createTransport({
   host: SMTP_SERVER,
@@ -19,6 +22,23 @@ const transporterReadyPromise = new Promise((resolve) => {
   });
 });
 
+const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, subject, headerText, bodyText, }) => {
+  if (!subject || !recipientEmail || !headerText || !bodyText)
+    throw new InvalidParametersError("Missing required parameters to send email.");
+  const rendered = await ejs.renderFile(
+    path.join(__dirname, "..", "views", "emails", "genericEmail.ejs"),
+    { recipientEmail, recipientName, headerText, bodyText, },
+  );
+  const mailOptions = {
+    from: SMTP_FROM_ADDRESS,
+    replyTo: replyToEmail,
+    to: recipientEmail,
+    subject,
+    html: rendered,
+  };
+  transporter.sendMail(mailOptions);
+};
+
 /**
  * In any function that needs to send emails, first check that email sending is
  * ready. Do this with an await call like: await emails.emailsReady;
@@ -26,4 +46,5 @@ const transporterReadyPromise = new Promise((resolve) => {
 module.exports = {
   emailTransporter: transporter,
   emailsReady: transporterReadyPromise,
+  sendGenericEmail: sendGenericEmail,
 };
