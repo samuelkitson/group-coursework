@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
+const { emailTransporter } = require("./utility/emails");
 
 const { API_PORT, SESSION_SECRET } = process.env;
 const { COOKIE_NAME } = require("./config/constants");
