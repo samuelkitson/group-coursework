@@ -33,5 +33,10 @@ router.get(
   "/provision-student",
   asyncHandler(testDataC.provisionTemporaryStudent),
 );
+router.get(
+  "/send-test-email",
+  requireLoggedIn("admin"),
+  asyncHandler(testDataC.sendTestEmail),
+)
 
 module.exports = router;

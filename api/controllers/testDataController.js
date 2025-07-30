@@ -8,6 +8,9 @@ const bcrypt = require("bcryptjs");
 const { generateHash } = require("../utility/auth");
 const { testStudentIds, testAssignment1, testAssignment2, testMeetings, testMeetingMinutes, testMeetingActions } = require("../models/testdata");
 const { generateRandomString } = require("../utility/maths");
+const { emailsReady, emailTransporter } = require("../utility/emails");
+const { ConfigurationError, InvalidParametersError } = require("../errors/errors");
+const { SMTP_FROM_ADDRESS } = process.env;
 
 /*
   For the given assignment and skill tag, randomises the student skill ratings.
@@ -358,4 +361,23 @@ exports.provisionTemporaryStudent = async (req, res) => {
   });
   await meetingModel.create(testMeetings(team._id, studentIds));
   return res.redirect("/login/refresh");
+};
+
+exports.sendTestEmail = async (req, res) => {
+  if (!req.query.email)
+    throw new InvalidParametersError("You must provide a recipient email address.");
+  const emailsReadyFlag = await emailsReady;
+  if (!emailsReadyFlag)
+    throw new ConfigurationError("Email sending is not configured correctly.");
+  const mailOptions = {
+    from: SMTP_FROM_ADDRESS,
+    replyTo: req.session.email,
+    to: req.query.email,
+    subject: "ECS Group Coursework [Testing]",
+    html: `<h3>ECS Group Coursework</h3><p>This is a test email. Please do not reply.</p>`,
+  };
+  const emailResult = await emailTransporter.sendMail(mailOptions);
+  if (!emailResult)
+    throw new ConfigurationError("Unable to send email.");
+  return res.json({ message: `Successfully sent email to ${req.query.email}.` });
 };
