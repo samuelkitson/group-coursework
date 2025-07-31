@@ -8,6 +8,10 @@ const transporter = nodemailer.createTransport({
   host: SMTP_SERVER,
   port: SMTP_PORT,
   secure: SMTP_SECURE === "true",
+  pool: true,
+  maxConnections: 3,
+  maxMessages: 100,
+  rateLimit: 5,
 });
 
 const transporterReadyPromise = new Promise((resolve) => {

@@ -35,6 +35,7 @@ services:
       - "8025:8025"
     networks:
       - app_network
+    command: ["-invite-jim", "-jim-disconnect=0", "-jim-accept=1", "-jim-linkspeed-affect=1", "-jim-linkspeed-max=1800", "-jim-reject-sender=0", "-jim-reject-auth=0"] 
 
   api:
     build:
