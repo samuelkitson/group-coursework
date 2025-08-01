@@ -5,6 +5,7 @@ const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
 const { AssignmentInvalidStateError } = require("../errors/errors");
+const { teamsReleasedStudentEmail } = require("../utility/emails");
 
 const findTeamMates = async (studentIds, includePast=false) => {
   const result = {};
@@ -135,12 +136,12 @@ exports.runAllocation = async (req, res) => {
 exports.confirmAllocation = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Get the assignment details and check that all students have been included
-  const assignment = await assignmentModel.findById(req.params.assignment);
+  const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email");
   const groups = req.body.allocation;
   if (!groups || !Array.isArray(groups))
     return res.status(400).json({ message: "You must provide a valid list of groups." });
   // Check that all students on the module are accounted for
-  const studentsOnAssignment = assignment.students.map(id => id.toString());
+  const studentsOnAssignment = assignment.students.map(s => s._id.toString());
   const studentsInRequest = groups.flat().map(id => id.toString());
   if (studentsOnAssignment.length != studentsInRequest.length || !studentsOnAssignment.every(id => studentsInRequest.includes(id)))
     return res.status(400).json({ message: "The list of students provided doesn't match the module enrollment list." });
@@ -153,5 +154,8 @@ exports.confirmAllocation = async (req, res) => {
   // Set assignment state to live
   assignment.state = "live";
   await assignment.save();
+  // Send emails to students
+  const studentEmails = assignment.students.map(s => s.email);
+  teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, })
   return res.json({"message": "Allocation confirmed and released to students. Your assignment is live!"});
 };
