@@ -116,3 +116,19 @@ exports.sendReminderEmails = async (req, res) => {
   await peerReview.save();
   return res.json({ message: `Reminder emails sent to ${unsubmittedCount} out of ${totalStudents} students.`})
 };
+
+/**
+ * Get the status of the current peer review for an assignment. Used to display
+ * a card on the assignment overview page for staff, allowing them to send
+ * reminder emails if needed.
+ */
+exports.getCurrentStatus = async (req, res) => {
+  const userRole = await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
+  const peerReview = await peerReviewModel.findByAssignment(req.query.assignment);
+  if (!peerReview)
+    return res.json({ type: "disabled", open: false });
+  if (peerReview.type === "none")
+    return res.json({ type: "none", open: false });
+  const { totalStudents, unsubmittedCount, submittedCount } = await findStudentsNotSubmitted(peerReview._id);
+  return res.json({ type: peerReview.type, open: true, totalStudents, unsubmittedCount, submittedCount, reminderSent: peerReview.reminderSent ?? false, });
+};
