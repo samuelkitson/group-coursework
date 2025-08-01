@@ -68,6 +68,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
   if (peerReview) {
     renderObj.peerReview = {};
     renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
+    renderObj.peerReview.name = peerReview.name;
     const fullReviews = await checkinModel.find({
       team: new Types.ObjectId(team._id),
       peerReview: peerReview._id,

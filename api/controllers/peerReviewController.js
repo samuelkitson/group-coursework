@@ -77,6 +77,11 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
     if (newPeerReview.type === "full") {
       newPeerReview.questions = peerReview.questions ?? [];
     }
+    if (peerReview.name) {
+      newPeerReview.name = peerReview.name
+    } else {
+      newPeerReview.name = undefined;
+    }
     peerReviewsToInsert.push(newPeerReview);
   }
   try {
