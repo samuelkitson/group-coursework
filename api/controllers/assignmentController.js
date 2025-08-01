@@ -3,6 +3,7 @@ const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
+const { questionnaireAvailableEmail } = require("../utility/emails");
 
 exports.createAssignment = async (req, res) => {
   if (req.session.role === "student")
@@ -87,7 +88,7 @@ exports.setSkills = async (req, res) => {
 exports.setState = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Check the current state and whether this move is valid
-  const assignment = await assignmentModel.findById(req.params.assignment);
+  const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email");
   const existingState = assignment.state;
   const newState = req.body.newState;
   const forceMove = req.body.force ?? false; // Must be true to move backwards
@@ -111,6 +112,11 @@ exports.setState = async (req, res) => {
     if (existingState === "pre-allocation") {
       changeAllowed = true;
       message = "The allocation questionnaire has been opened to students.";
+      // Send email to students
+      if ((assignment?.skills ?? []).length > 0) {
+        const studentEmails = assignment.students.map(s => s.email);
+        questionnaireAvailableEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+      }
     }
   }
   if (newState === "allocation") {

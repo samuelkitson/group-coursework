@@ -64,7 +64,7 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
  * template. The email categories are based on their triggers and are:
  *   * 1: security event
  *   * 2: assignment configuration change
- *   * 3: team configuration change
+ *   * 3: team allocation change
  *   * 4: automatic time-based reminders
  */
 
@@ -86,8 +86,17 @@ const newSupervisorExistingEmail = ({ supervisorEmail, supervisorName, staffUser
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
   const templateId = "2-03";
+  if (!recipients || !staffUserEmail || !assignmentName)
+    throw new InvalidParametersError("Missing required parameters to send email.");
+  const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. This only takes a few minutes to complete and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
+  sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "Action needed: allocation questionnaire available", headerText: "Allocation questionnaire", bodyText, templateId, bccMode: true, })
+    .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
+};
+
+const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+  const templateId = "3-01";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `The teams for ${assignmentName} have been allocated and are now available to view at ${homePageLink}. Please meet with your team as soon as possible and report any issues with contacting them to the module team.`;
@@ -96,7 +105,7 @@ const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName,
 };
 
 const teamsAllocatedToSupervisorsEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
-  const templateId = "2-04";
+  const templateId = "3-02";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `The teams for ${assignmentName} have been allocated and you can see who you're supervising at ${homePageLink}. Please meet with all of your teams as soon as possible and report any issues with contacting them to the module team.`;
@@ -108,7 +117,7 @@ const teamsAllocatedToSupervisorsEmail = ({ recipients, staffUserEmail, assignme
  * Recipients should be a list of emails.
  */
 const checkInReminderEmails = ({ recipients, staffUserEmail, assignmentName, deadlineDate, }) => {
-  const templateId = "3-01";
+  const templateId = "4-01";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `Please remember to complete this week's check-in for ${assignmentName}. It's important to complete these regularly to review the workload balance in your team and help staff decide marks fairly.<br />Please go to ${homePageLink} to complete the check-in before ${deadlineDate ?? "the deadline"}.`;
@@ -122,6 +131,7 @@ module.exports = {
   sendGenericEmail,
   newSupervisorPlaceholderEmail,
   newSupervisorExistingEmail,
+  questionnaireAvailableEmail,
   checkInReminderEmails,
   teamsReleasedStudentEmail,
   teamsAllocatedToSupervisorsEmail,
