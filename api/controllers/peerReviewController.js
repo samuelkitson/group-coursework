@@ -3,7 +3,7 @@ const peerReviewModel = require("../models/peerReview");
 const assignmentModel = require("../models/assignment");
 const checkinModel = require("../models/checkin");
 const { checkAssignmentRole, checkTeamRole } = require("../utility/auth");
-const { InvalidParametersError } = require("../errors/errors");
+const { InvalidParametersError, GenericNotAllowedError } = require("../errors/errors");
 const { checkInReminderEmails } = require("../utility/emails");
 const { format } = require("date-fns/format");
 
@@ -91,18 +91,28 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
   }
 };
 
+/**
+ * The system records in the database whether reminder emails have already been
+ * sent for this peer review point, and will disallow sending duplicates unless
+ * the force=true body parameter is set.
+ */
 exports.sendReminderEmails = async (req, res) => {
   if (!Types.ObjectId.isValid(req.params.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid.");
   // Try to fetch the peer review so we can check the assignment
   const peerReview = await peerReviewModel.findById(req.params.peerReview);
   if (!peerReview)
-    throw new GenericNotFoundError("The peer review could not be found.");
-  const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy");
+    throw new GenericNotAllowedError("The peer review could not be found.");
+  // Check if reminder emails have already been sent
+  if (peerReview?.reminderSent && !req.body?.force)
+    throw new GenericNotAllowedError("You've already sent reminder emails for this peer review point.");
+  const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy, HH:mm");
   const userRole = await checkAssignmentRole(peerReview.assignment, req.session.userId, "lecturer");
   const { totalStudents, unsubmittedCount, unsubmittedStudents } = await findStudentsNotSubmitted(peerReview._id);
   const assignment = await assignmentModel.findById(peerReview.assignment).select("name").lean();
   const recipients = unsubmittedStudents.map(s => s?.email).filter(e => e != null);
   checkInReminderEmails({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, deadlineDate, });
+  peerReview.reminderSent = true;
+  await peerReview.save();
   return res.json({ message: `Reminder emails sent to ${unsubmittedCount} out of ${totalStudents} students.`})
 };

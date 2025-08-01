@@ -18,6 +18,7 @@ const peerReviewSchema = new Schema(
       default: "simple",
     },
     questions: [String],
+    reminderSent: { type: Boolean, required: false, },
   },
   { timestamps: false },
 );
