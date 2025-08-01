@@ -14,6 +14,7 @@ import { ASSIGNMENT_STATES } from "@/utility/helpers";
 import TeamSkillsBarChart from "@/features/overview/TeamSkillsBarChart";
 import AssignmentKeyStats from "@/features/overview/AssignmentKeyStats";
 import DeleteAssignmentCard from "@/features/overview/DeleteAssignmentCard";
+import StaffCheckInStatusCard from "@/features/overview/StaffCheckInStatusCard";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -131,16 +132,19 @@ function AssignmentOverview() {
 
       {selectedAssignment.role === "lecturer" && (
         <Row className="mb-2">
-          <Col lg={4}>
+          <Col md={4}>
             <AdvanceAssignmentStateCard />
           </Col>
+          <Col md={4}>
+            <StaffCheckInStatusCard />
+          </Col>
           {selectedAssignment.state === "pre-allocation" &&
-            <Col lg={4}>
+            <Col md={4}>
               <DeleteAssignmentCard />
             </Col>
           }
           {selectedAssignment.state !== "pre-allocation" &&
-          <Col lg={6}>
+          <Col md={6}>
             <ClassSkillsChart />
           </Col>
           }

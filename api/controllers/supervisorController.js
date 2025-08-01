@@ -4,6 +4,7 @@ const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole, isValidEmail } = require("../utility/auth");
 const { InvalidParametersError, InvalidObjectIdError, GenericNotFoundError } = require("../errors/errors");
+const { newSupervisorPlaceholderEmail, newSupervisorExistingEmail } = require("../utility/emails");
 
 exports.getSupervisors = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
@@ -47,10 +48,12 @@ exports.addSupervisor = async (req, res) => {
     throw new InvalidParametersError("Invalid supervisor email address. Make sure you're using an allowed email domain.");
   const assignment = await assignmentModel.findById(req.body.assignment);
   // Check that the user exists
+  let existingUser = true;
   let user = await userModel.findOne({ email: req.body.supervisor });
   let successMessage = "Supervisor added succesfully.";
   if (!user) {
     // Create a placeholder account for them
+    existingUser = false;
     user = await userModel.createPlaceholder(req.body.supervisor);
     successMessage = "A placeholder account has been created. Please ask the supervisor to log into the app.";
   }
@@ -69,6 +72,12 @@ exports.addSupervisor = async (req, res) => {
     { _id: req.body.assignment, },
     { $addToSet: { supervisors: user._id }},
   );
+  // Send email to supervisor
+  if (existingUser) {
+    newSupervisorExistingEmail({ supervisorEmail: req.body.supervisor, supervisorName: user.displayName, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+  } else {
+    newSupervisorPlaceholderEmail({ supervisorEmail: req.body.supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+  }
   return res.json({ message: successMessage });
 };
 
@@ -92,6 +101,10 @@ exports.bulkAddSupervisors = async (req, res) => {
     { _id: req.body.assignment, },
     { $addToSet: { supervisors: { $each: supervisorIDs } }},
   );
+  // Send emails to each
+  for (const supervisor of req.body.supervisors) {
+    newSupervisorPlaceholderEmail({ supervisorEmail: supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+  }
   return res.json({ message: `${supervisorIDs.length} supervisors have been added.` });
 };
 

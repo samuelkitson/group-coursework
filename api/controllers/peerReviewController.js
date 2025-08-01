@@ -1,7 +1,25 @@
 const { Types } = require("mongoose");
 const peerReviewModel = require("../models/peerReview");
-const { checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError } = require("../errors/errors");
+const assignmentModel = require("../models/assignment");
+const checkinModel = require("../models/checkin");
+const { checkAssignmentRole, checkTeamRole } = require("../utility/auth");
+const { InvalidParametersError, GenericNotAllowedError } = require("../errors/errors");
+const { checkInReminderEmails } = require("../utility/emails");
+const { format } = require("date-fns/format");
+
+const findStudentsNotSubmitted = async (peerReviewId) => {
+  const peerReview = await peerReviewModel.findById(peerReviewId).lean();
+  if (!peerReview)
+    throw new GenericNotFoundError("Peer review not found.");
+  const assignment = await assignmentModel.findById(peerReview.assignment).populate("students", "_id email").select("students").lean();
+  if (!assignment)
+    throw new Error("Assignment not found.");
+  const assignmentStudents = assignment?.students ?? [];
+  const checkinsSubmitted = await checkinModel.find({ peerReview: peerReviewId, reviewer: { $in: assignmentStudents }}).select("reviewer").lean();
+  const submittedStudentIds = checkinsSubmitted.map(c => c.reviewer.toString()) ?? [];
+  const unsubmittedStudents = assignmentStudents.filter(s => !submittedStudentIds.includes(s._id.toString()));
+  return { totalStudents: assignmentStudents.length, submittedCount: submittedStudentIds.length, unsubmittedCount: unsubmittedStudents.length, unsubmittedStudents };
+};
 
 exports.getPeerReviewStructure = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
@@ -52,7 +70,9 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
     }
     newPeerReview.assignment = assignmentId;
     newPeerReview.periodStart = new Date(peerReview.periodStart) ?? new Date();
-    newPeerReview.periodEnd = new Date(peerReview.periodEnd) ?? new Date();
+    const periodEnd = new Date(peerReview.periodEnd) ?? new Date();
+    periodEnd.setHours(23, 59, 59, 999);
+    newPeerReview.periodEnd = periodEnd;
     newPeerReview.type = peerReview.type ?? "simple";
     if (newPeerReview.type === "full") {
       newPeerReview.questions = peerReview.questions ?? [];
@@ -69,4 +89,43 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
   } catch (ValidationError) {
     throw new InvalidParametersError("The provided peer review object is invalid. Please try again."); 
   }
+};
+
+/**
+ * The system records in the database whether reminder emails have already been
+ * sent for this peer review point, and will disallow sending duplicates unless
+ * the force=true body parameter is set.
+ */
+exports.sendReminderEmails = async (req, res) => {
+  const userRole = await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const peerReview = await peerReviewModel.findByAssignment(req.body.assignment);
+  if (!peerReview)
+    throw new GenericNotAllowedError("The peer review could not be found.");
+  // Check if reminder emails have already been sent
+  if (peerReview?.reminderSent && !req.body?.force)
+    throw new GenericNotAllowedError("You've already sent reminder emails for this peer review point.");
+  const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy, HH:mm");
+  const { totalStudents, unsubmittedCount, unsubmittedStudents } = await findStudentsNotSubmitted(peerReview._id);
+  const assignment = await assignmentModel.findById(peerReview.assignment).select("name").lean();
+  const recipients = unsubmittedStudents.map(s => s?.email).filter(e => e != null);
+  checkInReminderEmails({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, deadlineDate, });
+  peerReview.reminderSent = true;
+  await peerReview.save();
+  return res.json({ message: `Reminder emails sent to ${unsubmittedCount} out of ${totalStudents} students.`})
+};
+
+/**
+ * Get the status of the current peer review for an assignment. Used to display
+ * a card on the assignment overview page for staff, allowing them to send
+ * reminder emails if needed.
+ */
+exports.getCurrentStatus = async (req, res) => {
+  const userRole = await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
+  const peerReview = await peerReviewModel.findByAssignment(req.query.assignment);
+  if (!peerReview)
+    return res.json({ type: "disabled", open: false });
+  if (peerReview.type === "none")
+    return res.json({ type: "none", open: false });
+  const { totalStudents, unsubmittedCount, submittedCount } = await findStudentsNotSubmitted(peerReview._id);
+  return res.json({ type: peerReview.type, open: true, totalStudents, unsubmittedCount, submittedCount, reminderSent: peerReview.reminderSent ?? false, });
 };

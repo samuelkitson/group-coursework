@@ -47,3 +47,14 @@ export function utcToSelectorFormat(utcDate) {
   const minutes = date.getMinutes().toString().padStart(2, "0");
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
+
+/**
+ * date-fns-tz doesn't work properly and can't be imported into this project, so
+ * this helper function takes a date object and adjusts it so that it acts like 
+ * UTC.
+ */
+export function shimToUTC(utcDate) {
+  const localOffsetInMinutes = utcDate.getTimezoneOffset();
+  const utcAdjustedDate = new Date(utcDate.getTime() + localOffsetInMinutes * 60 * 1000);
+  return utcAdjustedDate;
+};
