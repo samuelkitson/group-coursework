@@ -1,7 +1,25 @@
 const { Types } = require("mongoose");
 const peerReviewModel = require("../models/peerReview");
-const { checkAssignmentRole } = require("../utility/auth");
+const assignmentModel = require("../models/assignment");
+const checkinModel = require("../models/checkin");
+const { checkAssignmentRole, checkTeamRole } = require("../utility/auth");
 const { InvalidParametersError } = require("../errors/errors");
+const { checkInReminderEmails } = require("../utility/emails");
+const { format } = require("date-fns/format");
+
+const findStudentsNotSubmitted = async (peerReviewId) => {
+  const peerReview = await peerReviewModel.findById(peerReviewId).lean();
+  if (!peerReview)
+    throw new GenericNotFoundError("Peer review not found.");
+  const assignment = await assignmentModel.findById(peerReview.assignment).populate("students", "_id email").select("students").lean();
+  if (!assignment)
+    throw new Error("Assignment not found.");
+  const assignmentStudents = assignment?.students ?? [];
+  const checkinsSubmitted = await checkinModel.find({ peerReview: peerReviewId, reviewer: { $in: assignmentStudents }}).select("reviewer").lean();
+  const submittedStudentIds = checkinsSubmitted.map(c => c.reviewer.toString()) ?? [];
+  const unsubmittedStudents = assignmentStudents.filter(s => !submittedStudentIds.includes(s._id.toString()));
+  return { totalStudents: assignmentStudents.length, submittedCount: submittedStudentIds.length, unsubmittedCount: unsubmittedStudents.length, unsubmittedStudents };
+};
 
 exports.getPeerReviewStructure = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "supervisor/lecturer");
@@ -69,4 +87,20 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
   } catch (ValidationError) {
     throw new InvalidParametersError("The provided peer review object is invalid. Please try again."); 
   }
+};
+
+exports.sendReminderEmails = async (req, res) => {
+  if (!Types.ObjectId.isValid(req.params.peerReview))
+    throw new InvalidObjectIdError("The provided peer review ID is invalid.");
+  // Try to fetch the peer review so we can check the assignment
+  const peerReview = await peerReviewModel.findById(req.params.peerReview);
+  if (!peerReview)
+    throw new GenericNotFoundError("The peer review could not be found.");
+  const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy");
+  const userRole = await checkAssignmentRole(peerReview.assignment, req.session.userId, "lecturer");
+  const { totalStudents, unsubmittedCount, unsubmittedStudents } = await findStudentsNotSubmitted(peerReview._id);
+  const assignment = await assignmentModel.findById(peerReview.assignment).select("name").lean();
+  const recipients = unsubmittedStudents.map(s => s?.email).filter(e => e != null);
+  checkInReminderEmails({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, deadlineDate, });
+  return res.json({ message: `Reminder emails sent to ${unsubmittedCount} out of ${totalStudents} students.`})
 };

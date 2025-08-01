@@ -1,4 +1,5 @@
 const { Schema, Types, model } = require("mongoose");
+const { GenericNotFoundError } = require("../errors/errors");
 
 const peerReviewSchema = new Schema(
   {

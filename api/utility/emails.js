@@ -33,7 +33,7 @@ const transporterReadyPromise = new Promise((resolve) => {
   });
 });
 
-const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, subject, headerText, bodyText, templateId, redHeader, }) => {
+const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, subject, headerText, bodyText, templateId, redHeader, bccMode=false, }) => {
   const ready = await transporterReadyPromise;
   if (!ready) throw new CustomError("Email sending not configured", 500);
   if (!subject || !recipientEmail || !headerText || !bodyText)
@@ -41,15 +41,20 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
   const headerColour = redHeader ? "#B11717" : "#005C84";
   const rendered = await ejs.renderFile(
     path.join(__dirname, "..", "views", "emails", "genericEmail.ejs"),
-    { recipientEmail, recipientName, headerText, bodyText, templateId: templateId ?? "0-00", headerColour, },
+    { recipientName, headerText, bodyText, templateId: templateId ?? "0-00", headerColour, },
   );
   const mailOptions = {
     from: SMTP_FROM_ADDRESS,
     replyTo: replyToEmail,
-    to: recipientEmail,
     subject,
     html: rendered,
   };
+  if (bccMode) {
+    mailOptions.to = "Undisclosed Recipients";
+    mailOptions.bcc = recipientEmail;
+  } else {
+    mailOptions.to = recipientEmail;
+  }
   transporter.sendMail(mailOptions);
 };
 
@@ -60,6 +65,7 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
  *   * 1: security event
  *   * 2: assignment configuration change
  *   * 3: team configuration change
+ *   * 4: automatic time-based reminders
  */
 
 const newSupervisorPlaceholderEmail = ({ supervisorEmail, staffUserEmail, assignmentName, }) => {
@@ -80,10 +86,23 @@ const newSupervisorExistingEmail = ({ supervisorEmail, supervisorName, staffUser
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
+/**
+ * Recipients should be a list of emails.
+ */
+const checkInReminderEmails = ({ recipients, staffUserEmail, assignmentName, deadlineDate, }) => {
+  const templateId = "3-01";
+  if (!recipients || !staffUserEmail || !assignmentName)
+    throw new InvalidParametersError("Missing required parameters to send email.");
+  const bodyText = `Please remember to complete this week's check-in for ${assignmentName}. It's important to complete these regularly to review the workload balance in your team and help staff decide marks fairly.<br />Please go to ${homePageLink} to complete the check-in before ${deadlineDate ?? "the deadline"}.`;
+  sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "Reminder: check-in to complete", headerText: "Check-in to complete", bodyText, templateId, bccMode: true, })
+    .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
+};
+
 module.exports = {
   emailTransporter: transporter,
   emailsReady: transporterReadyPromise,
   sendGenericEmail,
   newSupervisorPlaceholderEmail,
   newSupervisorExistingEmail,
+  checkInReminderEmails,
 };
