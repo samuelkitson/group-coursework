@@ -51,6 +51,7 @@ function CheckIn() {
   const [ completionRate, setCompletionRate ] = useState({done: 0, outOf: 0});
   const [ pointsImbalance, setPointsImbalance ] = useState(0);
   const [ checkInType, setCheckInType ] = useState(null);
+  const [ peerReviewName, setPeerReviewName ] = useState(undefined);
   const [ checkInAvailable, setCheckInAvailable ] = useState(false);
   const [ peerReviewQuestions, setPeerReviewQuestions ] = useState([]);
   const [ peerReviewRecipients, setPeerReviewRecipients ] = useState([]);
@@ -130,6 +131,7 @@ function CheckIn() {
         setCompletionRate(data?.completionRate ?? {done: 0, outOf: 0});
         setPeerReviewQuestions(data?.questions ?? []);
         setPeerReviewRecipients(data?.teamMembers ?? []);
+        setPeerReviewName(data?.name);
         if (data?.teamMembers) {
           const questionsMap = data?.questions.reduce((acc, q) => ({ ...acc, [q]: 0 }), {});
           setPeerReviewAnswers(data.teamMembers.map(m => {
@@ -161,7 +163,7 @@ function CheckIn() {
           <h1>Check-in</h1>
           <p className="text-muted">
             Complete a 2 minute check-in every week to reflect on how things are
-            going.
+            going. {peerReviewName && `This check-in is for ${peerReviewName}.`}
           </p>
         </Col>
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
@@ -325,8 +327,8 @@ function CheckIn() {
           <p>
             If things are more serious (for example if someone is being bullied
             or discriminated against), or you've tried the steps in the guide
-            and issues persist, you should{" "}
-            <a href={reportIssuesLink()}>contact the module team</a>{" "}
+            and issues persist, you should contact your team supervisor or{" "}
+            <a href={reportIssuesLink()}>the module team</a>{" "}
             for support.
           </p>
         </Modal.Body>
