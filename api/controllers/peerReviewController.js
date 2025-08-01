@@ -70,7 +70,9 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
     }
     newPeerReview.assignment = assignmentId;
     newPeerReview.periodStart = new Date(peerReview.periodStart) ?? new Date();
-    newPeerReview.periodEnd = new Date(peerReview.periodEnd) ?? new Date();
+    const periodEnd = new Date(peerReview.periodEnd) ?? new Date();
+    periodEnd.setHours(23, 59, 59, 999);
+    newPeerReview.periodEnd = periodEnd;
     newPeerReview.type = peerReview.type ?? "simple";
     if (newPeerReview.type === "full") {
       newPeerReview.questions = peerReview.questions ?? [];

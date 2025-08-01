@@ -6,6 +6,7 @@ import { Button, Col, Form, InputGroup, ListGroup, Modal, Row, ToggleButton, Tog
 import { startOfWeek, endOfWeek, isBefore, isAfter, isEqual, addWeeks, format, parseISO, addDays } from "date-fns";
 import toast from "react-hot-toast";
 import { CheckCircleFill, ExclamationTriangle, ExclamationTriangleFill, PencilSquare, PlusCircleFill, Trash3Fill, XCircle, XLg } from "react-bootstrap-icons";
+import { shimToUTC } from "@/utility/datetimes";
 
 function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
@@ -92,9 +93,11 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
         let earliest = null;
         let latest = null;
         // Convert the data formats
+        // The times are unimportant here and we should be careful to use the
+        // UTC-timezoned format, as the date may wrap around otherwise
         const formatted = existing.map(p => {
-          const startISO = parseISO(p.periodStart) ?? new Date();
-          const endISO = parseISO(p.periodEnd) ?? new Date();
+          const startISO = shimToUTC(parseISO(p.periodStart));
+          const endISO = shimToUTC(parseISO(p.periodEnd));
           if (earliest == null || isBefore(startISO, earliest)) earliest = startISO;
           if (latest == null || isAfter(endISO, latest)) latest = endISO;
           return {...p, periodStart: format(startISO, "yyyy-MM-dd"), periodEnd: format(endISO, "yyyy-MM-dd"), };

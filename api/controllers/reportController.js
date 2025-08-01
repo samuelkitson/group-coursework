@@ -173,6 +173,7 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
   // Set start and end dates for the search period
   const searchStartDate = periodStart ? new Date(periodStart) : new Date(2020, 0, 1);
   const searchEndDate = periodEnd ? new Date(periodEnd) : new Date();
+  searchEndDate.setHours(23, 59, 59, 999);
   // Create a query object to search either by team or assignment
   const generatedReportObjects = [];
   let teamQuery = {};

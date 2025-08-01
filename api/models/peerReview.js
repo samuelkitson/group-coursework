@@ -1,6 +1,12 @@
 const { Schema, Types, model } = require("mongoose");
 const { GenericNotFoundError } = require("../errors/errors");
 
+/**
+ * periodStart and periodEnd use the timezone of the server. The time for
+ * periodStart is always 00:00:00.000 and the time for periodEnd is always
+ * 23:59:59.999.
+ */
+
 const peerReviewSchema = new Schema(
   {
     assignment: { type: Types.ObjectId, ref: "assignment", required: true, },
