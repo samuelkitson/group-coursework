@@ -119,10 +119,11 @@ const StaffCheckInStatusCard = () => {
         <p>
         You're about to send reminder emails to the {unsubmittedCount} students
         on {selectedAssignment?.name} who haven't submitted this week's check-in
-        yet.
+        yet. Emails will be sent immediately.
         </p>
         { reminderSent && <p>You've already sent a reminder this week, so these
-          students will receive a duplicate. Be careful not to spam students.  
+          students will receive a duplicate. Please be careful not to spam
+          students.  
         </p>}
       </Modal.Body>
       <Modal.Footer>
