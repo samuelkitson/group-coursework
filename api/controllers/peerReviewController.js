@@ -97,17 +97,14 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
  * the force=true body parameter is set.
  */
 exports.sendReminderEmails = async (req, res) => {
-  if (!Types.ObjectId.isValid(req.params.peerReview))
-    throw new InvalidObjectIdError("The provided peer review ID is invalid.");
-  // Try to fetch the peer review so we can check the assignment
-  const peerReview = await peerReviewModel.findById(req.params.peerReview);
+  const userRole = await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const peerReview = await peerReviewModel.findByAssignment(req.body.assignment);
   if (!peerReview)
     throw new GenericNotAllowedError("The peer review could not be found.");
   // Check if reminder emails have already been sent
   if (peerReview?.reminderSent && !req.body?.force)
     throw new GenericNotAllowedError("You've already sent reminder emails for this peer review point.");
   const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy, HH:mm");
-  const userRole = await checkAssignmentRole(peerReview.assignment, req.session.userId, "lecturer");
   const { totalStudents, unsubmittedCount, unsubmittedStudents } = await findStudentsNotSubmitted(peerReview._id);
   const assignment = await assignmentModel.findById(peerReview.assignment).select("name").lean();
   const recipients = unsubmittedStudents.map(s => s?.email).filter(e => e != null);

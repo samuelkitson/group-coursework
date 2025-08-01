@@ -8,6 +8,6 @@ const router = express.Router();
 
 router.get("/", requireLoggedIn(), asyncHandler(peerReviewC.getPeerReviewStructure));
 router.put("/", requireLoggedIn(), asyncHandler(peerReviewC.updatePeerReviewsByAssignment));
-router.post("/:peerReview/reminders", requireLoggedIn(), asyncHandler(peerReviewC.sendReminderEmails));
+router.post("/reminders", requireLoggedIn(), asyncHandler(peerReviewC.sendReminderEmails));
 router.get("/current-status", requireLoggedIn(), asyncHandler(peerReviewC.getCurrentStatus));
 module.exports = router;
