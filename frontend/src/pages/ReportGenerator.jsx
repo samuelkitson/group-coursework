@@ -110,7 +110,11 @@ function ReportGenerator() {
           return {...p, periodStartFormatted: format(startISO, "dd/MM/yyyy"), periodEndFormatted: format(endISO, "dd/MM/yyyy"), };
         });
         setPeerReviewsList(formatted);
-        const fullReviews = formatted.filter(p => p.type == "full").map(p => ({ value: p._id, label: `${p.periodStartFormatted} - ${p.periodEndFormatted}`}));
+        const fullReviews = formatted.filter(p => p.type == "full").map(p => {
+          const dateString = `${p.periodStartFormatted} - ${p.periodEndFormatted}`;
+          const label = p?.name ? `${p?.name} (${dateString})` : dateString;
+          return { value: p._id, label }
+        });
         setFullPeerReviews(fullReviews);
         return fullReviews;
     });

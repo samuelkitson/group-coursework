@@ -10,6 +10,7 @@ const { GenericNotFoundError } = require("../errors/errors");
 const peerReviewSchema = new Schema(
   {
     assignment: { type: Types.ObjectId, ref: "assignment", required: true, },
+    name: { type: String, required: false, },
     periodStart: { type: Date, required: true, },
     periodEnd: { type: Date, required: true, },
     type: {

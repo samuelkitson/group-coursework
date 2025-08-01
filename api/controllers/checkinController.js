@@ -77,6 +77,7 @@ exports.getCheckinStateStudent = async (req, res) => {
   // Get the details of their team members
   return res.json({
     type: peerReview.type,
+    name: peerReview.name,
     open: !alreadyCompleted,
     completionRate: { done: teamMembersSubmitted.length, outOf: membersCount },
     questions,

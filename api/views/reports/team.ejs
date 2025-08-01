@@ -23,6 +23,9 @@
           <% if (typeof peerReview !== "undefined") { %>
           for the peer review week beginning <%= peerReview?.periodStart %>
           <% } %>
+          <% if (typeof peerReview.name !== "undefined") { %>
+          (<%= peerReview.name %>)
+          <% } %>
         </small>
       </div>
     </div>

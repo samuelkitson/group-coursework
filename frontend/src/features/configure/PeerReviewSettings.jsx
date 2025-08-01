@@ -7,6 +7,7 @@ import { startOfWeek, endOfWeek, isBefore, isAfter, isEqual, addWeeks, format, p
 import toast from "react-hot-toast";
 import { CheckCircleFill, ExclamationTriangle, ExclamationTriangleFill, PencilSquare, PlusCircleFill, Trash3Fill, XCircle, XLg } from "react-bootstrap-icons";
 import { shimToUTC } from "@/utility/datetimes";
+import { get, useForm } from "react-hook-form";
 
 function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
@@ -23,6 +24,9 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const [overallPeriodEnd, setOverallPeriodEnd] = useState("");
   const [questionsModalIndex, setQuestionsModalIndex] = useState(null);
   const [questionsModalList, setQuestionsModalList] = useState([]);
+  const [reviewToRename, setReviewToRename] = useState(null);
+  const defaultValues = { newReviewName: "" };
+  const { control, register, reset, getValues, } = useForm({ defaultValues, mode: "onTouched", });
 
   const updatePeerReview = (index, updatedFields) => {
     setPeerReviews(prev =>
@@ -60,6 +64,18 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
     updatePeerReview(questionsModalIndex, {questions: questionsList});
     setQuestionsModalIndex(null);
     setQuestionsModalList([]);
+  };
+
+  const startNameEdit = (idx) => {
+    setReviewToRename(idx);
+    reset({ newReviewName: peerReviews[idx]?.name ?? "" });
+  };
+
+  const handleRenameModalConfirm = () => {
+    const { newReviewName } = getValues();
+    const newName = newReviewName == "" ? undefined : newReviewName;
+    updatePeerReview(reviewToRename, {name: newName});
+    setReviewToRename(null);
   };
 
   const saveChanges = async () => {
@@ -228,7 +244,16 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
           <ListGroup.Item key={idx}>
             <Row className="gy-2 align-items-center">
               <Col md={4}>
-                <p className="mb-0">Week {idx + 1}</p>
+                <p className="mb-0 d-flex align-items-center">
+                  { peerReview.name ?
+                  peerReview.name
+                  :
+                  `Week ${idx + 1}`
+                  }
+                  <Button variant="link" className="ms-2 p-0" onClick={() => startNameEdit(idx)}>
+                    <PencilSquare className="me-1" />
+                  </Button>
+                </p>
                 <p className="mb-0 text-muted">
                   {format(parseISO(peerReview.periodStart), "d MMM")} - {format(parseISO(peerReview.periodEnd), "d MMM")}
                 </p>
@@ -272,6 +297,41 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
           </ListGroup.Item>
         ))}
         </ListGroup>
+
+        <Modal show={reviewToRename!==null} onHide={() => setReviewToRename(null)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Name peer review</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              Use the box below to give the peer review for the week beginning on {" "}
+              {format(parseISO(peerReviews[reviewToRename]?.periodStart ?? "2000-01-01"), "dd/MM/yyyy")}{" "}
+              a short recognisable name, e.g. "Deliverable 1". Leave blank to 
+              reset to the default name.
+            </p>
+            <Form.Control
+              name="newReviewName"
+              {...register("newReviewName")}
+              placeholder="Review point name"
+            />
+          </Modal.Body>
+          <Modal.Footer className="d-flex justify-content-between">
+            <Button
+              variant="secondary"
+              className="d-flex align-items-center"
+              onClick={() => setReviewToRename(null)}
+            >
+              <Trash3Fill className="me-2" /> Cancel
+            </Button>
+            <Button
+              variant="success"
+              className="d-flex align-items-center"
+              onClick={handleRenameModalConfirm}
+            >
+              <CheckCircleFill className="me-2" /> Confirm
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
         <Modal show={questionsModalIndex!==null} onHide={() => setQuestionsModalIndex(null)}>
           <Modal.Header closeButton>
