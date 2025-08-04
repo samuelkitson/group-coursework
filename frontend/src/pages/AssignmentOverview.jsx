@@ -16,6 +16,7 @@ import AssignmentKeyStats from "@/features/overview/AssignmentKeyStats";
 import DeleteAssignmentCard from "@/features/overview/DeleteAssignmentCard";
 import StaffCheckInStatusCard from "@/features/overview/StaffCheckInStatusCard";
 import SkillRatingsChart from "@/features/peerReviews/SkillRatingsChart";
+import StudentCheckInStatusCard from "@/features/overview/StudentCheckInStatusCard";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -147,6 +148,12 @@ function AssignmentOverview() {
       size: "large",
       chart: true,
       attemptLoad: () => (["lecturer", "supervisor"].includes(selectedAssignment.role) && selectedAssignment.state !== "pre-allocation"),
+    },
+    {
+      id: "student-checkin-status",
+      component: StudentCheckInStatusCard,
+      size: "small",
+      attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
     },
     {
       id: "student-key-stats",

@@ -83,7 +83,7 @@ export const pageMap = [
     statesVisible: ["live", "closed"],
     needsTeam: true,
   },
-  { label: "Check-In",
+  { label: "Check-in",
     icon: CardChecklist,
     link: "/assignment/check-in",
     rolesVisible: ["student"],
