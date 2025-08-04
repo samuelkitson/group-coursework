@@ -2,7 +2,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { Container, Row, Col, Card, ListGroup, Button } from "react-bootstrap";
+import { Container, Row, Col, Card, ListGroup, Button, Placeholder } from "react-bootstrap";
 import { ChevronRight } from "react-bootstrap-icons";
 
 import "./style/AssignmentOverview.css";
@@ -15,14 +15,47 @@ import TeamSkillsBarChart from "@/features/overview/TeamSkillsBarChart";
 import AssignmentKeyStats from "@/features/overview/AssignmentKeyStats";
 import DeleteAssignmentCard from "@/features/overview/DeleteAssignmentCard";
 import StaffCheckInStatusCard from "@/features/overview/StaffCheckInStatusCard";
+import SkillRatingsChart from "@/features/peerReviews/SkillRatingsChart";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
+
+const cardSizes = {
+  "small": { sm: 6, md: 6, xl: 4 },
+  "medium": { sm: 12, md: 6, xl: 4 },
+  "large": { sm: 12, md: 12, xl: 6 },
+}
+
+const LoadingPlaceholder = () => (
+  <Card className="h-100 placeholder-glow">
+    <Card.Body>
+      <Placeholder as={Card.Title} animation="glow">
+        <Placeholder xs={6} />
+      </Placeholder>
+      <Placeholder as={Card.Text} animation="glow">
+        <Placeholder xs={7} /> <Placeholder xs={4} /> <Placeholder xs={4} />
+      </Placeholder>
+    </Card.Body>
+  </Card>
+);
+
+const CardWrapper = ({ size, children }) => {
+  const cardSize = cardSizes[size];
+
+  return (
+    <Col sm={cardSize["sm"]} md={cardSize["md"]} xl={cardSize["xl"]}>
+      <div className="h-100 d-flex flex-column">{children}</div>
+    </Col>
+  );
+};
+
 
 function AssignmentOverview() {
   const navigate = useNavigate();
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+
+  const [loadedCards, setLoadedCards] = useState(null);
 
   const stateHelpText = () => {
     if (selectedAssignment.role === "student") {
@@ -83,6 +116,85 @@ function AssignmentOverview() {
     navigate("/assignment/questionnaire");
   };
 
+  /**
+   * Defines the dashboard cards that could be displayed. The function
+   * attemptLoad should return true when there is a possiblity that the card
+   * could be displayed. If it's impossible (e.g. wrong user role), then return
+   * false and the card will not be loaded at all.
+   */
+  const cardDefinitions = [
+    {
+      id: "staff-advance-state",
+      component: AdvanceAssignmentStateCard,
+      size: "small",
+      attemptLoad: () => selectedAssignment.role === "lecturer",
+    },
+    {
+      id: "staff-checkin-status",
+      component: StaffCheckInStatusCard,
+      size: "small",
+      attemptLoad: () => selectedAssignment.role === "lecturer",
+    },
+    {
+      id: "staff-delete-assignment",
+      component: DeleteAssignmentCard,
+      size: "small",
+      attemptLoad: () => (selectedAssignment.role === "lecturer" && selectedAssignment.state === "pre-allocation"),
+    },
+    {
+      id: "staff-skills-chart",
+      component: ClassSkillsChart,
+      size: "large",
+      attemptLoad: () => (["lecturer", "supervisor"].includes(selectedAssignment.role) && selectedAssignment.state !== "pre-allocation"),
+    },
+    {
+      id: "student-key-stats",
+      component: AssignmentKeyStats,
+      size: "medium",
+      attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
+    },
+    {
+      id: "student-team-skills",
+      component: TeamSkillsBarChart,
+      size: "large",
+      attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
+    },
+  ];
+
+  /**
+   * When the page loads (or the selected assignment changes), load all of the
+   * cards. For each card in cardDefinitions, it first filters the list to only
+   * those where attemptLoad() returns true. Then it loads the data for each
+   * card (if needed) and stores this. Once all cards have loaded, loadedCards
+   * is updated to cause them to display. isCancelled is used to prevent race
+   * conditions.
+   */
+  useEffect(() => {
+    let isCancelled = false;
+    const loadCards = async () => {
+      const visibleCards = cardDefinitions.filter((card) => card.attemptLoad());
+      const results = await Promise.all(
+        visibleCards.map(async ({ id, component, size }) => {
+          if (component?.loadData) {
+            const data = await component.loadData();
+            if (data == null) return null;
+            return { id, component, data, size };
+          }
+          return { id, component, data: null, size };
+        })
+      );
+      if (!isCancelled) {
+        setLoadedCards(results.filter(Boolean));
+      }
+    };
+    setLoadedCards(null);
+    loadCards();
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedAssignment]);
+
+
   return (
     <>
       <Row className="mb-2">
@@ -130,61 +242,24 @@ function AssignmentOverview() {
         </Col>
       </Row>
 
-      {selectedAssignment.role === "lecturer" && (
-        <Row className="mb-2">
-          <Col md={4}>
-            <AdvanceAssignmentStateCard />
-          </Col>
-          <Col md={4}>
-            <StaffCheckInStatusCard />
-          </Col>
-          {selectedAssignment.state === "pre-allocation" &&
-            <Col md={4}>
-              <DeleteAssignmentCard />
-            </Col>
-          }
-          {selectedAssignment.state !== "pre-allocation" &&
-          <Col md={6}>
-            <ClassSkillsChart />
-          </Col>
-          }
+      <Container fluid className="mt-4">
+        <Row className="g-3">
+          {loadedCards
+          ? loadedCards.map(({ id, component: Component, data, size }) => (
+              <CardWrapper key={id} size={size}>
+                <Component data={data} />
+              </CardWrapper>
+            ))
+          :
+            cardDefinitions
+              .filter((card) => card.attemptLoad())
+              .map(({ id, size }) => (
+                <CardWrapper key={id} size={size}>
+                  <LoadingPlaceholder />
+                </CardWrapper>
+          ))}
         </Row>
-      )}
-
-      {selectedAssignment.role === "student" && (
-        <Row className="my-2 gy-3">
-          { selectedAssignment.state === "allocation-questions" &&
-            <Col lg={4}>
-              <Card className="p-3 mb-3">
-                <Card.Body className="py-0">
-                  <h5 className="text-center mb-3">Allocation questionnaire</h5>
-                  <Card.Text className="mt-2 text-muted">
-                    Click the button below to fill in your skills self-assessment.
-                  </Card.Text>
-                  <Button
-                    variant="primary"
-                    className="d-flex align-items-center"
-                    onClick={goToQuestionnaire}
-                  >
-                    Questionnaire
-                    <ChevronRight className="ms-2" />
-                  </Button>
-                </Card.Body>
-              </Card>
-            </Col>
-          }
-          { selectedAssignment.state === "live" &&
-            <>
-              <Col xs={12} md={6}>
-                <AssignmentKeyStats />
-              </Col>
-              <Col xs={12} md={6}>
-                <TeamSkillsBarChart />
-              </Col>
-            </>
-          }
-        </Row>
-      )}
+      </Container>
     </>
   );
 }
