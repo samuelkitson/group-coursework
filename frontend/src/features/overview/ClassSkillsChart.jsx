@@ -10,7 +10,6 @@ import {
 import { Card, Nav } from "react-bootstrap";
 import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { Link } from "react-router-dom";
 
 // Custom Legend payload for top and bottom labels
 const customLegendPayload = [
@@ -19,73 +18,12 @@ const customLegendPayload = [
   { value: "Strong", type: "square", color: "#61e381" },
 ];
 
-const ClassSkillsChart = () => {
-  const selectedAssignment = useBoundStore((state) =>
-    state.getSelectedAssignment(),
-  );
-  const [loading, setLoading] = useState(true);
-  const [unavailable, setUnavailable] = useState(false);
-  const [skillsData, setSkillsData] = useState({});
-
-  // Normalise Likert data to percentages
-  const normaliseData = Object.keys(skillsData).map((skillName) => {
-    const skillRatings = skillsData[skillName];
-    const total = skillRatings.reduce(
-      (runningTotal, current) => runningTotal + current,
-      0,
-    );
-    const dataPoint = { name: skillName };
-    for (let i = 1; i <= 7; i++) {
-      dataPoint[i.toString()] = skillRatings[i - 1];
-    }
-    return dataPoint;
-  });
-
-  const refreshData = () => {
-    setSkillsData([]);
-    setLoading(true);
-    // Get the current required skills
-    api
-      .get(`/api/stats/skills?assignment=${selectedAssignment._id}`, {
-        genericErrorToasts: false,
-      })
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setSkillsData(data?.skills ?? []);
-        setLoading(false);
-        setUnavailable(false);
-      })
-      .catch((error) => {
-        setUnavailable(true);
-      });
-  };
-
-  // Refresh data on page load
-  useEffect(refreshData, [selectedAssignment]);
-
-  if (unavailable)
-    return (
-      <Card className="p-3">
-        <Card.Body>
-          <p className="text-muted">Skills overview currently unavailable.</p>
-          <p className="text-muted">
-            Set up the required skills for {selectedAssignment.name} in the{" "}
-            <Link to="/assignment/configure" className="text-muted">
-              assignment configuration
-            </Link>{" "}
-            tab to unlock this insight.
-          </p>
-        </Card.Body>
-      </Card>
-    );
-
+const ClassSkillsChart = ({ data }) => {
   return (
-    <Card className="p-3">
+    <Card className="p-3 shadow h-100">
       <h5 className="text-center mb-3">Skills overview</h5>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={normaliseData} layout="vertical">
+        <BarChart data={data?.skills} layout="vertical">
           <YAxis dataKey="name" type="category" textAnchor="end" width={100} />
           <XAxis type="number" />
           <Legend payload={customLegendPayload} />
@@ -100,6 +38,35 @@ const ClassSkillsChart = () => {
       </ResponsiveContainer>
     </Card>
   );
+};
+
+ClassSkillsChart.loadData = async () => {
+  const assignment = useBoundStore.getState().getSelectedAssignment();
+  if (!assignment || assignment.role !== "lecturer") return null;
+  try {
+    const res = await api.get(`/api/stats/skills?assignment=${assignment._id}`, {
+      genericErrorToasts: false,
+    })
+    const data = res.data;
+    if (!data?.skills || data.skills.length === 0) return null;
+    const normalisedSkillsData = Object.keys(data.skills).map((skillName) => {
+      const skillRatings = data.skills[skillName];
+      const total = skillRatings.reduce(
+        (runningTotal, current) => runningTotal + current,
+        0,
+      );
+      const dataPoint = { name: skillName };
+      for (let i = 1; i <= 7; i++) {
+        dataPoint[i.toString()] = skillRatings[i - 1];
+      }
+      return dataPoint;
+    });
+    return {
+      skills: normalisedSkillsData,
+    };
+  } catch (e) {
+    return null;
+  }
 };
 
 export default ClassSkillsChart;

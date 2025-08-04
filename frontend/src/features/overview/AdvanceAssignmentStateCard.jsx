@@ -54,7 +54,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
   };
 
   return (
-    <Card className="p-3 mb-3">
+    <Card className="p-3 shadow h-100">
       <Card.Body className="py-0">
         <h5 className="text-center mb-3">Assignment state</h5>
         <Card.Text className="mt-2 text-muted">

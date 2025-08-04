@@ -15,70 +15,13 @@ import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { EMOJI_RATINGS } from "@/utility/helpers";
 
-const TeamSkillsBarChart = () => {
-  const selectedTeam = useBoundStore((state) =>
-    state.getSelectedTeam(),
-  );
-  const [loading, setLoading] = useState(true);
-  const [unavailable, setUnavailable] = useState(false);
-  const [skillsData, setSkillsData] = useState([]);
-
-  const refreshData = () => {
-    setSkillsData([]);
-    if (selectedTeam == null) {
-      return setUnavailable(true);
-    }
-    setLoading(true);
-    api
-      .get(`/api/stats/team-skills?team=${selectedTeam._id}`, {
-        genericErrorToasts: false,
-      })
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setSkillsData(data?.skills);
-        setLoading(false);
-        setUnavailable(false);
-      })
-      .catch(() => {
-        setUnavailable(true);
-      });
-  };
-
-  // Refresh data on page load
-  useEffect(refreshData, [selectedTeam]);
-
-  if (unavailable)
-    return (
-      <Card className="p-3 shadow-sm">
-        <Card.Body>
-          <p className="text-muted mb-0">
-            Once you've joined a team, you'll be able to see your skills
-            overview here.
-          </p>
-        </Card.Body>
-      </Card>
-    );
-
-  if (loading)
-    return (
-      <Card className="p-3 shadow-sm">
-        <Card.Body>
-          <div className="d-flex align-items-center text-muted">
-            <Spinner className="me-3" />
-            Loading skills chart...
-          </div>
-        </Card.Body>
-      </Card>
-    );
-
+const TeamSkillsBarChart = ({ data }) => {
   return (
-    <Card className="p-3 shadow-sm">
+    <Card className="p-3 shadow h-100">
       <h5 className="text-center mb-1">Team skills overview</h5>
       <p className="text-center text-muted mb-2">Shows where your team's strongest skills are</p>
       <ResponsiveContainer width="100%" height={300}>
-        <BarChart width="100%" height="100%" data={skillsData}>
+        <BarChart width="100%" height="100%" data={data?.skills}>
           <CartesianGrid vertical={false} strokeDasharray="1 3" ticks={[1,2,3,4,5,6,7]} />
           <XAxis dataKey="skill" tick={{ fontSize: 10 }} />
           <YAxis domain={[0, 7]} tickCount={8}
@@ -99,6 +42,24 @@ const TeamSkillsBarChart = () => {
       </ResponsiveContainer>
     </Card>
   );
+};
+
+TeamSkillsBarChart.loadData = async () => {
+  const selectedTeam = useBoundStore.getState().getSelectedTeam();
+  if (!selectedTeam) return null;
+  try {
+    const res = await api.get(`/api/stats/team-skills?team=${selectedTeam._id}`, {
+      genericErrorToasts: false,
+    })
+    const data = res.data;
+    const skills = data?.skills ?? [];
+    if (skills.length === 0) return null;
+    return {
+      skills: data?.skills,
+    };
+  } catch (e) {
+    return null;
+  }
 };
 
 export default TeamSkillsBarChart;
