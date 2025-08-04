@@ -42,7 +42,6 @@ const userSchema = new Schema(
       type: Map,
       of: Number,
     },
-    gender: { type: String, },
     noPair: [{ type: "ObjectId", ref: "user", }],
   },
   { timestamps: true },

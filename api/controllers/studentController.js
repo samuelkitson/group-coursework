@@ -47,9 +47,6 @@ exports.upload = async (req, res) => {
           // Extract all the fields other than _id and performance data
           let studentDataFields = {};
           studentDataFields.displayName = row?.displayName ?? undefined;
-          studentDataFields.international = row?.international ?? undefined;
-          studentDataFields.gender = row?.gender ?? undefined;
-          const marksKeys = Object.fromEntries(Object.entries(row).filter(([key, _])=>key.startsWith("marks.")));
           studentDataFields = {...marksKeys, ...studentDataFields};
           // Check whether this user's email already exists (in which case just add them to the assignment)
           const existingStudent = await userModel.findOne(

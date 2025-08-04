@@ -298,8 +298,8 @@ class AllocationAlgorithm {
     if (penalty["tag"] === "all-international") {
       return groupDetails.every((student) => student["international"] || false);
     } else if (penalty["tag"] === "lone-gender") {
-      const maleCount = groupDetails.filter((s) => s.gender === "male").length;
-      const femaleCount = groupDetails.filter((s) => s.gender === "female").length;
+      const maleCount = groupDetails.filter((s) => s?.gender === "male").length;
+      const femaleCount = groupDetails.filter((s) => s?.gender === "female").length;
       return maleCount == 1 || femaleCount == 1;
     } else if (penalty["tag"] === "inter-module-clash" && this.otherTeamMembers) {
       const teamMembersOtherModules = [...new Set(group.flatMap(id => this.otherTeamMembers[id] || []))];
