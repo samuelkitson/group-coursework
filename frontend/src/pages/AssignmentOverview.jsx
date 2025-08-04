@@ -145,6 +145,7 @@ function AssignmentOverview() {
       id: "staff-skills-chart",
       component: ClassSkillsChart,
       size: "large",
+      chart: true,
       attemptLoad: () => (["lecturer", "supervisor"].includes(selectedAssignment.role) && selectedAssignment.state !== "pre-allocation"),
     },
     {
@@ -157,6 +158,7 @@ function AssignmentOverview() {
       id: "student-team-skills",
       component: TeamSkillsBarChart,
       size: "large",
+      chart: true,
       attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
     },
   ];
@@ -174,13 +176,13 @@ function AssignmentOverview() {
     const loadCards = async () => {
       const visibleCards = cardDefinitions.filter((card) => card.attemptLoad());
       const results = await Promise.all(
-        visibleCards.map(async ({ id, component, size }) => {
+        visibleCards.map(async ({ id, component, size, chart }) => {
           if (component?.loadData) {
             const data = await component.loadData();
             if (data == null) return null;
-            return { id, component, data, size };
+            return { id, component, data, size, chart };
           }
-          return { id, component, data: null, size };
+          return { id, component, data: null, size, chart };
         })
       );
       if (!isCancelled) {
@@ -194,6 +196,8 @@ function AssignmentOverview() {
     };
   }, [selectedAssignment]);
 
+  const statCards = loadedCards?.filter(card => !card?.chart) ?? [];
+  const chartCards = loadedCards?.filter(card => card?.chart) ?? [];
 
   return (
     <>
@@ -243,9 +247,9 @@ function AssignmentOverview() {
       </Row>
 
       <Container fluid className="mt-4">
-        <Row className="g-3">
-          {loadedCards
-          ? loadedCards.map(({ id, component: Component, data, size }) => (
+        <Row className="g-3 mb-3">
+          {statCards
+          ? statCards.map(({ id, component: Component, data, size }) => (
               <CardWrapper key={id} size={size}>
                 <Component data={data} />
               </CardWrapper>
@@ -258,6 +262,14 @@ function AssignmentOverview() {
                   <LoadingPlaceholder />
                 </CardWrapper>
           ))}
+        </Row>
+        <Row className="g-3">
+          {chartCards.map(({ id, component: Component, data, size }) => (
+              <CardWrapper key={id} size={size}>
+                <Component data={data} />
+              </CardWrapper>
+            ))
+          }
         </Row>
       </Container>
     </>
