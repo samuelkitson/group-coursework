@@ -246,7 +246,7 @@ function AssignmentOverview() {
         </Col>
       </Row>
 
-      <Container fluid className="mt-4">
+      <Container fluid className="mt-4 px-0">
         <Row className="g-3 mb-3">
           {statCards
           ? statCards.map(({ id, component: Component, data, size }) => (
