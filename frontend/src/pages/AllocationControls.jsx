@@ -130,6 +130,14 @@ function AllocationControls() {
     changeHandler(parseInt(value));
   };
 
+  const getRequiredDatasetCols = () => {
+    const requiredCols = new Set(["email"]);
+    const { criteria, dealbreakers } = getValues();
+    criteria.forEach(c => { if (c?.attribute) requiredCols.add(c.attribute); });
+    dealbreakers.forEach(d => { if (d?.attribute) requiredCols.add(d.attribute); });
+    return Array.from(requiredCols);
+  };
+
   const refreshData = () => {
     setCriteriaOptions([]);
     reset(defaultValues);

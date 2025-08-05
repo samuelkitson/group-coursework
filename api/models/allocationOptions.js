@@ -9,6 +9,8 @@
  * There are a few description fields used in various ways.
  *   - description: the basic description shown in the selector
  *   - fillerText: preceded by "Group together " or "Split up " (optional, only if goal is selectable)
+ * 
+ * - attribute: if this data comes from a dataset upload, the name of the column
  */
 
 const criteriaOptions = [
@@ -22,18 +24,21 @@ const criteriaOptions = [
     fillerText: "students with similar past performance.",
     category: "data",
     options: ["goal"],
+    attribute: "marks",
   },{
     name: "Degree programme",
     description: "Allocate using students' degree programmes.",
     fillerText: "students on the same degree programme.",
     category: "data",
     options: ["goal"],
+    attribute: "degree",
   },{
     name: "Enrolment",
     description: "Group together or split up students who are unenrolled.",
     fillerText: "students who aren't yet enrolled.",
     category: "data",
     options: ["goal"],
+    attribute: "enrolled",
   },{
     name: "Meeting preference",
     description: "Split up students who prefer to meet online and in-person.",
@@ -44,6 +49,7 @@ const criteriaOptions = [
     fillerText: "international students.",
     category: "language",
     options: ["goal"],
+    attribute: "international",
   },{
     name: "Custom (textual)",
     description: "A custom criterion for a textual dataset column.",
@@ -62,10 +68,12 @@ const dealbreakerOptions = [
     name: "Lone gender",
     description: "Avoid teams that have for example, one female student.",
     category: "personal",
+    attribute: "gender",
   },{
     name: "All international students",
     description: "Don't make teams where everyone is an international student.",
     category: "language",
+    attribute: "international",
   },{
     name: "Assignment crossover",
     description: "Don't put students together who are already in a team for another assignment.",
