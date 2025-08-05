@@ -37,6 +37,9 @@ import UnsavedChanges from "@/components/UnsavedChanges";
 import PotentialGroupsModal from "@/features/allocate/PotentialGroupsModal";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { FormProvider, useFieldArray, useForm, useFormState } from "react-hook-form";
+import CriterionBlock from "@/features/allocate/CriterionBlock";
+import DealbreakerBlock from "@/features/allocate/DealbreakerBlock";
 
 function AllocationControls() {
   const navigate = useNavigate();
@@ -55,148 +58,67 @@ function AllocationControls() {
   const [requiredSkills, setRequiredSkills] = useState([]);
 
   // Stores the current allocation setup
-  const [criteria, setCriteria] = useState([]);
-  const [dealbreakers, setDealbreakers] = useState([]);
   const [groupSize, setGroupSize] = useState(5);
   const [surplusLargerGroups, setSurplusLargerGroups] = useState(false);
 
+  // Stores the current allocation setup (a React-Hook-Form to reduce renders)
+  const defaultValues = {
+    criteria: [],
+    dealbreakers: [],
+  };
+  const formMethods = useForm(defaultValues);
+  const { control, getValues, trigger, reset, } = formMethods;
+  const { isDirty, dirtyFields } = useFormState({ control });
+  const { fields: criteriaFields, append: appendCriterion, remove: removeCriterion, move: moveCriterion }
+   = useFieldArray({ control, name: "criteria" });
+  const { fields: dealbreakersFields, append: appendDealbreaker, remove: removeDealbreaker }
+   = useFieldArray({ control, name: "dealbreakers" });
+
   const [pending, setPending] = useState(false);
-  const [unsaved, setUnsaved] = useState(false);
 
   const [activeModal, setActiveModal] = useState(false);
 
   const [generatedAllocation, setGeneratedAllocation] = useState(null);
 
-  const moveCriterion = (fromIndex, toIndex) => {
-    const updatedCriteria = [...criteria];
-    const [movedCriterion] = updatedCriteria.splice(fromIndex, 1);
-    updatedCriteria.splice(toIndex, 0, movedCriterion);
-    setCriteria(updatedCriteria);
-    setUnsaved(true);
-  };
-
-  const handleRemoveCriterion = (index) => {
-    setCriteria(criteria.filter((_, i) => i !== index));
-    setUnsaved(true);
-  };
-
-  const handleRemoveDealbreaker = (index) => {
-    setDealbreakers(dealbreakers.filter((_, i) => i !== index));
-    setUnsaved(true);
-  };
-
-  const handleValueChange = (index, newValue, optionName="value") => {
-    const updatedCriteria = criteria.map((criterion, i) =>
-      i === index ? { ...criterion, [optionName]: newValue } : criterion,
-    );
-    setCriteria(updatedCriteria);
-    setUnsaved(true);
-  };
-
-  const updateDealbreakerImportance = (index, newImportance) => {
-    const updatedDealbreakers = dealbreakers.map((dealbreaker, i) =>
-      i === index
-        ? { ...dealbreaker, importance: parseInt(newImportance) }
-        : dealbreaker,
-    );
-    setDealbreakers(updatedDealbreakers);
-    setUnsaved(true);
-  };
-
-  const handleMoveUp = (index) => {
-    if (index > 0) moveCriterion(index, index - 1);
-  };
-
-  const handleMoveDown = (index) => {
-    if (index < criteria.length - 1) moveCriterion(index, index + 1);
-  };
-
-  const renderControls = (index, criterion) => {
-    if (!criterion?.options) return [];
-    const controls = [];
-    if (criterion.options.includes("field")) {
-      controls.push(
-        <FloatingLabel label="Dataset field name">
-          <Form.Control disabled value="fieldname" className="mb-2" />
-        </FloatingLabel>
-      );
-    }
-    if (criterion.options.includes("goal")) {
-      controls.push(
-        <Form.Group className="mb-2">
-          <Form.Check
-            type="radio"
-            label="Similar students together"
-            value="similar"
-            checked={true}
-          />
-          <Form.Check
-            type="radio"
-            label="Diverse students together"
-            value="diverse"
-            checked={false}
-          />
-        </Form.Group>
-      );
-    }
-    if (criterion.options.includes("missing")) {
-      controls.push(
-        <Form.Check
-          type="switch"
-          label="Ignore missing values"
-          checked={true}
-          className="mb-2"
-        />
-      );
-    }
-    return controls;
-  };
-
   const addNewCriterion = (newCriterion) => {
-    setCriteria((prevCriteria) => [...prevCriteria, newCriterion]);
+    // Add default values
+    if (newCriterion?.options?.includes("goal"))
+      newCriterion.goal = "similar";
+    appendCriterion(newCriterion);
     setActiveModal(null);
-    setUnsaved(true);
     setTimeout(() => {
+      const newIndex = criteriaFields.length;
       document
-        .getElementById(`criterion-${criteria.length}`)
+        .getElementById(`criterion-${newIndex}`)
         ?.scrollIntoView({ behavior: "smooth" });
     }, 0);
   };
 
   const addNewDealbreaker = (newDealbreaker) => {
     newDealbreaker.importance = 2;
-    setDealbreakers((prevDealbreakers) => [
-      newDealbreaker,
-      ...prevDealbreakers,
-    ]);
+    appendDealbreaker(newDealbreaker);
     setActiveModal(null);
-    setUnsaved(true);
-  };
-
-  const splitIntoCategories = (options) => {
-    let categorised = {};
-    options.forEach((o) => {
-      if (o.category in categorised) {
-        categorised[o.category].push(o);
-      } else {
-        categorised[o.category] = [o];
-      }
-    });
-    return categorised;
+    setTimeout(() => {
+      const newIndex = dealbreakersFields.length;
+      document
+        .getElementById(`dealbreaker-${newIndex}`)
+        ?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
   };
 
   const updateGroupSize = (newSize) => {
     setGroupSize(newSize);
-    setUnsaved(true);
+    // setUnsaved(true);
   };
 
   const updateSurplusLarger = (allocateUpwards) => {
     setSurplusLargerGroups(allocateUpwards);
-    setUnsaved(true);
+    // setUnsaved(true);
   };
 
   const refreshData = () => {
     setCriteriaOptions([]);
+    reset(defaultValues);
     api
       .get(`/api/allocation/${selectedAssignment._id}/options`)
       .then((resp) => {
@@ -213,15 +135,15 @@ function AllocationControls() {
         return resp.data;
       })
       .then((data) => {
-        setCriteria(data?.criteria ?? []);
-        setDealbreakers(data?.dealbreakers ?? []);
+        // setCriteria(data?.criteria ?? []);
+        // setDealbreakers(data?.dealbreakers ?? []);
         setGroupSize(data?.groupSize ?? 5);
         setSurplusLargerGroups(data?.surplusLargerGroups ?? false);
       });
   };
   
   const startAllocation = () => {
-    if (criteria.length === 0) {
+    if (criteriaFields.length === 0) {
       toast.error("You must configure some allocation criteria first.");
       return;
     }
@@ -262,36 +184,25 @@ function AllocationControls() {
         return <PersonArmsUp />;
     }
   };
-
-  const getImportanceString = (importance) => {
-    switch (importance) {
-      case 0:
-        return "Just tell me";
-      case 1:
-        return "Low importance";
-      case 2:
-        return "Medium importance";
-      case 3:
-        return "High importance";
-      default:
-        return "Rate importance";
-    }
-  };
-
   const saveChanges = async () => {
+    // Try to validate the form fields first
+    const isValid = await trigger();
+    if (!isValid)
+      return toast.error("Please complete all fields before saving.");
     setPending(true);
+    const { criteriaFields } = getValues();
     const updateObj = {
       groupSize: groupSize,
       surplusLargerGroups: surplusLargerGroups,
-      criteria: criteria,
-      dealbreakers: dealbreakers,
+      criteria: criteriaFields,
+      dealbreakers: dealbreakersFields,
     };
     api
       .put(`/api/allocation/${selectedAssignment._id}/setup`, updateObj, {
         successToasts: true,
       })
       .then(() => {
-        setUnsaved(false);
+        reset(getValues());
       })
       .finally(() => {
         setPending(false);
@@ -317,7 +228,7 @@ function AllocationControls() {
         successToasts: true,
       })
       .then(() => {
-        setUnsaved(false);
+        // setUnsaved(false);
         setActiveModal(null);
         updateSelectedAssignment({ state: "live" });
         navigate("/assignment/overview");
@@ -332,10 +243,11 @@ function AllocationControls() {
 
   return (
     <>
+    <FormProvider {...formMethods}>
       <Row className="mb-4">
         <Col md={9} className="mb-3 mb-md-0">
           <h1>
-            Allocation <UnsavedChanges unsaved={unsaved} />
+            Allocation <UnsavedChanges unsaved={isDirty} />
           </h1>
           <p className="text-muted">
             It's time to create the group allocations for{" "}
@@ -374,7 +286,7 @@ function AllocationControls() {
         <Col xs={12} md={3} className="d-flex flex-column align-items-end">
           <div className="d-grid gap-2">
             <Button
-              disabled={pending || !unsaved}
+              disabled={pending || !isDirty}
               onClick={saveChanges}
               className="d-flex align-items-center"
             >
@@ -391,7 +303,7 @@ function AllocationControls() {
               )}
             </Button>
             <Button
-              disabled={pending || unsaved}
+              disabled={pending || isDirty}
               variant="success"
               className="d-flex align-items-center"
               onClick={startAllocation}
@@ -420,52 +332,22 @@ function AllocationControls() {
             allocation. Criteria are prioritised with the most important listed
             first.
           </p>
-          {criteria.length === 0 ? (
+          {criteriaFields.length === 0 ? (
             <p className="text-muted">
               Click the <PlusCircleFill /> button to add a new allocation
               criterion.
             </p>
           ) : (
-            criteria.map((criterion, index) => (
-              <Card className="mb-3" border="success" key={index}>
-                <Card.Body className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <Card.Title className="d-flex align-items-center">
-                      {getCategoryIcon(criterion.category)}
-                      <span className="ms-2">{criterion.name}</span>
-                    </Card.Title>
-                    <Card.Text>{criterion.description}</Card.Text>
-                    {renderControls(index, criterion)}
-                  </div>
-                  <div className="d-flex flex-column align-items-end"></div>
-                  <div className="d-flex flex-column">
-                    <Button
-                      variant="link"
-                      size="sm"
-                      style={{ color: "#dc3545" }}
-                      onClick={() => handleRemoveCriterion(index)}
-                    >
-                      <XLg />
-                    </Button>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0}
-                    >
-                      <ChevronUp />
-                    </Button>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === criteria.length - 1}
-                    >
-                      <ChevronDown />
-                    </Button>
-                  </div>
-                </Card.Body>
-              </Card>
+            criteriaFields.map((field, index) => (
+              <CriterionBlock
+                key={field.id}
+                index={index}
+                id={`criterion-${index}`}
+                remove={removeCriterion}
+                move={moveCriterion}
+                isFirst={index === 0}
+                isLast={index === criteriaFields.length - 1}
+              />
             ))
           )}
         </Col>
@@ -487,49 +369,21 @@ function AllocationControls() {
             problematic. If possible, the system won't create groups like this.
           </p>
 
-          {dealbreakers.length === 0 ? (
+          {dealbreakersFields.length === 0 ? (
             <p className="text-muted">
               Click the <PlusCircleFill /> button to add a new allocation
               dealbreaker.
             </p>
           ) : (
-            dealbreakers.map((dealbreaker, index) => (
-              <Card className="mb-3" border="danger" key={index}>
-                <Card.Body className="d-flex justify-content-between align-items-center">
-                  <div>
-                    <Card.Title className="d-flex align-items-center">
-                      {getCategoryIcon(dealbreaker.category)}
-                      <span className="ms-2">{dealbreaker.title}</span>
-                    </Card.Title>
-                    <Card.Text>{dealbreaker.description}</Card.Text>
-                    <div className="d-flex align-items-center">
-                      <Form.Range
-                        min={0}
-                        max={3}
-                        value={dealbreaker.importance ?? 2}
-                        onChange={(e) =>
-                          updateDealbreakerImportance(index, e.target.value)
-                        }
-                        style={{ width: "100px" }}
-                        className="me-3"
-                      />
-                      <span>{getImportanceString(dealbreaker.importance)}</span>
-                    </div>
-                  </div>
-                  <div className="d-flex flex-column align-items-end">
-                    <div className="d-flex flex-column">
-                      <Button
-                        variant="link"
-                        size="sm"
-                        style={{ color: "#dc3545" }}
-                        onClick={() => handleRemoveDealbreaker(index)}
-                      >
-                        <XLg />
-                      </Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
+            dealbreakersFields.map((field, index) => (
+              <DealbreakerBlock
+                key={field.id}
+                index={index}
+                id={`dealbreaker-${index}`}
+                remove={removeDealbreaker}
+                isFirst={index === 0}
+                isLast={index === dealbreakersFields.length - 1}
+              />
             ))
           )}
         </Col>
@@ -629,7 +483,7 @@ function AllocationControls() {
                 <div className="d-flex align-items-center">
                   {getCategoryIcon(option.category)}
                   <div className="ms-3">
-                    <h6 className="mb-0">{option.title}</h6>
+                    <h6 className="mb-0">{option.name}</h6>
                     <p className="small text-muted mb-0">
                       {option.description}
                     </p>
@@ -645,6 +499,7 @@ function AllocationControls() {
           </p>
         </Modal.Body>
       </Modal>
+    </FormProvider>
     </>
   );
 }
