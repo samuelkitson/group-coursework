@@ -31,7 +31,6 @@ const criteriaOptions = [
     name: "Meeting preference",
     description: "Allocate using students' expressed meeting preferences.",
     category: "personal",
-    options: ["goal"],
   },{
     name: "International",
     description: "Group international students together or split them up.",
