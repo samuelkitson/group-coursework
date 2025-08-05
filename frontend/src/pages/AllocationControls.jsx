@@ -81,6 +81,7 @@ function AllocationControls() {
   const [generatedAllocation, setGeneratedAllocation] = useState(null);
 
   const addNewCriterion = (newCriterion) => {
+    newCriterion.expanded = false;
     // Add default values
     if (newCriterion?.options?.includes("goal"))
       newCriterion.goal = "similar";
@@ -100,6 +101,7 @@ function AllocationControls() {
 
   const addNewDealbreaker = (newDealbreaker) => {
     newDealbreaker.importance = 2;
+    newDealbreaker.expanded = false;
     // Add default values
     if (newDealbreaker?.options?.includes("operator")) {
       newDealbreaker.operator = "max_per_value";

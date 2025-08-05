@@ -26,8 +26,7 @@ const getCategoryIcon = (category) => {
 };
 
 const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
-  const { control, register } = useFormContext();
-  const [ expanded, setExpanded ] = useState(false);
+  const { control, register, setValue } = useFormContext();
   const criterion = useWatch({ name: `criteria.${index}`, control });
 
   const hasOptions = criterion?.options?.length > 0;
@@ -39,7 +38,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
         { hasOptions ?
           <div 
             className="flex-grow-1 cursor-pointer" 
-            onClick={() => setExpanded(!expanded)}
+            onClick={() => setValue(`criteria.${index}.expanded`, !criterion.expanded)}
             style={{ cursor: "pointer" }}
           >
             <Card.Title className="d-flex align-items-center mb-1">
@@ -50,7 +49,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
                 size="sm"
                 className="p-0 ms-2 text-primary small"
               >
-                {expanded ? <DashLg /> : <PlusLg />}
+                {criterion.expanded ? <DashLg /> : <PlusLg />}
               </Button>
             </Card.Title>
             <Card.Text className="text-muted small mb-0">{criterion.description}</Card.Text>
@@ -96,7 +95,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
         </div>
       </div>
 
-      <Collapse in={expanded}>
+      <Collapse in={criterion.expanded}>
         <div>
           <hr className="my-3" />
           <div className="d-flex flex-column gap-3">
