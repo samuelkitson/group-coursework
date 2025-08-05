@@ -31,6 +31,17 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
 
   const hasOptions = criterion?.options?.length > 0;
 
+  let description = criterion.description;
+  if (criterion?.fillerText && criterion?.goal) {
+    description = `${criterion.goal == "similar" ? "Group together" : "Split up"} ${criterion.fillerText}`;
+  }
+  if (criterion?.name.startsWith("Custom") && criterion?.attribute && criterion?.goal) {
+    description = `${criterion.goal == "similar" ? "Group together" : "Split up"} students who have matching "${criterion?.attribute}" attributes.`;
+    if (criterion?.options.includes("ignoreMissing")) {
+      description += (criterion?.ignoreMissing ? " Students without this attribute will be ignored." : " Students without this attribute will be treated as matching.");
+    }
+  }
+
   return (
   <Card className="mb-3" border="success">
     <Card.Body>
@@ -58,13 +69,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
                 </Button>
               </OverlayTrigger>
             </Card.Title>
-            <Card.Text className="text-muted small mb-0">
-              { (criterion?.fillerText && criterion?.goal) ? 
-                `${criterion.goal == "similar" ? "Group together" : "Split up"} ${criterion.fillerText}`
-              :
-                criterion?.description
-              }
-            </Card.Text>
+            <Card.Text className="text-muted small mt-2 mb-0">{description}</Card.Text>
           </div>
         :
           <div>
@@ -72,7 +77,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
               {getCategoryIcon(criterion.category)}
               <span className="ms-2">{criterion.name || "Unnamed criterion"}</span>
             </Card.Title>
-            <Card.Text className="text-muted small mb-0">{criterion.description}</Card.Text>
+            <Card.Text className="text-muted small mt-2 mb-0">{description}</Card.Text>
           </div>
         }
         

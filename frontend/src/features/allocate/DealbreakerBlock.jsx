@@ -40,7 +40,7 @@ const getImportanceString = (importance) => {
   }
 };
 
-const textualOperations = [
+const operationsList = [
   { value: "max_per_value", label: "Maximum per value", },
   { value: "min_per_value", label: "Minimum per value", },
   { value: "max_unique", label: "Maximum unique values", },
@@ -52,6 +52,24 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
   const dealbreaker = useWatch({ name: `dealbreakers.${index}`, control });
 
   const hasOptions = dealbreaker?.options?.length > 0;
+
+  let description = dealbreaker.description;
+  if (dealbreaker?.name.startsWith("Custom") && dealbreaker?.attribute && dealbreaker?.operator && dealbreaker?.operand && dealbreaker?.operand > 0) {
+    if (dealbreaker.operator == "max_per_value") {
+      description = `Don't create groups where more than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+    } else if (dealbreaker.operator == "min_per_value") {
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+    } else if (dealbreaker.operator == "min_per_value") {
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+    } else if (dealbreaker.operator == "max_unique") {
+      description = `Don't create groups with more than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`
+    } else if (dealbreaker.operator == "min_unique") {
+      description = `Don't create groups with fewer than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`
+    }
+    if (dealbreaker?.options.includes("ignoreMissing")) {
+      description += (dealbreaker?.ignoreMissing ? " Students without this attribute will be ignored." : " Missing values for this attribute will still be counted.");
+    }
+  }
 
   return (
     <Card className="mb-3" border="danger">
@@ -80,7 +98,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                   </Button>
                   </OverlayTrigger>
               </Card.Title>
-              <Card.Text className="text-muted small mb-0">{dealbreaker?.description}</Card.Text>
+              <Card.Text className="text-muted small mb-0">{description}</Card.Text>
             </div>
           :
             <div>
@@ -88,7 +106,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                 {getCategoryIcon(dealbreaker?.category)}
                 <span className="ms-2">{dealbreaker?.name || "Unnamed deal-breaker"}</span>
               </Card.Title>
-              <Card.Text className="text-muted small mb-0">{dealbreaker?.description}</Card.Text>
+              <Card.Text className="text-muted small mb-0">{description}</Card.Text>
             </div>
           } 
           <div className="d-flex flex-column ms-3">
@@ -153,7 +171,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                           fontSize: "0.9rem"
                         }}
                       >
-                        {textualOperations.map((op) => (
+                        {operationsList.map((op) => (
                           <option key={op.value} value={op.value}>
                             {op.label}
                           </option>
