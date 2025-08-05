@@ -103,7 +103,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
             {criterion.options?.includes("field") && (
               <FloatingLabel label="Dataset field name">
                 <Form.Control
-                  {...register(`criteria.${index}.fieldName`, {
+                  {...register(`criteria.${index}.field`, {
                     required: `Please enter a dataset field name for criterion ${index + 1}`,
                   })}
                   placeholder=" "

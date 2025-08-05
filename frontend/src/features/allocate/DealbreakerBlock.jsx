@@ -126,7 +126,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                 <FloatingLabel label="Dataset field name">
                   <Form.Control
                     {...register(
-                      `dealbreakers.${index}.fieldName`, {
+                      `dealbreakers.${index}.field`, {
                       required: `Please enter a dataset field name for deal-breaker ${index + 1}`,
                     })}
                     placeholder=" "

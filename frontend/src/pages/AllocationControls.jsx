@@ -84,6 +84,10 @@ function AllocationControls() {
     // Add default values
     if (newCriterion?.options?.includes("goal"))
       newCriterion.goal = "similar";
+    if (newCriterion?.options?.includes("missing"))
+      newCriterion.missing = false;
+    if (newCriterion?.options?.includes("field"))
+      newCriterion.field = "";
     appendCriterion(newCriterion);
     setActiveModal(null);
     setTimeout(() => {
@@ -125,10 +129,8 @@ function AllocationControls() {
         return resp.data;
       })
       .then((data) => {
-        // setCriteria(data?.criteria ?? []);
-        // setDealbreakers(data?.dealbreakers ?? []);
-        // setGroupSize(data?.groupSize ?? 5);
-        // setSurplusLargerGroups(data?.surplusLargerGroups ?? false);
+        // Load the returned data into the form
+        reset(data);
       });
   };
   
@@ -180,12 +182,13 @@ function AllocationControls() {
     if (!isValid)
       return toast.error("Please complete all fields before saving.");
     setPending(true);
-    const { criteriaFields, dealbreakersFields, groupSize, surplusLargerGroups, } = getValues();
+    const { criteria, dealbreakers, groupSize, surplusLargerGroups } = getValues();
     const updateObj = {
+      criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, field: c?.field, missing: c?.missing, })),
+      // TODO: send more data for dealbreakers (operator, operand, etc)
+      dealbreakers: dealbreakers.map(d => ({ name: d.name, importance: d.importance, })),
       groupSize,
-      surplusLargerGroups,
-      criteria: criteriaFields,
-      dealbreakers: dealbreakersFields,
+      surplusLargerGroups
     };
     api
       .put(`/api/allocation/${selectedAssignment._id}/setup`, updateObj, {
@@ -218,7 +221,6 @@ function AllocationControls() {
         successToasts: true,
       })
       .then(() => {
-        // setUnsaved(false);
         setActiveModal(null);
         updateSelectedAssignment({ state: "live" });
         navigate("/assignment/overview");
