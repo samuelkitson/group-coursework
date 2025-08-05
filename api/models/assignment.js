@@ -10,18 +10,22 @@ const skillSchema = new Schema(
 
 const criterionSchema = new Schema(
   {
-    tag: { type: String, required: true },
-    value: { type: Schema.Types.Mixed, required: false },
-    priority: { type: Number, required: false },
-    goal: { type: String, },
+    name: { type: String, required: true }, // used by the algorithm to select the correct function
+    attribute: { type: String, }, // the dataset column to use (custom only)
+    goal: { type: String, }, // the goal ("similar" or "diverse")
+    ignoreMissing: { type: Boolean, }, // if true, skip over missing values - if false, treat them as the empty string
   },
   { _id: false },
 );
 
 const dealbreakerSchema = new Schema(
   {
-    tag: { type: String, required: true },
-    importance: { type: Number, required: true },
+    name: { type: String, required: true }, // used by the algorithm to select the correct function
+    importance: { type: Number, required: true }, // determines the penalty to apply if this dealbreaker triggers
+    attribute: { type: String, }, // the dataset column to use (custom only)
+    operator: { type: String, }, // the operator, such as "minimum unique values" (custom only)
+    operand: { type: Number, }, // the operand for the above, such as 3 (custom only)
+    ignoreMissing: { type: Boolean, }, // if true, skip over missing values - if false, treat them as the empty string
   },
   { _id: false },
 );
@@ -180,12 +184,12 @@ assignmentSchema.statics.removeStudent = async function (
   );
 };
 
-assignmentSchema.statics.getStudents = async function (assignmentId, fields="displayName email noPair") {
+assignmentSchema.statics.getStudents = async function (assignmentId, attributes="displayName email noPair") {
   return this.findById(assignmentId)
     .select("students")
     .populate({
       path: "students",
-      select: fields,
+      select: attributes,
       options: { sort: { displayName: 1 } },
     });
 };
@@ -197,7 +201,7 @@ assignmentSchema.statics.getRequiredSkills = async function (assignmentId) {
 assignmentSchema.statics.allExistingSkills = async function () {
   // unwind splits into a document per skill per user
   // group will group by skill name
-  // project removes the _id field
+  // project removes the _id attribute
   return this.aggregate([
     { $unwind: "$skills" },
     {
