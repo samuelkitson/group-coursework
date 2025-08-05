@@ -111,10 +111,10 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
           <span>{getImportanceString(dealbreaker?.importance)}</span>
         </div>
 
+        {expanded && <hr className="my-3" />}
         <Collapse in={expanded}>
-          <div>
-            <hr className="my-3" />
-            <div className="d-flex flex-column gap-3">
+        <div>
+          <div className="d-flex flex-column gap-3">
               {dealbreaker.options?.includes("field") && (
                 <FloatingLabel label="Dataset field name">
                   <Form.Control
