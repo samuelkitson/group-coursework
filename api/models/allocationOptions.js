@@ -36,7 +36,7 @@ const criteriaOptions = [
     options: ["goal"],
   },{
     name: "Meeting preference",
-    description: "Allocate using students' expressed meeting preferences.",
+    description: "Split up students who prefer to meet online and in-person.",
     category: "personal",
   },{
     name: "International",
