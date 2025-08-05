@@ -1,6 +1,6 @@
 import { useFormContext, Controller, useWatch } from "react-hook-form";
 import { Card, Button, Form, FloatingLabel, Dropdown, Collapse, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
-import { XLg, ChevronUp, ChevronDown, CardChecklist, QuestionCircle, Clipboard2Data, PersonArmsUp, Globe2, ArrowsCollapseVertical, PersonVideo3, GearWideConnected, ThreeDots, DashLg, PlusLg } from "react-bootstrap-icons";
+import { XLg, ChevronUp, ChevronDown, CardChecklist, QuestionCircle, Clipboard2Data, PersonArmsUp, Globe2, ArrowsCollapseVertical, PersonVideo3, GearWideConnected, ThreeDots, DashLg, PlusLg, PencilSquare } from "react-bootstrap-icons";
 import { useState } from "react";
 
 const getCategoryIcon = (category) => {
@@ -21,7 +21,7 @@ const getCategoryIcon = (category) => {
       return <PersonVideo3 />;
     case "custom":
     default:
-      return <GearWideConnected />;
+      return <PencilSquare />;
   }
 };
 

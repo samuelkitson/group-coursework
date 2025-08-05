@@ -25,6 +25,7 @@ import {
   GearWideConnected,
   Globe2,
   HourglassSplit,
+  PencilSquare,
   PersonArmsUp,
   PersonVideo3,
   PlusCircleFill,
@@ -197,10 +198,9 @@ function AllocationControls() {
         return <ArrowsCollapseVertical />;
       case "meetings":
         return <PersonVideo3 />;
-      case "custom":
-        return <GearWideConnected />;
       default:
-        return <PersonArmsUp />;
+      case "custom":
+        return <PencilSquare />;
     }
   };
   const saveChanges = async () => {
