@@ -111,7 +111,6 @@ function AllocationControls() {
       newDealbreaker.ignoreMissing = true;
     if (newDealbreaker?.options?.includes("attribute"))
       newDealbreaker.attribute = "";
-    console.log(newDealbreaker);
     appendDealbreaker(newDealbreaker);
     setActiveModal(null);
     setTimeout(() => {
@@ -273,56 +272,69 @@ function AllocationControls() {
             {selectedAssignment.name}.
           </p>
           <Row className="gy-2">
-            <Col md={4}>
-            <Controller
-              name="groupSize"
-              control={control}
-              defaultValue={5}
-              render={({ field }) => (
-                <InputGroup size="sm" style={{maxWidth: "150px"}}>
-                  <InputGroup.Text>Group size</InputGroup.Text>
-                  <Form.Control
-                    type="number"
-                    min="2"
-                    max="20"
-                    {...field}
-                    onChange={(e) => setGroupSize(e, field.onChange)}
-                  />
-                </InputGroup>
-              )}
-            />
-            </Col>
-            <Col md={6} className="d-flex align-items-center">
+            <Col md={12} className="d-flex align-items-center flex-wrap">
+              <span className="me-2">Create groups of</span>
+              
+              <Controller
+                name="groupSize"
+                control={control}
+                defaultValue={5}
+                render={({ field }) => (
+                  <Dropdown className="me-1">
+                    <Dropdown.Toggle variant="light" size="sm" className="border px-1 py-0">
+                      <span className="me-1">{field.value || 5} students</span>
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu style={{ maxHeight: '200px', overflowY: 'auto' }} >
+                      {Array.from({ length: 19 }, (_, i) => i + 2).map(size => (
+                        <Dropdown.Item 
+                          key={size}
+                          onClick={() => {
+                            field.onChange(size);
+                          }}
+                        >
+                          {size}
+                        </Dropdown.Item>
+                      ))}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                )}
+              />
+              
+              <span className="me-2">, allowing groups of</span>
+              
               <Controller
                 name="surplusLargerGroups"
                 control={control}
                 defaultValue={false}
                 render={({ field }) => {
-                  let smallerSize = 0;
-                  let largerSize = 0;
+                  let alternativeSize = 0;
                   if (groupSize) {
-                    smallerSize = parseInt(groupSize) - 1;
-                    largerSize = parseInt(groupSize) + 1;
+                    alternativeSize = field.value 
+                      ? parseInt(groupSize) + 1 
+                      : parseInt(groupSize) - 1;
                   } else {
-                    smallerSize = "??";
-                    largerSize = "??";
+                    alternativeSize = field.value ? 6 : 4; // defaults based on default groupSize of 5
                   }
+                  
                   return (
-                  <Dropdown>
-                    <Dropdown.Toggle variant="light" size="sm" className="border">
-                      {field.value ? `Allow groups of ${largerSize}` : `Allow groups of ${smallerSize}`}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu size="sm">
-                      <Dropdown.Item onClick={() => field.onChange(false)}>
-                        Allow groups of {smallerSize}
-                      </Dropdown.Item>
-                      <Dropdown.Item onClick={() => field.onChange(true)}>
-                        Allow groups of {largerSize}
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
-                )}}
+                    <Dropdown className="me-1">
+                      <Dropdown.Toggle variant="light" size="sm" className="border px-1 py-0">
+                        <span className="me-1">{alternativeSize} students</span>
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={() => field.onChange(false)}>
+                          {parseInt(groupSize || 5) - 1} (smaller groups)
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => field.onChange(true)}>
+                          {parseInt(groupSize || 5) + 1} (larger groups)
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  );
+                }}
               />
+              
+              <span>where necessary.</span>
             </Col>
           </Row>
         </Col>
