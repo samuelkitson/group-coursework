@@ -1,5 +1,5 @@
 import { useFormContext, Controller, useWatch } from "react-hook-form";
-import { Card, Button, Form, FloatingLabel, Dropdown, Collapse, Badge } from "react-bootstrap";
+import { Card, Button, Form, FloatingLabel, Dropdown, Collapse, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { XLg, ChevronUp, ChevronDown, CardChecklist, QuestionCircle, Clipboard2Data, PersonArmsUp, Globe2, ArrowsCollapseVertical, PersonVideo3, GearWideConnected, ThreeDots, DashLg, PlusLg } from "react-bootstrap-icons";
 import { useState } from "react";
 
@@ -44,13 +44,19 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
             <Card.Title className="d-flex align-items-center mb-1">
               {getCategoryIcon(criterion.category)}
               <span className="ms-2">{criterion.name || "Unnamed criterion"}</span>
-              <Button
-                variant="link"
-                size="sm"
-                className="p-0 ms-2 text-primary small"
+              <OverlayTrigger
+                placement="right"
+                className="small"
+                overlay={<Tooltip>{criterion.expanded ? "Hide" : "Show"} additional options</Tooltip>}
               >
-                {criterion.expanded ? <DashLg /> : <PlusLg />}
-              </Button>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 ms-2 text-primary small"
+                >
+                  {criterion.expanded ? <DashLg /> : <PlusLg />}
+                </Button>
+              </OverlayTrigger>
             </Card.Title>
             <Card.Text className="text-muted small mb-0">{criterion.description}</Card.Text>
           </div>

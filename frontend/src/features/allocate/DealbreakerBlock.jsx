@@ -1,5 +1,5 @@
 import { useFormContext, Controller, useWatch } from "react-hook-form";
-import { Card, Button, Form, FloatingLabel, Collapse, InputGroup } from "react-bootstrap";
+import { Card, Button, Form, FloatingLabel, Collapse, InputGroup, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { XLg, ChevronUp, ChevronDown, CardChecklist, QuestionCircle, Clipboard2Data, PersonArmsUp, Globe2, ArrowsCollapseVertical, PersonVideo3, GearWideConnected, DashLg, PlusLg } from "react-bootstrap-icons";
 import { useState } from "react";
 
@@ -66,13 +66,19 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
               <Card.Title className="d-flex align-items-center mb-1">
                 {getCategoryIcon(dealbreaker?.category)}
                 <span className="ms-2">{dealbreaker?.name || "Unnamed deal-breaker"}</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 ms-2 text-primary small"
+                <OverlayTrigger
+                  placement="right"
+                  className="small"
+                  overlay={<Tooltip>{dealbreaker.expanded ? "Hide" : "Show"} additional options</Tooltip>}
                 >
-                  {dealbreaker.expanded ? <DashLg /> : <PlusLg />}
-                </Button>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="p-0 ms-2 text-primary small"
+                  >
+                    {dealbreaker.expanded ? <DashLg /> : <PlusLg />}
+                  </Button>
+                </OverlayTrigger>
               </Card.Title>
               <Card.Text className="text-muted small mb-0">{dealbreaker?.description}</Card.Text>
             </div>
