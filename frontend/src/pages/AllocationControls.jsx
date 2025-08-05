@@ -84,8 +84,8 @@ function AllocationControls() {
     // Add default values
     if (newCriterion?.options?.includes("goal"))
       newCriterion.goal = "similar";
-    if (newCriterion?.options?.includes("missing"))
-      newCriterion.missing = false;
+    if (newCriterion?.options?.includes("ignoreMissing"))
+      newCriterion.ignoreMissing = true;
     if (newCriterion?.options?.includes("field"))
       newCriterion.field = "";
     appendCriterion(newCriterion);
@@ -184,7 +184,7 @@ function AllocationControls() {
     setPending(true);
     const { criteria, dealbreakers, groupSize, surplusLargerGroups } = getValues();
     const updateObj = {
-      criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, field: c?.field, missing: c?.missing, })),
+      criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, field: c?.field, ignoreMissing: c?.ignoreMissing, })),
       // TODO: send more data for dealbreakers (operator, operand, etc)
       dealbreakers: dealbreakers.map(d => ({ name: d.name, importance: d.importance, })),
       groupSize,

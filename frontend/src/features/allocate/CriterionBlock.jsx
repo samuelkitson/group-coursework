@@ -139,7 +139,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
               </Form.Group>
             )}
 
-            {criterion.options?.includes("missing") && (
+            {criterion.options?.includes("ignoreMissing") && (
               <Form.Check
                 type="switch"
                 label="Ignore missing values"

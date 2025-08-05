@@ -180,7 +180,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                 </InputGroup>
               )}
 
-              {dealbreaker.options?.includes("missing") && (
+              {dealbreaker.options?.includes("ignoreMissing") && (
                 <Form.Check
                   type="switch"
                   label="Ignore missing values"
