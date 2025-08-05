@@ -1,5 +1,5 @@
 import { useFormContext, Controller, useWatch } from "react-hook-form";
-import { Card, Button, Form, FloatingLabel, Collapse } from "react-bootstrap";
+import { Card, Button, Form, FloatingLabel, Collapse, InputGroup } from "react-bootstrap";
 import { XLg, ChevronUp, ChevronDown, CardChecklist, QuestionCircle, Clipboard2Data, PersonArmsUp, Globe2, ArrowsCollapseVertical, PersonVideo3, GearWideConnected, DashLg, PlusLg } from "react-bootstrap-icons";
 import { useState } from "react";
 
@@ -39,6 +39,13 @@ const getImportanceString = (importance) => {
       return "Rate importance";
   }
 };
+
+const textualOperations = [
+  { value: "max_per_value", label: "Maximum per value", },
+  { value: "min_per_value", label: "Minimum per value", },
+  { value: "max_unique", label: "Maximum unique values", },
+  { value: "min_unique", label: "Minimum unique values", },
+];
 
 const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
   const { control, register } = useFormContext();
@@ -125,6 +132,52 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                     placeholder=" "
                   />
                 </FloatingLabel>
+              )}
+
+              {dealbreaker.options?.includes("operation") && (
+                <InputGroup>
+                  <Controller
+                    control={control}
+                    name={`dealbreakers.${index}.operator`}
+                    render={({ field }) => (
+                      <Form.Select 
+                        {...field} 
+                        style={{
+                          borderTopRightRadius: 0,
+                          borderBottomRightRadius: 0,
+                          fontSize: "0.9rem"
+                        }}
+                      >
+                        {textualOperations.map((op) => (
+                          <option key={op.value} value={op.value}>
+                            {op.label}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    )}
+                  />
+                  <Controller
+                    control={control}
+                    name={`dealbreakers.${index}.operand`}
+                    rules={{ 
+                      required: "Value is required",
+                      min: { value: 0, message: "Value must be non-negative" }
+                    }}
+                    render={({ field }) => (
+                      <Form.Control
+                        {...field}
+                        type="number"
+                        placeholder="Enter value"
+                        style={{
+                          borderTopLeftRadius: 0,
+                          borderBottomLeftRadius: 0,
+                          fontSize: '0.9rem',
+                          maxWidth: '120px'
+                        }}
+                      />
+                    )}
+                  />
+                </InputGroup>
               )}
 
               {dealbreaker.options?.includes("missing") && (

@@ -106,12 +106,7 @@ const dealbreakerOptions = [
     name: "Custom (textual)",
     description: "A custom deal-breaker for a textual spreadsheet column.",
     category: "custom",
-    options: ["field", "goal", "missing"],
-  },{
-    name: "Custom (numeric)",
-    description: "A custom deal-breaker for a numeric spreadsheet column.",
-    category: "custom",
-    options: ["field", "goal", "missing"],
+    options: ["field", "operation", "missing"],
   },
 ]
 
