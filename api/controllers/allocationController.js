@@ -4,7 +4,7 @@ const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { AssignmentInvalidStateError } = require("../errors/errors");
+const { AssignmentInvalidStateError, InvalidParametersError } = require("../errors/errors");
 const { teamsReleasedStudentEmail } = require("../utility/emails");
 
 const findTeamMates = async (studentIds, includePast=false) => {
@@ -31,9 +31,8 @@ const findTeamMates = async (studentIds, includePast=false) => {
 exports.getAllocationOptions = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const assignment = await assignmentModel.findById(req.params.assignment).select("skills");
-  temporaryCriteriaOptions = criteriaOptions;
   return res.json({
-    "criteria": temporaryCriteriaOptions,
+    "criteria": criteriaOptions,
     "dealbreakers": dealbreakerOptions,
     "skills": assignment?.skills,
   })
@@ -43,14 +42,14 @@ exports.getAllocationSetup = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const assignment = await assignmentModel.findById(req.params.assignment).select("allocationCriteria allocationDealbreakers groupSize surplusLargerGroups").lean();
   fullCriteria = assignment.allocationCriteria?.map(criterion => {
-    const fullCriterion = criteriaOptionsMap.get(criterion.tag);
+    const fullCriterion = criteriaOptionsMap.get(criterion.name);
     if (fullCriterion) {
       return { ...fullCriterion, ...criterion };
     }
     return criterion;
   }) ?? [];
   fullDealbreakers = assignment.allocationDealbreakers?.map(dealbreaker => {
-    const fullDealbreaker = dealbreakerOptionsMap.get(dealbreaker.tag);
+    const fullDealbreaker = dealbreakerOptionsMap.get(dealbreaker.name);
     if (fullDealbreaker) {
       return { ...fullDealbreaker, ...dealbreaker };
     }
@@ -78,6 +77,11 @@ exports.setAllocationSetup = async (req, res) => {
   const updatedDealbreakers = req.body.dealbreakers;
   if (!updatedDealbreakers || !Array.isArray(updatedDealbreakers))
     throw new InvalidParametersError("You must provide a valid list of allocation dealbreakers.");
+  // Check that criteria and dealbreakers are recognised
+  if (!updatedCriteria.every(c => criteriaOptions.some(o => o.name == c.name)))
+    throw new InvalidParametersError("One or more of the criteria are not recognised.");
+  if (!updatedDealbreakers.every(c => dealbreakerOptions.some(o => o.name == c.name)))
+    throw new InvalidParametersError("One or more of the deal-breakers are not recognised.");
   // Check that assignment is in a valid state
   const assignment = await assignmentModel.findById(req.params.assignment);
   if (assignment.state !== "allocation") {

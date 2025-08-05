@@ -49,45 +49,6 @@ const criteriaOptions = [
   },
 ];
 
-
-
-const criteriaOptionsOld = [
-  {
-    type: "preset",
-    tag: "skill-coverage",
-    title: "Skill coverage",
-    description:
-      "Teams have someone confident in each required skill.",
-    category: "skills",
-    value: true, // true if the option to prevent one student being best at everything is disabled
-  },
-  {
-    type: "customisable",
-    tag: "specific-skill",
-    title: "Prioritise specific skill",
-    description: "Teams have someone confident in a specific critical skill.",
-    category: "skills",
-  },
-  {
-    type: "goals",
-    tag: "past-performance",
-    title: "Past performance",
-    description:
-      "Allocate teams based on students' past performance and marks.",
-    category: "data",
-    goal: "similar",
-  },
-  {
-    type: "preset",
-    tag: "meeting-preference",
-    title: "Meeting preference",
-    description:
-      "Group students by their meeting preference (online or in-person).",
-    category: "meetings",
-    goal: "similar",
-  },
-];
-
 const dealbreakerOptions = [
   {
     name: "Lone gender",
@@ -107,34 +68,10 @@ const dealbreakerOptions = [
     category: "custom",
     options: ["attribute", "operator", "operand", "ignoreMissing"],
   },
-]
-
-const dealbreakerOptionsOld = [
-  {
-    type: "preset",
-    tag: "lone-gender",
-    title: "Lone gender",
-    description: "Avoid teams that have for example, one female student.",
-    category: "personal",
-  },
-  {
-    type: "preset",
-    tag: "all-international",
-    title: "All international students",
-    description: "Don't make teams where everyone is an international student.",
-    category: "language",
-  },
-  {
-    type: "preset",
-    tag: "inter-module-clash",
-    title: "Crossover with other assignments",
-    description: "Don't put students together who are already in a team for another assignment.",
-    category: "clash",
-  }
 ];
 
-const criteriaOptionsMap = new Map(criteriaOptionsOld.map((option) => [option.tag, option]));
-const dealbreakerOptionsMap = new Map(dealbreakerOptionsOld.map((option) => [option.tag, option]));
+const criteriaOptionsMap = new Map(criteriaOptions.map((option) => [option.name, option]));
+const dealbreakerOptionsMap = new Map(dealbreakerOptions.map((option) => [option.name, option]));
 
 exports.criteriaOptions = criteriaOptions;
 exports.criteriaOptionsMap = criteriaOptionsMap;
