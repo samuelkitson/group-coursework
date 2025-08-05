@@ -37,7 +37,7 @@ import UnsavedChanges from "@/components/UnsavedChanges";
 import PotentialGroupsModal from "@/features/allocate/PotentialGroupsModal";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { FormProvider, useFieldArray, useForm, useFormState } from "react-hook-form";
+import { Controller, FormProvider, useFieldArray, useForm, useFormState, useWatch } from "react-hook-form";
 import CriterionBlock from "@/features/allocate/CriterionBlock";
 import DealbreakerBlock from "@/features/allocate/DealbreakerBlock";
 
@@ -57,22 +57,22 @@ function AllocationControls() {
   // Extra data used for some criteria block types
   const [requiredSkills, setRequiredSkills] = useState([]);
 
-  // Stores the current allocation setup
-  const [groupSize, setGroupSize] = useState(5);
-  const [surplusLargerGroups, setSurplusLargerGroups] = useState(false);
-
   // Stores the current allocation setup (a React-Hook-Form to reduce renders)
   const defaultValues = {
     criteria: [],
     dealbreakers: [],
+    groupSize: 5,
+    surplusLargerGroups: false,
   };
   const formMethods = useForm(defaultValues);
-  const { control, getValues, trigger, reset, } = formMethods;
+  const { control, getValues, trigger, reset, register, } = formMethods;
   const { isDirty, dirtyFields } = useFormState({ control });
   const { fields: criteriaFields, append: appendCriterion, remove: removeCriterion, move: moveCriterion }
    = useFieldArray({ control, name: "criteria" });
   const { fields: dealbreakersFields, append: appendDealbreaker, remove: removeDealbreaker }
    = useFieldArray({ control, name: "dealbreakers" });
+
+  const groupSize = useWatch({ name: "groupSize", control });
 
   const [pending, setPending] = useState(false);
 
@@ -106,16 +106,6 @@ function AllocationControls() {
     }, 0);
   };
 
-  const updateGroupSize = (newSize) => {
-    setGroupSize(newSize);
-    // setUnsaved(true);
-  };
-
-  const updateSurplusLarger = (allocateUpwards) => {
-    setSurplusLargerGroups(allocateUpwards);
-    // setUnsaved(true);
-  };
-
   const refreshData = () => {
     setCriteriaOptions([]);
     reset(defaultValues);
@@ -137,8 +127,8 @@ function AllocationControls() {
       .then((data) => {
         // setCriteria(data?.criteria ?? []);
         // setDealbreakers(data?.dealbreakers ?? []);
-        setGroupSize(data?.groupSize ?? 5);
-        setSurplusLargerGroups(data?.surplusLargerGroups ?? false);
+        // setGroupSize(data?.groupSize ?? 5);
+        // setSurplusLargerGroups(data?.surplusLargerGroups ?? false);
       });
   };
   
@@ -190,10 +180,10 @@ function AllocationControls() {
     if (!isValid)
       return toast.error("Please complete all fields before saving.");
     setPending(true);
-    const { criteriaFields } = getValues();
+    const { criteriaFields, dealbreakersFields, groupSize, surplusLargerGroups, } = getValues();
     const updateObj = {
-      groupSize: groupSize,
-      surplusLargerGroups: surplusLargerGroups,
+      groupSize,
+      surplusLargerGroups,
       criteria: criteriaFields,
       dealbreakers: dealbreakersFields,
     };
@@ -255,31 +245,45 @@ function AllocationControls() {
           </p>
           <Row className="gy-2">
             <Col md={4}>
-              <InputGroup size="sm" style={{maxWidth: "150px"}}>
-                <InputGroup.Text>Group size</InputGroup.Text>
-                <Form.Control
-                  type="number"
-                  min="2"
-                  max="20"
-                  value={groupSize}
-                  onChange={(e) => updateGroupSize(+e.target.value)}
-                />
-              </InputGroup>
+            <Controller
+              name="groupSize"
+              control={control}
+              defaultValue={5}
+              render={({ field }) => (
+                <InputGroup size="sm" style={{maxWidth: "150px"}}>
+                  <InputGroup.Text>Group size</InputGroup.Text>
+                  <Form.Control
+                    type="number"
+                    min="2"
+                    max="20"
+                    {...field}
+                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                  />
+                </InputGroup>
+              )}
+            />
             </Col>
             <Col md={6} className="d-flex align-items-center">
-              <Dropdown>
-                <Dropdown.Toggle variant="light" size="sm" className="border">
-                  {surplusLargerGroups ? `Allow groups of ${groupSize + 1} ` : `Allow groups of ${groupSize - 1} `}
-                </Dropdown.Toggle>
-                <Dropdown.Menu size="sm">
-                  <Dropdown.Item onClick={() => updateSurplusLarger(false)}>
-                    Allow groups of {groupSize - 1}
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => updateSurplusLarger(true)}>
-                    Allow groups of {groupSize + 1}
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
+              <Controller
+                name="surplusLargerGroups"
+                control={control}
+                defaultValue={false}
+                render={({ field }) => (
+                  <Dropdown>
+                    <Dropdown.Toggle variant="light" size="sm" className="border">
+                      {field.value ? `Allow groups of ${parseInt(groupSize) + 1}` : `Allow groups of ${parseInt(groupSize) - 1}`}
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu size="sm">
+                      <Dropdown.Item onClick={() => field.onChange(false)}>
+                        Allow groups of {parseInt(groupSize) - 1}
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => field.onChange(true)}>
+                        Allow groups of {parseInt(groupSize) + 1}
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                )}
+              />
             </Col>
           </Row>
         </Col>
