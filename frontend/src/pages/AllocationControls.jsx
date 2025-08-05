@@ -11,6 +11,7 @@ import {
   Form,
   InputGroup,
   Dropdown,
+  FloatingLabel,
 } from "react-bootstrap";
 import {
   ArrowsCollapseVertical,
@@ -21,6 +22,7 @@ import {
   ChevronUp,
   Clipboard2Data,
   Floppy2Fill,
+  GearWideConnected,
   Globe2,
   HourglassSplit,
   PersonArmsUp,
@@ -110,81 +112,44 @@ function AllocationControls() {
   };
 
   const renderControls = (index, criterion) => {
-    if (criterion.tag === "specific-skill") {
-      return (
-        <Form.Select
-          value={criterion.value}
-          onChange={(e) => handleValueChange(index, e.target.value, "value")}
-        >
-          <option hidden>Select a skill</option>
-          {requiredSkills.map((skill) => {
-            return (
-              <option key={skill.name} value={skill.name}>
-                {skill.name}
-              </option>
-            );
-          })}
-        </Form.Select>
+    if (!criterion?.options) return [];
+    const controls = [];
+    if (criterion.options.includes("field")) {
+      controls.push(
+        <FloatingLabel label="Dataset field name">
+          <Form.Control disabled value="fieldname" className="mb-2" />
+        </FloatingLabel>
       );
-    } else if (criterion.tag === "skill-coverage") {
-      return (
-        <Form.Check
-          type="switch"
-          label="Range of confidence levels within teams"
-          checked={criterion.goal == "balance"}
-          onChange={(e) => handleValueChange(index, e.target.checked ? "balance" : undefined, "goal")}
-        />
-      );
-    } else if (criterion.tag === "past-performance") {
-      return (
-        <Form>
-          <Form.Control
-            value={criterion.value}
-            className="mb-3"
-            placeholder="Specific marks data (optional)"
-            onChange={(e) => handleValueChange(index, e.target.value, "value")}
-          >
-          </Form.Control>
-          <Form.Group>
-            <Form.Check
-              type="radio"
-              label="Similar students together"
-              value="similar"
-              checked={criterion.goal === "similar"}
-              onChange={(e) => handleValueChange(index, e.target.value, "goal")}
-            />
-            <Form.Check
-              type="radio"
-              label="Diverse students together"
-              value="diverse"
-              checked={criterion.goal === "diverse"}
-              onChange={(e) => handleValueChange(index, e.target.value, "goal")}
-            />
-          </Form.Group>
-        </Form>
-      )
-    } else if (criterion.type === "goals") {
-      return (
-        <Form>
+    }
+    if (criterion.options.includes("goal")) {
+      controls.push(
+        <Form.Group className="mb-2">
           <Form.Check
             type="radio"
             label="Similar students together"
             value="similar"
-            checked={criterion.value === "similar"}
-            onChange={(e) => handleValueChange(index, e.target.value)}
+            checked={true}
           />
           <Form.Check
             type="radio"
             label="Diverse students together"
             value="diverse"
-            checked={criterion.value === "diverse"}
-            onChange={(e) => handleValueChange(index, e.target.value)}
+            checked={false}
           />
-        </Form>
+        </Form.Group>
       );
-    } else {
-      return null;
     }
+    if (criterion.options.includes("missing")) {
+      controls.push(
+        <Form.Check
+          type="switch"
+          label="Ignore missing values"
+          checked={true}
+          className="mb-2"
+        />
+      );
+    }
+    return controls;
   };
 
   const addNewCriterion = (newCriterion) => {
@@ -291,6 +256,8 @@ function AllocationControls() {
         return <ArrowsCollapseVertical />;
       case "meetings":
         return <PersonVideo3 />;
+      case "custom":
+        return <GearWideConnected />;
       default:
         return <PersonArmsUp />;
     }
@@ -465,7 +432,7 @@ function AllocationControls() {
                   <div>
                     <Card.Title className="d-flex align-items-center">
                       {getCategoryIcon(criterion.category)}
-                      <span className="ms-2">{criterion.title}</span>
+                      <span className="ms-2">{criterion.name}</span>
                     </Card.Title>
                     <Card.Text>{criterion.description}</Card.Text>
                     {renderControls(index, criterion)}
@@ -626,7 +593,7 @@ function AllocationControls() {
                 <div className="d-flex align-items-center">
                   {getCategoryIcon(option.category)}
                   <div className="ms-3">
-                    <h6 className="mb-0">{option.title}</h6>
+                    <h6 className="mb-0">{option.name}</h6>
                     <p className="small text-muted mb-0">
                       {option.description}
                     </p>

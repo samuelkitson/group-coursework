@@ -1,4 +1,58 @@
+/**
+ * The options attribute determines which (if any) form controls appear for the
+ * user on the allocation control page for the criterion. They are:
+ *   - field: a text box that allows the user to specify a spreadsheet column
+ *   - goal: a dropdown/selector to choose between similar or diverse together
+ *   - missing: a checkbox that if selected ignores missing values, and if
+ *       not selected treats empty values as a value in itself
+ */
+
 const criteriaOptions = [
+  {
+    name: "Skill coverage",
+    description: "Teams have someone confident in each required skill.",
+    category: "skills",
+  },{
+    name: "Past performance",
+    description: "Allocate based on students' past performance and marks.",
+    category: "data",
+    options: ["goal"],
+  },{
+    name: "Degree programme",
+    description: "Allocate using students' degree programmes.",
+    category: "data",
+    options: ["goal"],
+  },{
+    name: "Enrolment",
+    description: "Group together or split up students who are unenrolled.",
+    category: "data",
+    options: ["goal"],
+  },{
+    name: "Meeting preference",
+    description: "Allocate using students' expressed meeting preferences.",
+    category: "personal",
+    options: ["goal"],
+  },{
+    name: "International",
+    description: "Group international students together or split them up.",
+    category: "language",
+    options: ["goal"],
+  },{
+    name: "Custom (textual)",
+    description: "A custom criterion for a textual spreadsheet column.",
+    category: "custom",
+    options: ["field", "goal", "missing"],
+  },{
+    name: "Custom (numeric)",
+    description: "A custom criterion for a numeric spreadsheet column.",
+    category: "custom",
+    options: ["field", "goal", "missing"],
+  },
+];
+
+
+
+const criteriaOptionsOld = [
   {
     type: "preset",
     tag: "skill-coverage",
@@ -59,7 +113,7 @@ const dealbreakerOptions = [
   }
 ];
 
-const criteriaOptionsMap = new Map(criteriaOptions.map((option) => [option.tag, option]));
+const criteriaOptionsMap = new Map(criteriaOptionsOld.map((option) => [option.tag, option]));
 const dealbreakerOptionsMap = new Map(dealbreakerOptions.map((option) => [option.tag, option]));
 
 exports.criteriaOptions = criteriaOptions;
