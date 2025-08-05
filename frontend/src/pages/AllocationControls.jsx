@@ -86,8 +86,8 @@ function AllocationControls() {
       newCriterion.goal = "similar";
     if (newCriterion?.options?.includes("ignoreMissing"))
       newCriterion.ignoreMissing = true;
-    if (newCriterion?.options?.includes("field"))
-      newCriterion.field = "";
+    if (newCriterion?.options?.includes("attribute"))
+      newCriterion.attribute = "";
     appendCriterion(newCriterion);
     setActiveModal(null);
     setTimeout(() => {
@@ -100,6 +100,16 @@ function AllocationControls() {
 
   const addNewDealbreaker = (newDealbreaker) => {
     newDealbreaker.importance = 2;
+    // Add default values
+    if (newDealbreaker?.options?.includes("operator")) {
+      newDealbreaker.operator = "max_per_value";
+      newDealbreaker.operand = 1;
+    }
+    if (newDealbreaker?.options?.includes("ignoreMissing"))
+      newDealbreaker.ignoreMissing = true;
+    if (newDealbreaker?.options?.includes("attribute"))
+      newDealbreaker.attribute = "";
+    console.log(newDealbreaker);
     appendDealbreaker(newDealbreaker);
     setActiveModal(null);
     setTimeout(() => {
@@ -108,6 +118,14 @@ function AllocationControls() {
         .getElementById(`dealbreaker-${newIndex}`)
         ?.scrollIntoView({ behavior: "smooth" });
     }, 0);
+  };
+
+  const setGroupSize = (e, changeHandler) => {
+    const value = e?.target?.value;
+    if (!value || value == "") return changeHandler(null);
+    if (value.includes(".")) return parseInt(value);
+    if (value <= 1) return changeHandler(2);
+    changeHandler(value);
   };
 
   const refreshData = () => {
@@ -184,9 +202,9 @@ function AllocationControls() {
     setPending(true);
     const { criteria, dealbreakers, groupSize, surplusLargerGroups } = getValues();
     const updateObj = {
-      criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, field: c?.field, ignoreMissing: c?.ignoreMissing, })),
+      criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, attribute: c?.attribute, ignoreMissing: c?.ignoreMissing, })),
       // TODO: send more data for dealbreakers (operator, operand, etc)
-      dealbreakers: dealbreakers.map(d => ({ name: d.name, importance: d.importance, })),
+      dealbreakers: dealbreakers.map(d => ({ name: d.name, importance: d.importance, attribute: d?.attribute, operator: d?.operator, operand: d?.operand, ignoreMissing: d?.ignoreMissing, })),
       groupSize,
       surplusLargerGroups
     };
@@ -259,7 +277,7 @@ function AllocationControls() {
                     min="2"
                     max="20"
                     {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value))}
+                    onChange={(e) => setGroupSize(e, field.onChange)}
                   />
                 </InputGroup>
               )}
@@ -270,21 +288,31 @@ function AllocationControls() {
                 name="surplusLargerGroups"
                 control={control}
                 defaultValue={false}
-                render={({ field }) => (
+                render={({ field }) => {
+                  let smallerSize = 0;
+                  let largerSize = 0;
+                  if (groupSize) {
+                    smallerSize = parseInt(groupSize) - 1;
+                    largerSize = parseInt(groupSize) + 1;
+                  } else {
+                    smallerSize = "??";
+                    largerSize = "??";
+                  }
+                  return (
                   <Dropdown>
                     <Dropdown.Toggle variant="light" size="sm" className="border">
-                      {field.value ? `Allow groups of ${parseInt(groupSize) + 1}` : `Allow groups of ${parseInt(groupSize) - 1}`}
+                      {field.value ? `Allow groups of ${largerSize}` : `Allow groups of ${smallerSize}`}
                     </Dropdown.Toggle>
                     <Dropdown.Menu size="sm">
                       <Dropdown.Item onClick={() => field.onChange(false)}>
-                        Allow groups of {parseInt(groupSize) - 1}
+                        Allow groups of {smallerSize}
                       </Dropdown.Item>
                       <Dropdown.Item onClick={() => field.onChange(true)}>
-                        Allow groups of {parseInt(groupSize) + 1}
+                        Allow groups of {largerSize}
                       </Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
-                )}
+                )}}
               />
             </Col>
           </Row>

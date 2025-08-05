@@ -1,7 +1,7 @@
 /**
  * The options attribute determines which (if any) form controls appear for the
  * user on the allocation control page for the criterion. They are:
- *   - field: a text box that allows the user to specify a spreadsheet column
+ *   - attribute: a text box that allows the user to specify a spreadsheet column
  *   - goal: a dropdown/selector to choose between similar or diverse together
  *   - ignoreMissing: a checkbox that if selected ignores ignoreMissing values, and if
  *       not selected treats empty values as a value in itself
@@ -40,12 +40,12 @@ const criteriaOptions = [
     name: "Custom (textual)",
     description: "A custom criterion for a textual spreadsheet column.",
     category: "custom",
-    options: ["field", "goal", "ignoreMissing"],
+    options: ["attribute", "goal", "ignoreMissing"],
   },{
     name: "Custom (numeric)",
     description: "A custom criterion for a numeric spreadsheet column.",
     category: "custom",
-    options: ["field", "goal", "ignoreMissing"],
+    options: ["attribute", "goal", "ignoreMissing"],
   },
 ];
 
@@ -105,7 +105,7 @@ const dealbreakerOptions = [
     name: "Custom (textual)",
     description: "A custom deal-breaker for a textual spreadsheet column.",
     category: "custom",
-    options: ["field", "operation", "ignoreMissing"],
+    options: ["attribute", "operator", "operand", "ignoreMissing"],
   },
 ]
 

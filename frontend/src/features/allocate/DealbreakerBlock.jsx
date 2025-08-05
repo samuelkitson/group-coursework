@@ -122,19 +122,19 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
         <Collapse in={expanded}>
         <div>
           <div className="d-flex flex-column gap-3">
-              {dealbreaker.options?.includes("field") && (
-                <FloatingLabel label="Dataset field name">
+              {dealbreaker.options?.includes("attribute") && (
+                <FloatingLabel label="Dataset attribute (column name)">
                   <Form.Control
                     {...register(
-                      `dealbreakers.${index}.field`, {
-                      required: `Please enter a dataset field name for deal-breaker ${index + 1}`,
+                      `dealbreakers.${index}.attribute`, {
+                      required: `Please enter a dataset attribute name for deal-breaker ${index + 1}`,
                     })}
                     placeholder=" "
                   />
                 </FloatingLabel>
               )}
 
-              {dealbreaker.options?.includes("operation") && (
+              {dealbreaker.options?.includes("operator") && (
                 <InputGroup>
                   <Controller
                     control={control}
@@ -166,6 +166,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                     render={({ field }) => (
                       <Form.Control
                         {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
                         type="number"
                         placeholder="Enter value"
                         style={{

@@ -100,11 +100,11 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
         <div>
           <hr className="my-3" />
           <div className="d-flex flex-column gap-3">
-            {criterion.options?.includes("field") && (
-              <FloatingLabel label="Dataset field name">
+            {criterion.options?.includes("attribute") && (
+              <FloatingLabel label="Dataset attribute (column name)">
                 <Form.Control
-                  {...register(`criteria.${index}.field`, {
-                    required: `Please enter a dataset field name for criterion ${index + 1}`,
+                  {...register(`criteria.${index}.attribute`, {
+                    required: `Please enter a dataset attribute name for criterion ${index + 1}`,
                   })}
                   placeholder=" "
                 />
