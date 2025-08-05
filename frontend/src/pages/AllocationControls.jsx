@@ -127,7 +127,7 @@ function AllocationControls() {
     if (!value || value == "") return changeHandler(null);
     if (value.includes(".")) return parseInt(value);
     if (value <= 1) return changeHandler(2);
-    changeHandler(value);
+    changeHandler(parseInt(value));
   };
 
   const refreshData = () => {
@@ -205,7 +205,6 @@ function AllocationControls() {
     const { criteria, dealbreakers, groupSize, surplusLargerGroups } = getValues();
     const updateObj = {
       criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, attribute: c?.attribute, ignoreMissing: c?.ignoreMissing, })),
-      // TODO: send more data for dealbreakers (operator, operand, etc)
       dealbreakers: dealbreakers.map(d => ({ name: d.name, importance: d.importance, attribute: d?.attribute, operator: d?.operator, operand: d?.operand, ignoreMissing: d?.ignoreMissing, })),
       groupSize,
       surplusLargerGroups

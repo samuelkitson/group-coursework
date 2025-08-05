@@ -74,11 +74,11 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                   <Button
                     variant="link"
                     size="sm"
-                    className="p-0 ms-2 text-primary small"
+                    className={`p-0 ms-2 ${dealbreaker.expanded ? "text-dark" : "text-secondary"}`}
                   >
-                    {dealbreaker.expanded ? <DashLg /> : <PlusLg />}
+                    <GearWideConnected />
                   </Button>
-                </OverlayTrigger>
+                  </OverlayTrigger>
               </Card.Title>
               <Card.Text className="text-muted small mb-0">{dealbreaker?.description}</Card.Text>
             </div>

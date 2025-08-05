@@ -52,13 +52,19 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
                 <Button
                   variant="link"
                   size="sm"
-                  className="p-0 ms-2 text-primary small"
+                  className={`p-0 ms-2 ${criterion.expanded ? "text-dark" : "text-secondary"}`}
                 >
-                  {criterion.expanded ? <DashLg /> : <PlusLg />}
+                  <GearWideConnected />
                 </Button>
               </OverlayTrigger>
             </Card.Title>
-            <Card.Text className="text-muted small mb-0">{criterion.description}</Card.Text>
+            <Card.Text className="text-muted small mb-0">
+              { (criterion?.fillerText && criterion?.goal) ? 
+                `${criterion.goal == "similar" ? "Group together" : "Split up"} ${criterion.fillerText}`
+              :
+                criterion?.description
+              }
+            </Card.Text>
           </div>
         :
           <div>
@@ -76,7 +82,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
             size="sm"
             style={{ color: "#dc3545" }}
             onClick={() => remove(index)}
-            className="p-0 mb-1"
+            className="p-0"
           >
             <XLg />
           </Button>
@@ -85,7 +91,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
             size="sm"
             onClick={() => move(index, index - 1)}
             disabled={isFirst}
-            className="p-0 mb-1"
+            className="p-0"
           >
             <ChevronUp />
           </Button>
