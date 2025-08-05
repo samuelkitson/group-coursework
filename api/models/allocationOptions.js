@@ -91,6 +91,32 @@ const criteriaOptionsOld = [
 
 const dealbreakerOptions = [
   {
+    name: "Lone gender",
+    description: "Avoid teams that have for example, one female student.",
+    category: "personal",
+  },{
+    name: "All international students",
+    description: "Don't make teams where everyone is an international student.",
+    category: "language",
+  },{
+    name: "Assignment crossover",
+    description: "Don't put students together who are already in a team for another assignment.",
+    category: "clash",
+  },{
+    name: "Custom (textual)",
+    description: "A custom deal-breaker for a textual spreadsheet column.",
+    category: "custom",
+    options: ["field", "goal", "missing"],
+  },{
+    name: "Custom (numeric)",
+    description: "A custom deal-breaker for a numeric spreadsheet column.",
+    category: "custom",
+    options: ["field", "goal", "missing"],
+  },
+]
+
+const dealbreakerOptionsOld = [
+  {
     type: "preset",
     tag: "lone-gender",
     title: "Lone gender",
@@ -114,7 +140,7 @@ const dealbreakerOptions = [
 ];
 
 const criteriaOptionsMap = new Map(criteriaOptionsOld.map((option) => [option.tag, option]));
-const dealbreakerOptionsMap = new Map(dealbreakerOptions.map((option) => [option.tag, option]));
+const dealbreakerOptionsMap = new Map(dealbreakerOptionsOld.map((option) => [option.tag, option]));
 
 exports.criteriaOptions = criteriaOptions;
 exports.criteriaOptionsMap = criteriaOptionsMap;
