@@ -33,6 +33,14 @@ const findTeamMates = async (studentIds, includePast=false) => {
   return result;
 };
 
+/**
+ * Runs the allocation algorithm in a separate worker thread to prevent the main
+ * thread from being blocked.
+ * 
+ * @param workerData object of data to be passed to AllocationAlgorithm
+ * @returns Promise that resolves when the allocation algorithm finishes
+ * @throws {CustomError} throws error if the allocation algorithm fails, times out after 30s or if the worker crashes
+ */
 const runAlgorithmWoker = (workerData) => {
   return new Promise((resolve, reject) => {
     const worker = new Worker(path.join(__dirname, "..", "algorithm", "worker.js"), { workerData });

@@ -1,3 +1,12 @@
+/**
+ * worker.js
+ * 
+ * This script is used to run the (slow) allocation algorithm in a worker_thread
+ * without holding up the main thread and delaying other requests. This script
+ * is relatively simple as it just wraps the AllocationAlgorithm class and calls
+ * its methods. Messages are passed back to runner on either success or failure.
+ */
+
 const { parentPort, workerData } = require("worker_threads");
 const { AllocationAlgorithm } = require("../algorithm/algorithm");
 
