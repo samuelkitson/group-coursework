@@ -137,11 +137,14 @@ function AllocationControls() {
     const { criteria, dealbreakers } = getValues();
     criteria.forEach(c => { if (c?.attribute) requiredCols.add(c.attribute); });
     dealbreakers.forEach(d => { if (d?.attribute) requiredCols.add(d.attribute); });
+    let requiredColsArr;
     if (requiredCols.length === 1) {
-      setRequiredColumns([]);
+      requiredColsArr = [];
     } else {
-      setRequiredColumns(Array.from(requiredCols));
+      requiredColsArr = Array.from(requiredCols);
     }
+    setRequiredColumns(requiredColsArr);
+    return requiredColsArr;
   };
 
   const refreshData = () => {
@@ -171,6 +174,12 @@ function AllocationControls() {
   const startAllocation = () => {
     if (criteriaFields.length === 0) {
       toast.error("You must configure some allocation criteria first.");
+      return;
+    }
+    const requiredCols = getRequiredDatasetCols();
+    if (requiredCols.length > 1 && !datasetFile) {
+      toast.error("You need to upload a dataset before starting allocation.");
+      setActiveModal("dataset-upload");
       return;
     }
     // Add the dataset (if provided)
