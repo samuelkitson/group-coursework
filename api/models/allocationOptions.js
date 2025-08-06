@@ -66,7 +66,7 @@ const criteriaOptions = [
 const dealbreakerOptions = [
   {
     name: "Lone gender",
-    description: "Avoid teams that have for example, one female student.",
+    description: "Avoid teams that have exactly one male, female or non-binary student.",
     category: "personal",
     attribute: "gender",
   },{

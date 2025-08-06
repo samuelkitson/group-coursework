@@ -169,3 +169,12 @@ exports.hoursSince = (timestamp) => {
 exports.generateRandomString = (length) => {
   return Math.random().toString(36).substring(2, length + 2);
 }
+
+// Polyfill
+exports.setDifference = (set1, set2) => {
+  const result = new Set(set1);
+  for (const elem of set2) {
+    result.delete(elem);
+  }
+  return result;
+}

@@ -55,6 +55,12 @@ class GenericNotFoundError extends CustomError {
   }
 }
 
+class InvalidFileError extends CustomError {
+  constructor(message = "The uploaded file was not valid.") {
+    super(message, 400);
+  }
+}
+
 class IncorrectRoleError extends CustomError {
   constructor(message = "Sorry, your account is not allowed to do that.") {
     super(message, 403, "INCORRECT-ROLE")
@@ -88,6 +94,7 @@ module.exports = {
   GenericNotAllowedError,
   GenericNotFoundError,
   IncorrectRoleError,
+  InvalidFileError,
   InvalidObjectIdError,
   InvalidParametersError,
   SessionInvalidError,

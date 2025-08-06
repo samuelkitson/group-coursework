@@ -1,11 +1,14 @@
+const Papa = require("papaparse");
+const fs = require("fs");
 const { AllocationAlgorithm } = require("../algorithm/algorithm");
 const { criteriaOptions, criteriaOptionsMap, dealbreakerOptions, dealbreakerOptionsMap } = require("../models/allocationOptions");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { AssignmentInvalidStateError, InvalidParametersError } = require("../errors/errors");
+const { AssignmentInvalidStateError, InvalidParametersError, InvalidFileError } = require("../errors/errors");
 const { teamsReleasedStudentEmail } = require("../utility/emails");
+const { setDifference } = require("../utility/maths");
 
 const findTeamMates = async (studentIds, includePast=false) => {
   const result = {};
@@ -97,31 +100,84 @@ exports.setAllocationSetup = async (req, res) => {
 
 exports.runAllocation = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
-  const studentsList = await assignmentModel.findById(req.params.assignment).select("students").populate("students", "-passwordHash").lean();
-  const studentsListStringIds = studentsList.students.map(s => ({
+  // Fetch the students list and allocation config from the assignment object.
+  const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email displayName skills meetingPref noPair").lean();
+  const studentsListStringIds = assignment.students.map(s => ({
     ...s,
     _id: s._id?.toString(),
   }));
-  const assignment = await assignmentModel.findById(req.params.assignment).lean();
-  // Assign priorities in order
+  // Pre-process the criteria and dealbreakers. This involves extracting the
+  // list of dataset attributes required (so that the uploaded CSV can be
+  // checked), adding in extra data such as required skills and assigning
+  // priority scores (highest = most important).
   const numCriteria = assignment.allocationCriteria.length;
+  const requiredAttributes = new Set(["email"]);
   const criteria = assignment.allocationCriteria.map((c, i) => {
-    if (c["tag"] === "skill-coverage" && c["skills"] == undefined) {
-      c["skills"] = assignment.skills.map(s => s.name);
+    if (c.name === "Skill coverage" && c?.skills == undefined) {
+      c.skills = assignment.skills.map(s => s.name);
     }
-    c["priority"] = numCriteria - i;
+    c.priority = numCriteria - i;
+    if (c?.attribute) requiredAttributes.add(c.attribute);
     return c;
   });
-  const dealbreakers = assignment.allocationDealbreakers.map(c => {
-    c["penalty"] = 0;
-    if (c["importance"] === 1) c["penalty"] = 0.1;
-    if (c["importance"] === 2) c["penalty"] = 0.2;
-    if (c["importance"] === 3) c["penalty"] = 0.5;
-    return c;
+  const dealbreakers = assignment.allocationDealbreakers.map(d => {
+    d.penalty = 0;
+    if (d.importance === 1) d.penalty = 0.1;
+    if (d.importance === 2) d.penalty = 0.2;
+    if (d.importance === 3) d.penalty = 0.5;
+    if (d?.attribute) requiredAttributes.add(d.attribute);
+    return d;
   });
+  // If provided, parse the uploaded dataset file.
+  let studentData;
+  if (req.file) {
+    try {
+      // Attempt to load and parse the CSV.
+      const parsePromise = new Promise((resolve, reject) => {
+        const fileStream = fs.createReadStream(req.file.path);
+        Papa.parse(fileStream, {
+          header: true,
+          complete: (results) => {
+            resolve({ parsedData: results.data, datasetHeaders: results.meta.fields });
+          },
+          error: (err) => {
+            console.warn(`Dataset upload error: ${err.message}`);
+            reject(new InvalidFileError("The uploaded file was not valid. Please check the requested format and try again."));
+          },
+        });
+      });
+      // Check whether all of the required attributes are present.
+      const { datasetHeaders, parsedData } = await parsePromise;
+      const missingCols = Array.from(setDifference(requiredAttributes, new Set(datasetHeaders)));
+      if (missingCols.length > 0)
+        throw new InvalidFileError(`The dataset provided is missing one or more required columns: ${missingCols.join(", ")}.`);
+      // Check that all students are accounted for in the dataset.
+      if (parsedData.length < assignment.students.length)
+        throw new InvalidFileError(`The dataset is missing data for some students. Please make sure you've included data for all ${assignment.students.length} students.`);
+      const datasetMap = new Map(parsedData.map(s => [s?.email, s]));
+      // Combine fields from the dataset with those from the database. Database
+      // takes precedence to avoid accidentally overwiting displayNames etc.
+      studentData = assignment.students.map(s => {
+        const email = student.email;
+        if (!datasetMap.has(email))
+          throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
+        return {...datasetMap.get(email), ...s};
+      });
+    } finally {
+      fs.unlink(req.file.path, (err) => {
+        if (err) console.error(`Failed to delete uploaded dataset: `, err.message);
+      });
+    }
+  } else if (requiredAttributes.length > 1) {
+    // Needs attributes but no dataset provided
+    throw new InvalidFileError(`A dataset upload is required for the options selected. Please provide these columns: ${Array.from(requiredAttributes).join(", ")}.`);
+  } else {
+    // Dataset not provided and not required, so just use the data from the DB.
+    studentData = assignment.students;
+  }
   // Check if the "clash with other assignments" dealbreaker is present, and if
   // so, generate the teammate matrix for it.
-  const assignmentClashDealbreaker = dealbreakers.filter(d => d.tag === "inter-module-clash");
+  const assignmentClashDealbreaker = dealbreakers.filter(d => d.name === "Assignment crossover");
   let otherTeamMembers;
   if (assignmentClashDealbreaker.length > 0) {
     otherTeamMembers = await findTeamMates(studentsListStringIds.map(s => s._id));
