@@ -121,7 +121,7 @@ const DatasetUpload = ({ showModal, onHide, currentFileName, datasetColumns, req
                   onClick={downloadTemplate}
                 >
                   <Download className="me-1" />
-                  <span className="d-none d-md-inline">Template</span>
+                  <span>Template</span>
                 </Button>
               }
               <Button

@@ -173,9 +173,17 @@ function AllocationControls() {
       toast.error("You must configure some allocation criteria first.");
       return;
     }
+    // Add the dataset (if provided)
+    const formData = new FormData();
+    if (datasetFile) {
+      formData.append("dataset", datasetFile);
+    }
     setPending(true);
     api
-      .post(`/api/allocation/${selectedAssignment._id}/run`)
+      .post(`/api/allocation/${selectedAssignment._id}/run`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+      }})
       .then((resp) => {
         return resp.data;
       })
