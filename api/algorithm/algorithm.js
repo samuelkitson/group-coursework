@@ -101,7 +101,7 @@ class AllocationAlgorithm {
   studentIDs = [];
   population = [];
   datasetStatistics = {};
-  fitnessAggregation = "average"; // average/minimum/maximum
+  fitnessAggregation = "minimum"; // average/minimum/maximum
 
   constructor({ studentData, criteria, dealbreakers, groupSize, surplusLargerGroups, otherTeamMembers, fitnessAggregation="minimum", }) {
     this.students = studentData;
