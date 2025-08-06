@@ -12,6 +12,7 @@ import {
   InputGroup,
   Dropdown,
   FloatingLabel,
+  Table,
 } from "react-bootstrap";
 import {
   ArrowsCollapseVertical,
@@ -21,6 +22,10 @@ import {
   ChevronRight,
   ChevronUp,
   Clipboard2Data,
+  CloudUpload,
+  CloudUploadFill,
+  File,
+  FiletypeCsv,
   Floppy2Fill,
   GearWideConnected,
   Globe2,
@@ -30,6 +35,7 @@ import {
   PersonVideo3,
   PlusCircleFill,
   QuestionCircle,
+  Upload,
   XLg,
 } from "react-bootstrap-icons";
 
@@ -41,6 +47,7 @@ import { useNavigate } from "react-router-dom";
 import { Controller, FormProvider, useFieldArray, useForm, useFormState, useWatch } from "react-hook-form";
 import CriterionBlock from "@/features/allocate/CriterionBlock";
 import DealbreakerBlock from "@/features/allocate/DealbreakerBlock";
+import DatasetUpload from "@/features/allocate/DatasetUpload";
 
 function AllocationControls() {
   const navigate = useNavigate();
@@ -76,6 +83,9 @@ function AllocationControls() {
   const groupSize = useWatch({ name: "groupSize", control });
 
   const [pending, setPending] = useState(false);
+  const [datasetFile, setDatasetFile] = useState(null);
+  const [requiredColumns, setRequiredColumns] = useState(null);
+  const [datasetColumns, setDatasetColumns] = useState(null);
 
   const [activeModal, setActiveModal] = useState(false);
 
@@ -122,20 +132,16 @@ function AllocationControls() {
     }, 0);
   };
 
-  const setGroupSize = (e, changeHandler) => {
-    const value = e?.target?.value;
-    if (!value || value == "") return changeHandler(null);
-    if (value.includes(".")) return parseInt(value);
-    if (value <= 1) return changeHandler(2);
-    changeHandler(parseInt(value));
-  };
-
   const getRequiredDatasetCols = () => {
     const requiredCols = new Set(["email"]);
     const { criteria, dealbreakers } = getValues();
     criteria.forEach(c => { if (c?.attribute) requiredCols.add(c.attribute); });
     dealbreakers.forEach(d => { if (d?.attribute) requiredCols.add(d.attribute); });
-    return Array.from(requiredCols);
+    if (requiredCols.length === 1) {
+      setRequiredColumns([]);
+    } else {
+      setRequiredColumns(Array.from(requiredCols));
+    }
   };
 
   const refreshData = () => {
@@ -203,6 +209,17 @@ function AllocationControls() {
         return <PencilSquare />;
     }
   };
+
+  const showDatasetUploadModal = () => {
+    getRequiredDatasetCols();
+    setActiveModal("dataset-upload");
+  }
+
+  const handleDatasetUpload = (file, columns) => {
+    setDatasetFile(file);
+    setDatasetColumns(columns);
+  };
+
   const saveChanges = async () => {
     // Try to validate the form fields first
     const isValid = await trigger();
@@ -341,22 +358,32 @@ function AllocationControls() {
         <Col xs={12} md={3} className="d-flex flex-column align-items-end">
           <div className="d-grid gap-2">
             <Button
-              disabled={pending || !isDirty}
-              onClick={saveChanges}
               className="d-flex align-items-center"
+              onClick={showDatasetUploadModal}
             >
-              {pending ? (
-                <>
-                  <HourglassSplit className="me-2" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Floppy2Fill className="me-2" />
-                  Save changes
-                </>
-              )}
+              <Upload className="me-2" />
+              { datasetFile ? "Change dataset" : "Upload dataset" }
             </Button>
+            { isDirty &&
+              <Button
+                disabled={pending || !isDirty}
+                onClick={saveChanges}
+                className="d-flex align-items-center"
+              >
+                {pending ? (
+                  <>
+                    <HourglassSplit className="me-2" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Floppy2Fill className="me-2" />
+                    Save changes
+                  </>
+                )}
+              </Button>
+            }
+            { !isDirty &&
             <Button
               disabled={pending || isDirty}
               variant="success"
@@ -365,6 +392,7 @@ function AllocationControls() {
             >
               <CheckCircleFill className="me-2" /> Start allocation
             </Button>
+            }
           </div>
         </Col>
       </Row>
@@ -554,6 +582,15 @@ function AllocationControls() {
           </p>
         </Modal.Body>
       </Modal>
+      
+      <DatasetUpload
+       showModal={activeModal === "dataset-upload"}
+       onHide={() => setActiveModal(null)}
+       currentFileName={datasetFile?.name}
+       datasetColumns={datasetColumns}
+       requiredColumns={requiredColumns}
+       handleDatasetUpload={handleDatasetUpload}
+      />
     </FormProvider>
     </>
   );

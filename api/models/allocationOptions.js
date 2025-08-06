@@ -70,6 +70,11 @@ const dealbreakerOptions = [
     category: "personal",
     attribute: "gender",
   },{
+    name: "Lone female/NB",
+    description: "Specifically avoid teams with only one female or non-binary student. Allows teams with one male student.",
+    category: "personal",
+    attribute: "gender",
+  },{
     name: "All international students",
     description: "Don't make teams where everyone is an international student.",
     category: "language",
