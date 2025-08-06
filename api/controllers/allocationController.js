@@ -1,12 +1,14 @@
 const Papa = require("papaparse");
 const fs = require("fs");
+const path = require("path");
+const { Worker } = require("worker_threads");
 const { AllocationAlgorithm } = require("../algorithm/algorithm");
 const { criteriaOptions, criteriaOptionsMap, dealbreakerOptions, dealbreakerOptionsMap } = require("../models/allocationOptions");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { AssignmentInvalidStateError, InvalidParametersError, InvalidFileError } = require("../errors/errors");
+const { AssignmentInvalidStateError, InvalidParametersError, InvalidFileError, CustomError, TimeoutError, AllocationError } = require("../errors/errors");
 const { teamsReleasedStudentEmail } = require("../utility/emails");
 const { setDifference } = require("../utility/maths");
 
@@ -29,6 +31,38 @@ const findTeamMates = async (studentIds, includePast=false) => {
     result[studentId.toString()] = deDupOtherMembers;
   }
   return result;
+};
+
+const runAlgorithmWoker = (workerData) => {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(path.join(__dirname, "..", "algorithm", "worker.js"), { workerData });
+    // Timeout after 30 seconds.
+    const timeout = setTimeout(() => {
+      worker.terminate();
+      reject(new TimeoutError("The allocation algorithm took too long to run. Please simplify your requirements and try again."));
+    }, 30000);
+    // Listen for messages from the worker (indicates fail or complete).
+    worker.on("message", (data) => {
+      clearTimeout(timeout);
+      if (data.success) {
+        resolve(data.result);
+      } else {
+        reject(new AllocationError(data?.error?.stack));
+      }
+    })
+    // Listen for unhandled errors.
+    worker.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(new AllocationError(error?.stack));
+    });
+    // Listen for worker exit.
+    worker.on("exit", (code) => {
+      clearTimeout(timeout);
+      if (code !== 0) {
+        reject(new AllocationError(`Algorithm worker exited with status code ${code}.`));
+      }
+    });
+  });
 };
 
 exports.getAllocationOptions = async (req, res) => {
@@ -102,10 +136,6 @@ exports.runAllocation = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Fetch the students list and allocation config from the assignment object.
   const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email displayName skills meetingPref noPair").lean();
-  const studentsListStringIds = assignment.students.map(s => ({
-    ...s,
-    _id: s._id?.toString(),
-  }));
   // Pre-process the criteria and dealbreakers. This involves extracting the
   // list of dataset attributes required (so that the uploaded CSV can be
   // checked), adding in extra data such as required skills and assigning
@@ -158,10 +188,10 @@ exports.runAllocation = async (req, res) => {
       // Combine fields from the dataset with those from the database. Database
       // takes precedence to avoid accidentally overwiting displayNames etc.
       studentData = assignment.students.map(s => {
-        const email = student.email;
+        const email = s.email;
         if (!datasetMap.has(email))
           throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
-        return {...datasetMap.get(email), ...s};
+        return {...datasetMap.get(email), ...s, _id: s._id.toString(), };
       });
     } finally {
       fs.unlink(req.file.path, (err) => {
@@ -173,24 +203,22 @@ exports.runAllocation = async (req, res) => {
     throw new InvalidFileError(`A dataset upload is required for the options selected. Please provide these columns: ${Array.from(requiredAttributes).join(", ")}.`);
   } else {
     // Dataset not provided and not required, so just use the data from the DB.
-    studentData = assignment.students;
+    studentData = assignment.students.map(s => ({ ...s, _id: s._id.toString(), }));
   }
   // Check if the "clash with other assignments" dealbreaker is present, and if
   // so, generate the teammate matrix for it.
   const assignmentClashDealbreaker = dealbreakers.filter(d => d.name === "Assignment crossover");
   let otherTeamMembers;
   if (assignmentClashDealbreaker.length > 0) {
-    otherTeamMembers = await findTeamMates(studentsListStringIds.map(s => s._id));
+    otherTeamMembers = await findTeamMates(studentData.map(s => s._id));
   }
-  let algo = new AllocationAlgorithm(studentsListStringIds, criteria, dealbreakers, assignment.groupSize, assignment.surplusLargerGroups, otherTeamMembers, "minimum");
-  algo.createInitialPopulation();
-  algo.run();
-  // console.log(JSON.stringify(algo.population[0]));
-  // console.log(algo.datasetStatistics);
-  // algo.logBestGroup();
-  const returnObj = algo.bestAllocationDetails();
-  returnObj.criteria = criteria;
-  return res.json(returnObj);
+  // Run the algorithm.
+  const startTime = Date.now();
+  const workerData = { studentData, criteria, dealbreakers, groupSize: assignment.groupSize, surplusLargerGroups: assignment.surplusLargerGroups, otherTeamMembers, };
+  const algorithmResult = await runAlgorithmWoker(workerData);
+  const executionTime = Date.now() - startTime;
+  // Return the results to the client.
+  return res.json({...algorithmResult, criteria, dealbreakers, executionTime, });
 };
 
 exports.confirmAllocation = async (req, res) => {

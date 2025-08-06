@@ -16,6 +16,15 @@ class CustomError extends Error {
   }
 }
 
+class AllocationError extends CustomError {
+  constructor(details = null, message = "Something went wrong while running allocation. Please try again.") {
+    if (details) {
+      console.error(`Error while running allocation: ${details}`);
+    }
+    super(message, 500);
+  }
+}
+
 class AuthenticationError extends CustomError {
   constructor(message = "Something went wrong while checking your identity. Please try again.") {
     super(message, 401);
@@ -85,8 +94,15 @@ class SessionInvalidError extends CustomError {
   }
 }
 
+class TimeoutError extends CustomError {
+  constructor(message = "The requested operation took too long to run and was cancelled. Please try again.") {
+    super(message, 503);
+  }
+}
+
 module.exports = {
   CustomError,
+  AllocationError,
   AuthenticationError,
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
@@ -98,4 +114,5 @@ module.exports = {
   InvalidObjectIdError,
   InvalidParametersError,
   SessionInvalidError,
+  TimeoutError,
 };

@@ -103,15 +103,15 @@ class AllocationAlgorithm {
   datasetStatistics = {};
   fitnessAggregation = "average"; // average/minimum/maximum
 
-  constructor(students, criteria, dealbreakers, groupSize, surplusLargerGroups, otherTeamMembers, fitnessAggregation) {
-    this.students = students;
+  constructor({ studentData, criteria, dealbreakers, groupSize, surplusLargerGroups, otherTeamMembers, fitnessAggregation="minimum", }) {
+    this.students = studentData;
     this.criteria = criteria;
     this.dealbreakers = dealbreakers;
     this.groupSize = groupSize;
     this.surplusLargerGroups = surplusLargerGroups;
     this.otherTeamMembers = otherTeamMembers;
-    this.studentIDs = students.map((s) => s._id);
-    this.fitnessAggregation = fitnessAggregation;
+    this.studentIDs = studentData.map((s) => s._id);
+    this.fitnessAggregation = fitnessAggregation ?? "minimum";
   }
 
   /**
