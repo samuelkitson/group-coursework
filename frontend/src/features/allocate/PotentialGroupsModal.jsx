@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Modal,
   Button,
@@ -14,9 +15,32 @@ import {
   CheckCircleFill,
   Trash3Fill,
   Shuffle,
+  Search,
+  QuestionCircle,
+  XCircleFill,
+  BarChartFill,
+  InfoCircleFill,
+  InfoCircle,
 } from "react-bootstrap-icons";
 
 const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, criteriaOptions, dealbreakerOptions}) => {
+  const [spotlightIndex, setSpotlightIndex] = useState([null, null]);
+  const [spotlightAttribute, setSpotlightAttribute] = useState(null);
+
+  const setSpotlight = (isCriterion, critDealIndex) => {
+    if (spotlightIndex[0] == isCriterion && spotlightIndex[1] == critDealIndex) {
+      setSpotlightIndex([null, null]);
+      setSpotlightAttribute(null);
+    } else {
+      setSpotlightIndex([isCriterion, critDealIndex]);
+      if (isCriterion) {
+        setSpotlightAttribute(allocation.criteria[critDealIndex]?.attribute);
+      } else {
+        setSpotlightAttribute(allocation.dealbreakers[critDealIndex]?.attribute);
+      }
+    }
+  };
+  
   const criterionIcon = (quality) => {
     if (quality < 0.4) {
       return <XCircle />;
@@ -51,14 +75,37 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
   };
 
   const getCriterionName = (criterionIndex) => {
-    const tag = allocation.criteria[criterionIndex]?.tag;
-    if (!tag) return "Unknown criterion";
-    return criteriaOptions.find(c => c.tag === tag)?.title ?? "Unknown criterion";
+    return allocation.criteria[criterionIndex]?.name ?? "Unknown criterion";
   }
 
-  const getDealbreakerName = (tag) => {
-    return dealbreakerOptions.find(c => c.tag === tag)?.title ?? "Unknown dealbreaker";
-  }
+  const getSpotlightValue = (student) => {
+    const className = "ms-2 d-flex-inline align-items-center";
+    if (!spotlightAttribute) return null;
+    const studentValue = student[spotlightAttribute];
+    if (studentValue === null || studentValue === undefined) return (<span className={`${className} text-muted`}>
+      <QuestionCircle size={14} className="me-1" />no data
+    </span>);
+    if (typeof studentValue == "boolean") {
+      if (studentValue) {
+        return (
+          <span className={`${className} text-success`}>
+            <CheckCircle size={14} className="me-1" />{spotlightAttribute}
+          </span>
+        ); 
+      } else {
+        return (
+          <span className={`${className} text-danger`}>
+            <XCircle size={14} className="me-1" />not {spotlightAttribute}
+          </span>
+        ); 
+      }
+    }
+    return (
+      <span className={`${className} text-muted`}>
+        <InfoCircle size={14} className="me-1" />{studentValue}
+      </span>
+    ); 
+  };
 
   if (allocation == null) { return <></> }
 
@@ -80,7 +127,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           We've created a group allocation based on your preferences, as shown
           below.
           <br /> Each group has been evaluated against how well it meets your
-          criteria and dealbreakers, with the worst groups listed first.
+          criteria and deal-breakers, with the worst groups listed first.
         </p>
         <Row className="mt-3">
           <Col
@@ -88,25 +135,64 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
             md={4}
             className="h-100 overflow-auto sticky-md-top pt-3"
           >
-            <ListGroup variant="flush">
-              <ListGroup.Item>
-                Allocation quality: {(allocation.fitness * 100).toFixed(1)}%
-              </ListGroup.Item>
-              <ListGroup.Item>
-                Number of groups: {allocation.allocation.length}
-              </ListGroup.Item>
+            <h5 className="fw-semibold">
+              <Search className="me-1" /> Data spotlight
+            </h5>
+            <p className="text-muted small">
+              Click one of the criteria or deal-breakers below to reveal the
+              data used to compute it.
+            </p>
+
+            <ListGroup className="mt-3">
+              {allocation.criteria.map((criterion, index) => (
+                <ListGroup.Item
+                  key={`criterion-selector-${index}`}
+                  action
+                  onClick={() => setSpotlight(true, index)}
+                  disabled={criterion.name === "Skill coverage"}
+                  active={spotlightIndex[0] && spotlightIndex[1] === index}
+                >
+                  {criterion.name}
+                </ListGroup.Item>
+              ))}
+              {allocation.dealbreakers.map((dealbreaker, index) => (
+                <ListGroup.Item
+                  key={`dealbreaker-selector-${index}`}
+                  action
+                  onClick={() => setSpotlight(false, index)}
+                  active={!spotlightIndex[0] && spotlightIndex[1] === index}
+                >
+                  {dealbreaker.name}
+                </ListGroup.Item>
+              ))}
             </ListGroup>
           </Col>
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
+            <div className="d-flex justify-content-between">
+              <p className="mb-0">
+                {allocation.allocation.length ?? 0} groups generated
+              </p>
+              <p className="mb-0">
+                Overall allocation quality: {(allocation.fitness * 100).toFixed(1)}%
+              </p>
+            </div>
+            
             {allocation.allocation.map((group, index) => (
-              <Card key={index} className="my-3" border={borderColour(group.fitness ,group.dealbreakers)}>
+              <Card
+                key={index}
+                className="my-3"
+                border={borderColour(group.fitness, group.dealbreakers)}
+              >
                 <Card.Body>
                   <Row>
                     <Col lg={6}>
                       <h6 className="mb-2">Members</h6>
                       <ul className="list-unstyled">
                         {group.members.map((student, i) => (
-                          <li key={student._id}>{student.displayName}</li>
+                          <li key={student._id}>
+                            {student.displayName}
+                            {getSpotlightValue(student)}
+                          </li>
                         ))}
                       </ul>
                     </Col>
@@ -122,7 +208,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                                 className="d-flex align-items-center text-danger fw-semibold"
                               >
                                 <FlagFill className="me-2" />
-                                {getDealbreakerName(dealbreaker)} 
+                                {dealbreaker} 
                               </li>
                             ))}
                         {group.criteriaScores.map((criterion, index) => (
