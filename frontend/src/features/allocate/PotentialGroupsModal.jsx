@@ -1,3 +1,4 @@
+import { toTitleCase } from "@/utility/helpers";
 import { useEffect, useState } from "react";
 import {
   Modal,
@@ -66,7 +67,14 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
   };
 
   const getCriterionName = (criterionIndex) => {
-    return allocation.criteria[criterionIndex]?.name ?? "Unknown criterion";
+    const criterion = allocation.criteria[criterionIndex];
+    if (!criterion) return "Unknown criterion";
+    const name = criterion.name.startsWith("Custom") ? toTitleCase(criterion.attribute) : criterion.name;
+    if (criterion?.goal) {
+      return `${name} (${criterion.goal})`;
+    } else {
+      return name;
+    }
   }
 
   const getSpotlightValue = (student) => {
