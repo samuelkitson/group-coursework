@@ -75,7 +75,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
     let studentValue;
     if (spotlightAttribute[1]) {
       // Fetch skill rating specifically.
-      studentValue = student.skills[spotlightAttribute[0]].toString();
+      studentValue = student.skills[spotlightAttribute[0]]?.toString();
     } else {
       // Fetch normal attribute value.
       studentValue = student[spotlightAttribute[0]];
@@ -146,7 +146,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                   { spotlightAttribute ? `Showing "${spotlightAttribute?.[0]}" data` : "No attribute selected"}
                 </span>
               </Dropdown.Toggle>
-              <Dropdown.Menu size="sm" style={{ maxHeight: "150px", overflowY: "auto" }}>
+              <Dropdown.Menu size="sm" style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
                 <Dropdown.Item
                   onClick={() => setSpotlightAttribute(null)}
                   className="text-muted"
