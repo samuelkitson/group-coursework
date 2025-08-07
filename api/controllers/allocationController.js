@@ -46,6 +46,32 @@ const castObjKeyToBool = (object, key, castError=true, nullError=false) => {
   return object;
 };
 
+/**
+ * Given an object (such as a student record), attempt to cast one of its values
+ * to an integer from a string.
+ * 
+ * @param object The object with the value to cast.
+ * @param {String} key The key of the value to cast.
+ * @param {Boolean} castError If true, throw an error if a non-null, invalid value is found. If false, just default to null.
+ * @param {Boolean} nullError If true, throw an error if the vlaue is missing. If false, just default to null.
+ * @returns The object with the value re-cast.
+ */
+const castObjKeyToInt = (object, key, castError=true, nullError=false) => {
+  if (!object?.[key]) {
+    if (nullError) throw new InvalidFileError(`A missing value was found for the ${key} attribute. Please provide a value for every student.`);
+    object[key] = null;
+    return object;
+  }
+  const parsed = parseInt(object?.[key], 10);
+  if (isNaN(parsed)) {
+    if (castError) throw new InvalidFileError(`An invalid value was found for the ${key} attribute. "${object?.[key]}" is not a valid integer.`);
+    object[key] = null;
+  } else {
+    object[key] = parsed;
+  }
+  return object;
+};
+
 const findTeamMates = async (studentIds, includePast=false) => {
   const result = {};
   // Get a list of the relevant assignments
@@ -235,11 +261,13 @@ exports.runAllocation = async (req, res) => {
         if (!datasetMap.has(email))
           throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
         const mergedRecord = {...datasetMap.get(email), ...s, _id: s._id.toString(), };
-        // Cast boolean types as appropriate
+        // Cast attribute types as appropriate
         if (requiredAttributes.has("international"))
-          castObjKeyToBool(mergedRecord, "international");
+          castObjKeyToBool(mergedRecord, "international", true, false);
         if (requiredAttributes.has("enrolled"))
-          castObjKeyToBool(mergedRecord, "enrolled");
+          castObjKeyToBool(mergedRecord, "enrolled", true, false);
+        if (requiredAttributes.has("marks"))
+          castObjKeyToInt(mergedRecord, "marks", true, true);
         return mergedRecord;
       });
     } finally {
