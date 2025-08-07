@@ -16,7 +16,7 @@
 const criteriaOptions = [
   {
     name: "Skill coverage",
-    description: "Teams have someone confident in each required skill.",
+    description: "Teams have someone with above average confidence in each required skill.",
     category: "skills",
   },{
     name: "Past performance",
