@@ -93,6 +93,7 @@ class AllocationAlgorithm {
   populationTargetSize = 50;
 
   students = [];
+  studentsMap = new Map();
   criteria = [];
   dealbreakers = [];
   groupSize = 1;
@@ -105,6 +106,7 @@ class AllocationAlgorithm {
 
   constructor({ studentData, criteria, dealbreakers, groupSize, surplusLargerGroups, otherTeamMembers, fitnessAggregation="minimum", }) {
     this.students = studentData;
+    this.studentsMap = new Map(studentData.map(s => [s?._id, s]));
     this.criteria = criteria;
     this.dealbreakers = dealbreakers;
     this.groupSize = groupSize;
@@ -215,7 +217,7 @@ class AllocationAlgorithm {
         return 1 - (Math.abs(groupAvg - datasetAvg) / (datasetRange / 2));
       } else if (criterion["goal"] === "similar") {
         // Minimise standard deviation
-        const score = 1 - (groupRange / datasetRange / 2);
+        const score = 1 - (groupRange / datasetRange);
         return logistic(score, 20, 0.7);
       } else {
         throw new Error(`Invalid goal type "${criterion["goal"]}" for past-performance criterion.`);
@@ -509,9 +511,10 @@ class AllocationAlgorithm {
   bestAllocationDetails() {
     const withDetails = JSON.parse(JSON.stringify(this.population[0]));
     withDetails.allocation = withDetails.allocation.map(group => {
-      group.members = group.members.map(student => {
-        const studentName = this.students.find((s) => s._id == student)?.displayName ?? "Unknown student";
-        return {_id: student, displayName: studentName};
+      group.members = group.members.map(studentId => {
+        const studentInfo = this.studentsMap.get(studentId);
+        const displayName = studentInfo?.displayName ?? "Unknown Student";
+        return {_id: studentId, ...studentInfo, displayName,};
       });
       return group;
     }).sort((a, b) => a.fitness - b.fitness).sort((a, b) => b.dealbreakers.length - a.dealbreakers.length);

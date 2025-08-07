@@ -291,7 +291,6 @@ exports.runAllocation = async (req, res) => {
   }
   // Run the algorithm.
   const startTime = Date.now();
-  console.log(studentData[0]);
   const workerData = { studentData, criteria, dealbreakers, groupSize: assignment.groupSize, surplusLargerGroups: assignment.surplusLargerGroups, otherTeamMembers, };
   const algorithmResult = await runAlgorithmWoker(workerData);
   const executionTime = Date.now() - startTime;
