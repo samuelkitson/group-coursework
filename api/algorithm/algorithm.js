@@ -1,3 +1,5 @@
+const { AllocationError } = require("../errors/errors");
+
 /**
  * Shuffles the input array in-place.
  * From: https://www.geeksforgeeks.org/how-to-shuffle-an-array-using-javascript/
@@ -15,7 +17,7 @@ function shuffleArray(inputArr) {
 }
 
 function sumArray(inputArr) {
-  return inputArr.reduce((partial, a) => partial + a, 0);
+  return inputArr.reduce((partial, a) => partial + (a || 0), 0);
 }
 
 function multiplyArrays(arr1, arr2) {
@@ -130,9 +132,6 @@ class AllocationAlgorithm {
       if (attribute.startsWith("skill:")) {
         const skillName = attribute.substring("skill:".length);
         values = this.students.map((s) => s.skills[skillName]).filter(v => Number.isInteger(v));
-      } else if (attribute.startsWith("marks:")) {
-        const markPoint = attribute.substring("marks:".length);
-        values = this.students.map((s) => s.marks[markPoint]).filter(v => Number.isInteger(v));
       } else {
         values = this.students.map((s) => s[attribute]);
       }
@@ -202,25 +201,21 @@ class AllocationAlgorithm {
    * @param {*} criterion The criterion to evaluate against
    */
   groupCriterionFitness(group, groupDetails, criterion) {
-    if (criterion["tag"] === "past-performance") {
-      const markPoint = (criterion["value"] ?? "overall") || "overall";
-      const datasetAvg = this.getDatasetStatistic(`marks:${markPoint}-mean`);
-      const datasetStddev = this.getDatasetStatistic(`marks:${markPoint}-stddev`);
-      const datasetRange = this.getDatasetStatistic(`marks:${markPoint}-range`);
-      const marks = groupDetails.map((student) => student["marks"][markPoint] ?? datasetAvg);
+    if (criterion["name"] === "Past performance") {
+      const datasetAvg = this.getDatasetStatistic("marks-mean");
+      const datasetRange = this.getDatasetStatistic("marks-range");
+      const marks = groupDetails.map((student) => student["marks"] ?? datasetAvg);
       const groupRange = range(marks);
       const groupAvg = meanAverage(marks);
-      const groupStddev = standardDeviation(marks);
-      const groupPairwiseAvg = avgPairwiseDistance(marks);
       if (criterion["goal"] === "diverse") {
-        // Keep group average mark close to the cohort average mark
+        // Keep group average mark close to the cohort average mark.
         return 1 - (Math.abs(groupAvg - datasetAvg) / (datasetRange / 2));
       } else if (criterion["goal"] === "similar") {
-        // Minimise standard deviation
+        // Minimise the range of marks within groups.
         const score = 1 - (groupRange / datasetRange);
-        return logistic(score, 20, 0.7);
+        return logistic(score, 10, 0.5);
       } else {
-        throw new Error(`Invalid goal type "${criterion["goal"]}" for past-performance criterion.`);
+        throw new AllocationError(`Invalid goal type "${criterion["goal"]}" for past-performance criterion.`);
       }
     }
 
@@ -247,7 +242,7 @@ class AllocationAlgorithm {
       } else if (criterion["goal"] == "diverse") {
         return fitness;
       }
-    } else if (criterion["tag"] == "skill-coverage") {
+    } else if (criterion["name"] == "Skill coverage") {
       // Aim for at least one member to be confident in each skill
       // For each skill, get the maximum score within the group and scale with
       // a logistic curve (assuming skills are rated 1-7). This makes high
@@ -258,39 +253,21 @@ class AllocationAlgorithm {
       criterion["skills"].forEach((skill) => {
         const ratings = skillRatings.map((s) => s[skill] ?? this.getDatasetStatistic(`skill:${skill}-mean`, true));
         const topRating = Math.max(...ratings);
-        // This function gets the indices of the students who provide these top
-        // skill ratings. This allows a small penalty to be applied if the same
-        // student is providing the best skill in everything.
-        const topScorersCount = ratings.filter(r => r === topRating).length;
-        for (const [i, r] of ratings.entries()) {
-          if (r === topRating) {
-            topScorers[i] += (1 / topScorersCount);
-          }
-        }
-        const skillScore = logistic(topRating, 1, this.getDatasetStatistic(`skill:${skill}-mean`));
-        if (criterion["goal"] === "balance") {
-          // Apply a small penalty (if option enabled) if the group's average
-          // rating is quite different to the class average. This helps more
-          // balanced groups to form.
-          const groupAvg = meanAverage(ratings);
-          const classAvg = this.getDatasetStatistic(`skill:${skill}-mean`, true);
-          const balancePenalty = Math.max(0.7, 1 - (1/10) * Math.pow((groupAvg-classAvg), 2));
-          bestRatings.push(skillScore * balancePenalty);
-        } else {
-          // Balance option disabled so don't apply the balance penalty.
-          bestRatings.push(skillScore);
-        }
+        // This logistic curves means that a skill rating that's average for the
+        // class receives a skill score of 50%. 1 above average gets 82% and 2
+        // above average gets 95%.
+        const skillScore = topRating == 7 ? 1 : logistic(topRating, 1, this.getDatasetStatistic(`skill:${skill}-mean`));
+        // Apply a small penalty if the group's average rating is quite
+        // different to the class average. This helps more balanced groups to
+        // form.
+        const groupAvg = meanAverage(ratings);
+        const classAvg = this.getDatasetStatistic(`skill:${skill}-mean`, true);
+        const balancePenalty = Math.max(0.7, 1 - (1/10) * Math.pow((groupAvg-classAvg), 2));
+        bestRatings.push(skillScore * balancePenalty);
       });
-      var singleStudentPenalty = 1;
-      return Math.min(...bestRatings) * singleStudentPenalty;
-    } else if (criterion["tag"] == "specific-skill") {
-      // Use the logistic curve to help ensure that at least one member is
-      // confident in a specific skill
-      let skillsRatings = groupDetails.map((s) => {
-        var rating = s["skills"][criterion["value"]] ?? 1;
-        return 1.01 * logistic(rating, 1, 4);
-      });
-      return Math.max(...skillsRatings);
+      // The criterion fitness score is the group's lowest skill score. The aim
+      // of this is to ensure that groups have confidence in each listed skill.
+      return Math.min(...bestRatings);
     } else if (criterion["tag"] == "meeting-preference") {
       // Where students have a preference for online vs in-person, try and
       // group them together.
@@ -335,15 +312,15 @@ class AllocationAlgorithm {
         group["criteriaScores"].push(score);
         return score;
       });
-      // console.log(criteriaScores);
       let criteriaWeights = this.criteria.map((crit) => crit["priority"]);
       let tempFitness = sumArray(multiplyArrays(criteriaWeights, criteriaScores)) / sumArray(criteriaWeights);
+      console.log(multiplyArrays(criteriaWeights, criteriaScores));
       group["dealbreakers"] = [];
       this.dealbreakers.forEach((p) => {
         if (this.checkGroupPenalty(group.members, groupDetails, p)) {
           // console.log("Penalty applied");
           tempFitness = tempFitness * (1 - p["penalty"]);
-          group["dealbreakers"].push(p["tag"]);
+          group["dealbreakers"].push(p["name"]);
         }
       });
       // Flag small and large groups (where numbers aren't perfectly divisible)
