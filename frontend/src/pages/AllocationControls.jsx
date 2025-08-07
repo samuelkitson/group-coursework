@@ -198,7 +198,7 @@ function AllocationControls() {
       })
       .then((data) => {
         setGeneratedAllocation(data);
-        setActiveModal("allocation");
+        if (activeModal !== "allocation") setActiveModal("allocation");
       })
       .finally(() => {
         setPending(false);

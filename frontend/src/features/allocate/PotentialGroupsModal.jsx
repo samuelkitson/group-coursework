@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   Button,
@@ -7,6 +7,7 @@ import {
   Col,
   ListGroup,
   Badge,
+  Dropdown,
 } from "react-bootstrap";
 import {
   FlagFill,
@@ -26,7 +27,11 @@ import {
 
 const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
-  
+
+  const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
+  const skillsList = allocation?.criteria?.find(c => c.name === "Skill coverage")?.skills?.map(s => [s, true]);
+  if (skillsList) spotlightOptions.push(...skillsList);
+
   const criterionIcon = (quality) => {
     if (quality < 0.4) {
       return <XCircle />;
@@ -64,18 +69,17 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
     return allocation.criteria[criterionIndex]?.name ?? "Unknown criterion";
   }
 
-  const setSpotlight = (attribute) => {
-    if (spotlightAttribute === attribute) {
-      setSpotlightAttribute(null);
-    } else {
-      setSpotlightAttribute(attribute);
-    }
-  }
-
   const getSpotlightValue = (student) => {
     const className = "ms-2 d-flex-inline align-items-center small";
     if (!spotlightAttribute) return null;
-    const studentValue = student[spotlightAttribute];
+    let studentValue;
+    if (spotlightAttribute[1]) {
+      // Fetch skill rating specifically.
+      studentValue = student.skills[spotlightAttribute[0]].toString();
+    } else {
+      // Fetch normal attribute value.
+      studentValue = student[spotlightAttribute[0]];
+    }
     if (studentValue === null || studentValue === undefined) return (<span className={`${className} text-muted`}>
       <QuestionCircle className="me-1" />no data
     </span>);
@@ -83,13 +87,13 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
       if (studentValue) {
         return (
           <span className={`${className} text-success`}>
-            <CheckCircle className="me-1" />{spotlightAttribute}
+            <CheckCircle className="me-1" />{spotlightAttribute[0]}
           </span>
         ); 
       } else {
         return (
           <span className={`${className} text-danger`}>
-            <XCircle className="me-1" />not {spotlightAttribute}
+            <XCircle className="me-1" />not {spotlightAttribute[0]}
           </span>
         ); 
       }
@@ -127,28 +131,43 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           <Col
             xs={12}
             md={4}
-            className="h-100 overflow-auto sticky-md-top pt-3"
+            className="h-100 sticky-md-top pt-3"
           >
             <h5 className="fw-semibold">
               <Search className="me-1" /> Data spotlight
             </h5>
-            <p className="text-muted small">
-              Click one of the attributes below to display its value for each
-              student.
+            <p className="text-muted small mb-2">
+              Select an attribute to display its value for each student.
             </p>
 
-            <ListGroup className="mt-3">
-              {requiredAttributes.map((attribute, index) => (
-                <ListGroup.Item
-                  key={`attribute-selector-${index}`}
-                  action
-                  onClick={() => setSpotlight(attribute)}
-                  active={spotlightAttribute === attribute}
+            <Dropdown>
+              <Dropdown.Toggle variant="light" size="sm" className="border">
+                <span className="pe-1">
+                  { spotlightAttribute ? `Showing "${spotlightAttribute?.[0]}" data` : "No attribute selected"}
+                </span>
+              </Dropdown.Toggle>
+              <Dropdown.Menu size="sm" style={{ maxHeight: "150px", overflowY: "auto" }}>
+                <Dropdown.Item
+                  onClick={() => setSpotlightAttribute(null)}
+                  className="text-muted"
                 >
-                  {attribute}
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
+                  Hide data spotlight
+                </Dropdown.Item>
+                {spotlightOptions.map(([attribute, isSkill], index) => (
+                  <Dropdown.Item
+                    key={`attribute-selector-${index}`}
+                    onClick={() => setSpotlightAttribute([attribute, isSkill])}
+                    active={spotlightAttribute?.[0] === attribute}
+                  >
+                    { isSkill ? 
+                      `skills > ${attribute}`
+                    :
+                      attribute
+                    }
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
           </Col>
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
             <div className="d-flex justify-content-between">
