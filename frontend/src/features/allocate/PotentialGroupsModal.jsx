@@ -207,7 +207,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                       </ul>
                     </Col>
                     <Col lg={6}>
-                      <h6 className="mb-2">Allocation quality ({Math.round(group.fitness * 100)}%)</h6>
+                      <h6 className="mb-2">Allocation quality - {Math.round(group.fitness * 100)}%</h6>
                       <ul className="list-unstyled">
                         {group.dealbreakers &&
                           group.dealbreakers
@@ -229,7 +229,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                             <span className="me-2">
                               {criterionIcon(criterion)}
                             </span>
-                            {getCriterionName(index)} ({Math.round(criterion * 100)}%)
+                            {getCriterionName(index)} - {Math.round(criterion * 100)}%
                           </li>
                         ))}
                       </ul>
