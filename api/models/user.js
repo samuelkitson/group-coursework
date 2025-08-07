@@ -37,11 +37,6 @@ const userSchema = new Schema(
       type: String,
       enum: ["online", "in-person", "either"],
     },
-    international: { type: Boolean, default: false },
-    marks: {
-      type: Map,
-      of: Number,
-    },
     noPair: [{ type: "ObjectId", ref: "user", }],
   },
   { timestamps: true },

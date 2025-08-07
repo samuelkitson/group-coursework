@@ -12,6 +12,40 @@ const { AssignmentInvalidStateError, InvalidParametersError, InvalidFileError, C
 const { teamsReleasedStudentEmail } = require("../utility/emails");
 const { setDifference } = require("../utility/maths");
 
+/**
+ * Given an object (such as a student record), attempt to cast one of its values
+ * to a boolean from a string. Converts strings such as TRUE, true, True, etc.
+ * 
+ * @param object The object with the value to cast.
+ * @param {String} key The key of the value to cast.
+ * @param {Boolean} castError If true, throw an error if a non-null, invalid value is found. If false, just default to null.
+ * @param {Boolean} nullError If true, throw an error if the vlaue is missing. If false, just default to null.
+ * @returns The object with the value re-cast.
+ */
+const castObjKeyToBool = (object, key, castError=true, nullError=false) => {
+  if (!object?.[key]) {
+    if (nullError) throw new InvalidFileError(`A missing value was found for the ${key} attribute. Please provide a value for every student.`);
+    object[key] = null;
+    return object;
+  }
+  switch (object?.[key]?.toLowerCase()) {
+    case null:
+      object[key] = null;
+      break;
+    case "true":
+      object[key] = true;
+      break;
+    case "false":
+      object[key] = false;
+      break;
+    default:
+      if (castError) throw new InvalidFileError(`An invalid value was found for the ${key} attribute. "${object?.[key]}" is not true or false.`);
+      object[key] = null;
+      break;
+  }
+  return object;
+};
+
 const findTeamMates = async (studentIds, includePast=false) => {
   const result = {};
   // Get a list of the relevant assignments
@@ -175,6 +209,7 @@ exports.runAllocation = async (req, res) => {
         const fileStream = fs.createReadStream(req.file.path);
         Papa.parse(fileStream, {
           header: true,
+          transform: (value) => (value === "" ? null : value),
           complete: (results) => {
             resolve({ parsedData: results.data, datasetHeaders: results.meta.fields });
           },
@@ -199,7 +234,13 @@ exports.runAllocation = async (req, res) => {
         const email = s.email;
         if (!datasetMap.has(email))
           throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
-        return {...datasetMap.get(email), ...s, _id: s._id.toString(), };
+        const mergedRecord = {...datasetMap.get(email), ...s, _id: s._id.toString(), };
+        // Cast boolean types as appropriate
+        if (requiredAttributes.has("international"))
+          castObjKeyToBool(mergedRecord, "international");
+        if (requiredAttributes.has("enrolled"))
+          castObjKeyToBool(mergedRecord, "enrolled");
+        return mergedRecord;
       });
     } finally {
       fs.unlink(req.file.path, (err) => {
@@ -222,6 +263,7 @@ exports.runAllocation = async (req, res) => {
   }
   // Run the algorithm.
   const startTime = Date.now();
+  console.log(studentData[0]);
   const workerData = { studentData, criteria, dealbreakers, groupSize: assignment.groupSize, surplusLargerGroups: assignment.surplusLargerGroups, otherTeamMembers, };
   const algorithmResult = await runAlgorithmWoker(workerData);
   const executionTime = Date.now() - startTime;
