@@ -6,6 +6,7 @@ import {
   Row,
   Col,
   ListGroup,
+  Badge,
 } from "react-bootstrap";
 import {
   FlagFill,
@@ -23,23 +24,8 @@ import {
   InfoCircle,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, criteriaOptions, dealbreakerOptions}) => {
-  const [spotlightIndex, setSpotlightIndex] = useState([null, null]);
+const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
-
-  const setSpotlight = (isCriterion, critDealIndex) => {
-    if (spotlightIndex[0] == isCriterion && spotlightIndex[1] == critDealIndex) {
-      setSpotlightIndex([null, null]);
-      setSpotlightAttribute(null);
-    } else {
-      setSpotlightIndex([isCriterion, critDealIndex]);
-      if (isCriterion) {
-        setSpotlightAttribute(allocation.criteria[critDealIndex]?.attribute);
-      } else {
-        setSpotlightAttribute(allocation.dealbreakers[critDealIndex]?.attribute);
-      }
-    }
-  };
   
   const criterionIcon = (quality) => {
     if (quality < 0.4) {
@@ -78,31 +64,39 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
     return allocation.criteria[criterionIndex]?.name ?? "Unknown criterion";
   }
 
+  const setSpotlight = (attribute) => {
+    if (spotlightAttribute === attribute) {
+      setSpotlightAttribute(null);
+    } else {
+      setSpotlightAttribute(attribute);
+    }
+  }
+
   const getSpotlightValue = (student) => {
-    const className = "ms-2 d-flex-inline align-items-center";
+    const className = "ms-2 d-flex-inline align-items-center small";
     if (!spotlightAttribute) return null;
     const studentValue = student[spotlightAttribute];
     if (studentValue === null || studentValue === undefined) return (<span className={`${className} text-muted`}>
-      <QuestionCircle size={14} className="me-1" />no data
+      <QuestionCircle className="me-1" />no data
     </span>);
     if (typeof studentValue == "boolean") {
       if (studentValue) {
         return (
           <span className={`${className} text-success`}>
-            <CheckCircle size={14} className="me-1" />{spotlightAttribute}
+            <CheckCircle className="me-1" />{spotlightAttribute}
           </span>
         ); 
       } else {
         return (
           <span className={`${className} text-danger`}>
-            <XCircle size={14} className="me-1" />not {spotlightAttribute}
+            <XCircle className="me-1" />not {spotlightAttribute}
           </span>
         ); 
       }
     }
     return (
-      <span className={`${className} text-muted`}>
-        <InfoCircle size={14} className="me-1" />{studentValue}
+      <span className={`${className} text-primary`}>
+        {studentValue}
       </span>
     ); 
   };
@@ -139,30 +133,19 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
               <Search className="me-1" /> Data spotlight
             </h5>
             <p className="text-muted small">
-              Click one of the criteria or deal-breakers below to reveal the
-              data used to compute it.
+              Click one of the attributes below to display its value for each
+              student.
             </p>
 
             <ListGroup className="mt-3">
-              {allocation.criteria.map((criterion, index) => (
+              {requiredAttributes.map((attribute, index) => (
                 <ListGroup.Item
-                  key={`criterion-selector-${index}`}
+                  key={`attribute-selector-${index}`}
                   action
-                  onClick={() => setSpotlight(true, index)}
-                  disabled={criterion.name === "Skill coverage"}
-                  active={spotlightIndex[0] && spotlightIndex[1] === index}
+                  onClick={() => setSpotlight(attribute)}
+                  active={spotlightAttribute === attribute}
                 >
-                  {criterion.name}
-                </ListGroup.Item>
-              ))}
-              {allocation.dealbreakers.map((dealbreaker, index) => (
-                <ListGroup.Item
-                  key={`dealbreaker-selector-${index}`}
-                  action
-                  onClick={() => setSpotlight(false, index)}
-                  active={!spotlightIndex[0] && spotlightIndex[1] === index}
-                >
-                  {dealbreaker.name}
+                  {attribute}
                 </ListGroup.Item>
               ))}
             </ListGroup>

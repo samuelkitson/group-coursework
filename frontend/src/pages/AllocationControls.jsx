@@ -495,8 +495,7 @@ function AllocationControls() {
         handleConfirm={handleAcceptAllocation}
         allocation={generatedAllocation}
         regnerateAllocation={startAllocation}
-        criteriaOptions={criteriaOptions}
-        dealbreakerOptions={dealbreakerOptions}
+        requiredAttributes={requiredColumns}
       />
 
       <Modal show={activeModal === "release-allocation"} centered>
