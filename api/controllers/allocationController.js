@@ -263,9 +263,9 @@ exports.runAllocation = async (req, res) => {
         const mergedRecord = {...datasetMap.get(email), ...s, _id: s._id.toString(), };
         // Cast attribute types as appropriate
         if (requiredAttributes.has("international"))
-          castObjKeyToBool(mergedRecord, "international", true, false);
+          castObjKeyToBool(mergedRecord, "international", true, true);
         if (requiredAttributes.has("enrolled"))
-          castObjKeyToBool(mergedRecord, "enrolled", true, false);
+          castObjKeyToBool(mergedRecord, "enrolled", true, true);
         if (requiredAttributes.has("marks"))
           castObjKeyToInt(mergedRecord, "marks", true, true);
         return mergedRecord;

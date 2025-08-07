@@ -35,7 +35,7 @@ const criteriaOptions = [
   },{
     name: "Enrolment",
     description: "Group together or split up students who are unenrolled.",
-    fillerText: "students who aren't yet enrolled.",
+    fillerText: "students by their enrolment status.",
     category: "data",
     options: ["goal"],
     attribute: "enrolled",
@@ -60,7 +60,12 @@ const criteriaOptions = [
     description: "A custom criterion for a numeric dataset column.",
     category: "custom",
     options: ["attribute", "goal", "ignoreMissing"],
-  },
+  },{
+    name: "Custom (boolean)",
+    description: "A custom criterion for a boolean dataset column.",
+    category: "custom",
+    options: ["attribute", "goal"],
+  }
 ];
 
 const dealbreakerOptions = [

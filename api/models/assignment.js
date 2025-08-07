@@ -12,7 +12,7 @@ const criterionSchema = new Schema(
   {
     name: { type: String, required: true }, // used by the algorithm to select the correct function
     attribute: { type: String, }, // the dataset column to use (custom only)
-    goal: { type: String, }, // the goal ("similar" or "diverse")
+    goal: { type: String, }, // the goal ("similar", "diverse", "separate-true", "separate-false")
     ignoreMissing: { type: Boolean, }, // if true, skip over missing values - if false, treat them as the empty string
   },
   { _id: false },

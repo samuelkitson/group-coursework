@@ -25,10 +25,41 @@ const getCategoryIcon = (category) => {
   }
 };
 
+const getGoalOptions = (criterionName) => {
+  if (criterionName.includes("boolean")) {
+    return {
+      "similar": "Similar students together",
+      "diverse": "Diverse students together",
+      "separate-true": "Separate \"true\" values",
+      "separate-false": "Separate \"false\" values",
+    };
+  } else if (criterionName === "International") {
+    return {
+      "similar": "Similar students together",
+      "diverse": "Diverse students together",
+      "separate-true": "Separate international students",
+      "separate-false": "Separate home students",
+    };
+  } else if (criterionName === "Enrolment") {
+    return {
+      "similar": "Similar students together",
+      "diverse": "Diverse students together",
+      "separate-true": "Separate enrolled students",
+      "separate-false": "Separate unenrolled students",
+    };
+  } else {
+    return {
+      "similar": "Similar students together",
+      "diverse": "Diverse students together",
+    };
+  }
+};
+
 const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
   const { control, register, setValue } = useFormContext();
   const criterion = useWatch({ name: `criteria.${index}`, control });
 
+  const goalOptions = getGoalOptions(criterion.name);
   const hasOptions = criterion?.options?.length > 0;
 
   let description = criterion.description;
@@ -134,21 +165,17 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
                   name={`criteria.${index}.goal`}
                   rules={{ required: `Please choose a mode for criterion ${index + 1}` }}
                   render={({ field }) => (
-                    <div className="d-flex gap-4">
-                      <Form.Check
-                        type="radio"
-                        label="Similar students together"
-                        value="similar"
-                        checked={field.value === "similar"}
-                        onChange={() => field.onChange("similar")}
-                      />
-                      <Form.Check
-                        type="radio"
-                        label="Diverse students together"
-                        value="diverse"
-                        checked={field.value === "diverse"}
-                        onChange={() => field.onChange("diverse")}
-                      />
+                    <div className={Object.keys(goalOptions).length <= 2 ? "d-flex gap-4" : ""}>
+                      { Object.keys(goalOptions).map((value, index) => (
+                        <Form.Check
+                          key={index}
+                          type="radio"
+                          label={goalOptions?.[value]}
+                          value={value}
+                          checked={field.value === value}
+                          onChange={() => field.onChange(value)}
+                        />
+                      ))}
                     </div>
                   )}
                 />

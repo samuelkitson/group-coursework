@@ -67,6 +67,20 @@ function countOccurences(data) {
   return occurences;
 }
 
+function getMostCommonFrequency(data) {
+  if (data.length === 0) return 0;
+  const frequencyMap = new Map();
+  let maxFrequency = 0;
+  for (const item of data) {
+    const currentCount = (frequencyMap.get(item) || 0) + 1;
+    frequencyMap.set(item, currentCount);
+    if (currentCount > maxFrequency) {
+      maxFrequency = currentCount;
+    }
+  }
+  return maxFrequency;
+}
+
 function logistic(x, steepness, offset) {
   return 1 / (1 + Math.pow(Math.E, -1 * steepness * (x - offset)));
 }
@@ -144,6 +158,12 @@ class AllocationAlgorithm {
         value = meanAverage(values);
       } else if (measure == "range") {
         value = range(values);
+      } else if (measure == "proportiontrue") {
+        if (values.length == 0) {
+          values = 1;
+        } else {
+          value = values.filter(Boolean).length / values.length;
+        }
       }
       this.datasetStatistics[statistic] = value;
     }
@@ -270,7 +290,7 @@ class AllocationAlgorithm {
       // The criterion fitness score is the group's lowest skill score. The aim
       // of this is to ensure that groups have confidence in each listed skill.
       return Math.min(...bestRatings);
-    } else if (criterion["tag"] == "meeting-preference") {
+    } else if (criterion["name"] == "Meeting preference") {
       // Where students have a preference for online vs in-person, try and
       // group them together.
       const preferences = groupDetails.map((s) => s?.meetingPref ?? "either");
@@ -280,6 +300,41 @@ class AllocationAlgorithm {
       if (preferOnline === 0 || preferInPerson === 0) return 1.0;
       // If conflicting preferences, try to minimise the conflict
       return (Math.max(preferOnline, preferInPerson) / (preferOnline + preferInPerson));
+    } else {
+      let functionMode = "discrete";
+      if (["Enrolment", "International", "Custom (boolean)"].includes(criterion.name)) functionMode = "boolean";
+      if (functionMode === "discrete") {
+        const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
+        if (values.length == 0) return 1;
+        const occurrences = countOccurences(values);
+        if (criterion.goal === "similar") {
+          const maxCount = Math.max(...Object.values(occurrences));
+          return maxCount / values.length;
+        } else if (criterion.goal === "diverse") {
+          if (values.length <= 1) return 1;
+          const uniques = Object.keys(occurrences).length;
+          return (uniques - 1) / (values.length - 1);
+        }
+      } else if (functionMode === "boolean") {
+        const trues = groupDetails.filter(s => s?.[criterion.attribute]).length;
+        const falses = groupDetails.length - trues;
+        if (criterion.goal === "separate-true") {
+          // Penalise if the group's true proportion is higher than the class
+          // true proportion. Prevents over-represetation.
+          if (trues <= 1) return 1;
+          const classPropTrue = this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
+          const groupPropTrue = trues / (trues + falses);
+          if (groupPropTrue <= classPropTrue) return 1;
+          return 1 - (groupPropTrue - classPropTrue) / (1 - classPropTrue);
+        } else if (criterion.goal === "separate-false") {
+          // The same as above but in reverse.
+          if (falses <= 1) return 1;
+          const classPropFalse = 1 - this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
+          const groupPropFalse = falses / (trues + falses);
+          if (groupPropFalse <= classPropFalse) return 1;
+          return 1 - ((groupPropFalse - classPropFalse) / (1 - classPropFalse));
+        }
+      }
     }
   }
 
@@ -431,7 +486,6 @@ class AllocationAlgorithm {
           childGroups[groupCounter].members.push(unassignedStudents.pop());
         }
         this.population.push({ allocation: childGroups });
-        // console.log("Crossover: done");
       }
       // STEP 4: Mutation
       let mutants = [];
