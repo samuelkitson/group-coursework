@@ -322,10 +322,8 @@ class AllocationAlgorithm {
       // If conflicting preferences, try to minimise the conflict
       return (Math.max(preferOnline, preferInPerson) / (preferOnline + preferInPerson));
     } else {
-      let functionMode = "discrete";
-      if (["Enrolment", "International", "Custom (boolean)"].includes(criterion.name)) functionMode = "boolean";
-      if (["Past performance", "Custom (numeric)"].includes(criterion.name)) functionMode = "numeric";
-      if (functionMode === "discrete") {
+      const dataType = criterion?.type ?? "textual";
+      if (dataType === "textual") {
         const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
         if (values.length == 0) return 1;
         const occurrences = countOccurrences(values);
@@ -339,17 +337,24 @@ class AllocationAlgorithm {
           const uniques = Object.keys(occurrences).length;
           return (uniques - 1) / (datasetUniques - 1);
         }
-      } else if (functionMode === "boolean") {
+      } else if (dataType === "boolean") {
         const trues = groupDetails.filter(s => s?.[criterion.attribute]).length;
         const falses = groupDetails.length - trues;
+        if (trues + falses == 0) return 1;
         const classPropTrue = this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
-        if (criterion.goal === "separate-true") {
+        if (criterion.goal === "group-true") {
+          if (trues === 0) return 1;
+          return trues / (trues + falses);
+        } else if (criterion.goal === "group-false") {
+          if (falses === 0) return 1;
+          return falses / (trues + falses);
+        } else if (criterion.goal === "separate-true") {
           // Penalise if the group's true proportion is higher than the class
           // true proportion. Prevents over-represetation.
           if (trues <= 1) return 1;
           const groupPropTrue = trues / (trues + falses);
           if (groupPropTrue <= classPropTrue) return 1;
-          return 1 - (groupPropTrue - classPropTrue) / (1 - classPropTrue);
+          return 1 - ((groupPropTrue - classPropTrue) / (1 - classPropTrue));
         } else if (criterion.goal === "separate-false") {
           // The same as above but in reverse.
           if (falses <= 1) return 1;
@@ -360,13 +365,13 @@ class AllocationAlgorithm {
         } else if (criterion.goal === "similar") {
           // Simplified version of the "similar" function for discrete.
           return (Math.max(trues, falses) / groupDetails.length);
-        } else if (criterion.goal === "diverse") {
+        } else if (criterion.goal === "proportional") {
           // Get the group's true proportion to be as close to the cohort true
           // proportion as possible.
           const groupPropTrue = trues / (trues + falses);
           return 1 - (Math.abs(groupPropTrue - classPropTrue) / Math.max(classPropTrue, 1 - classPropTrue));
         }
-      } else if (functionMode === "numeric") {
+      } else if (dataType === "numeric") {
         const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
         if (values.length == 0) return 1;
         if (criterion.goal === "similar") {
@@ -395,7 +400,7 @@ class AllocationAlgorithm {
           // broad.
           const datasetAvg = this.getDatasetStatistic(`${criterion.attribute}-mean`);
           const datasetRange = this.getDatasetStatistic(`${criterion.attribute}-range`);
-          const groupAvg = mean(values);
+          const groupAvg = meanAverage(values);
           return 1 - (Math.abs(groupAvg - datasetAvg) / (datasetRange / 2));
         }
       }
@@ -430,7 +435,7 @@ class AllocationAlgorithm {
       if (values.length == 0) return false;
       if (dealbreaker.name === "Custom (textual)") {
         const occurrences = countOccurrences(values);
-        if (dealbreaker?.operator === "max_per_value") {
+        if (dealbreaker?.type === "numeric") {
           const mostFrequent = Math.max(...Object.values(occurrences));
           return mostFrequent > dealbreaker?.operand;
         } else if (dealbreaker?.operator === "min_per_value") {
@@ -443,7 +448,7 @@ class AllocationAlgorithm {
           const uniqueCount = Object.values(occurrences).length;
           return uniqueCount < dealbreaker?.operand;
         }
-      } else if (dealbreaker.name === "Custom (boolean)") {
+      } else if (dealbreaker?.type === "boolean") {
         const trueCount = values.filter(v => v === true).length;
         const falseCount = values.filter(v => v === false).length;
         console.log(`${values.join(",")} ${trueCount} ${falseCount}`);

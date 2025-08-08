@@ -25,33 +25,39 @@ const getCategoryIcon = (category) => {
   }
 };
 
-const getGoalOptions = (criterionName) => {
-  if (criterionName.includes("boolean")) {
+const getGoalOptions = (criterion) => {
+  if (criterion?.type === "boolean") {
+    if (criterion.name.startsWith("Custom")) {
+      return {
+        "proportional": "Match class-wide true/false split",
+        "group-true": "Group together \"true\" values",
+        "group-false": "Group together \"false\" values",
+        "separate-true": "Separate \"true\" values",
+        "separate-false": "Separate \"false\" values",
+      };
+    } else {
+      return {
+        "proportional": `Match class-wide ${criterion.attribute} proportion`,
+        "group-true": `Group together ${criterion.attribute} students`,
+        "group-false": `Group together not ${criterion.attribute} students`,
+        "separate-true": `Separate ${criterion.attribute} students`,
+        "separate-false": `Separate not ${criterion.attribute} students`,
+      };
+    }
+    
+  } else if (criterion?.type === "numeric") {
     return {
       "similar": "Similar students together",
       "diverse": "Diverse students together",
-      "separate-true": "Separate \"true\" values",
-      "separate-false": "Separate \"false\" values",
+      "average": "Match class-wide average",
     };
-  } else if (criterionName === "International") {
+  } else if (criterion?.type === "textual") {
     return {
       "similar": "Similar students together",
       "diverse": "Diverse students together",
-      "separate-true": "Separate international students",
-      "separate-false": "Separate home students",
-    };
-  } else if (criterionName === "Enrolment") {
-    return {
-      "similar": "Similar students together",
-      "diverse": "Diverse students together",
-      "separate-true": "Separate enrolled students",
-      "separate-false": "Separate unenrolled students",
     };
   } else {
-    return {
-      "similar": "Similar students together",
-      "diverse": "Diverse students together",
-    };
+    return {};
   }
 };
 
@@ -59,7 +65,7 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
   const { control, register, setValue } = useFormContext();
   const criterion = useWatch({ name: `criteria.${index}`, control });
 
-  const goalOptions = getGoalOptions(criterion.name);
+  const goalOptions = getGoalOptions(criterion);
   const hasOptions = criterion?.options?.length > 0;
 
   let description = criterion.description;

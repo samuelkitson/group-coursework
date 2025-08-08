@@ -94,8 +94,13 @@ function AllocationControls() {
   const addNewCriterion = (newCriterion) => {
     newCriterion.expanded = false;
     // Add default values
-    if (newCriterion?.options?.includes("goal"))
-      newCriterion.goal = "similar";
+    if (newCriterion?.options?.includes("goal")) {
+      if (newCriterion?.type === "boolean") {
+        newCriterion.goal = "proportional";
+      } else {
+        newCriterion.goal = "similar";
+      }
+    }
     if (newCriterion?.options?.includes("ignoreMissing"))
       newCriterion.ignoreMissing = true;
     if (newCriterion?.options?.includes("attribute"))

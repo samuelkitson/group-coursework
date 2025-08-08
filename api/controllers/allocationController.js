@@ -234,6 +234,7 @@ exports.runAllocation = async (req, res) => {
       } else {
         attributeTypes.set(c.attribute, dataType);
       }
+      c.type = dataType;
     }
     return c;
   });
@@ -254,6 +255,7 @@ exports.runAllocation = async (req, res) => {
       } else {
         attributeTypes.set(d.attribute, dataType);
       }
+      d.type = dataType;
     }
     return d;
   });
