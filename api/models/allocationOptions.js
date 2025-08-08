@@ -75,7 +75,7 @@ const dealbreakerOptions = [
     category: "personal",
     attribute: "gender",
   },{
-    name: "Lone female/NB",
+    name: "Lone female/non-binary",
     description: "Specifically avoid teams with only one female or non-binary student. Allows teams with one male student.",
     category: "personal",
     attribute: "gender",
@@ -93,6 +93,11 @@ const dealbreakerOptions = [
     description: "A custom deal-breaker for a textual dataset column.",
     category: "custom",
     options: ["attribute", "operator", "operand", "ignoreMissing"],
+  },{
+    name: "Custom (boolean)",
+    description: "A custom deal-breaker for a boolean dataset column.",
+    category: "custom",
+    options: ["attribute", "operator", "operand"],
   },
 ];
 

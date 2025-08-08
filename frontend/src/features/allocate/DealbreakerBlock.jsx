@@ -40,11 +40,18 @@ const getImportanceString = (importance) => {
   }
 };
 
-const operationsList = [
+const operationsListTextual = [
   { value: "max_per_value", label: "Maximum per value", },
   { value: "min_per_value", label: "Minimum per value", },
   { value: "max_unique", label: "Maximum unique values", },
   { value: "min_unique", label: "Minimum unique values", },
+];
+
+const operationsListBoolean = [
+  { value: "min_true", label: "Minimum true per group", },
+  { value: "max_true", label: "Maximum true per group", },
+  { value: "min_false", label: "Minimum false per group", },
+  { value: "max_False", label: "Maximum false per group", },
 ];
 
 const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
@@ -52,6 +59,10 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
   const dealbreaker = useWatch({ name: `dealbreakers.${index}`, control });
 
   const hasOptions = dealbreaker?.options?.length > 0;
+
+  let operatorOptions = [];
+  if (dealbreaker?.name == "Custom (textual)") operatorOptions = operationsListTextual;
+  if (dealbreaker?.name == "Custom (boolean)") operatorOptions = operationsListBoolean;
 
   let description = dealbreaker.description;
   if (dealbreaker?.name.startsWith("Custom") && dealbreaker?.attribute && dealbreaker?.operator && dealbreaker?.operand && dealbreaker?.operand > 0) {
@@ -69,7 +80,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
     if (dealbreaker?.options.includes("ignoreMissing")) {
       description += (dealbreaker?.ignoreMissing ? " Students without this attribute will be ignored." : " Missing values for this attribute will still be counted.");
     }
-  }
+  };
 
   return (
     <Card className="mb-3" border="danger">
@@ -171,7 +182,7 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
                           fontSize: "0.9rem"
                         }}
                       >
-                        {operationsList.map((op) => (
+                        {operatorOptions.map((op) => (
                           <option key={op.value} value={op.value}>
                             {op.label}
                           </option>

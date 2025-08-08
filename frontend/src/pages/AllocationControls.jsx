@@ -115,7 +115,11 @@ function AllocationControls() {
     newDealbreaker.expanded = false;
     // Add default values
     if (newDealbreaker?.options?.includes("operator")) {
-      newDealbreaker.operator = "max_per_value";
+      if (newDealbreaker.name.includes("boolean")) {
+        newDealbreaker.operator = "max_true";
+      } else {
+        newDealbreaker.operator = "max_per_value";
+      }
       newDealbreaker.operand = 1;
     }
     if (newDealbreaker?.options?.includes("ignoreMissing"))
