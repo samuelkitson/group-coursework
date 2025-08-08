@@ -115,7 +115,12 @@ const runAlgorithmWoker = (workerData) => {
       if (data.success) {
         resolve(data.result);
       } else {
-        reject(new AllocationError(data?.error?.stack));
+        if (typeof data?.error == InvalidParametersError) {
+          // User has supplied some dodgy parameters, so show them the error.
+          reject(new InvalidParametersError(data?.error?.message));
+        } else {
+          reject(new AllocationError(data?.error?.stack));
+        }
       }
     })
     // Listen for unhandled errors.
@@ -210,12 +215,26 @@ exports.runAllocation = async (req, res) => {
   // priority scores (highest = most important).
   const numCriteria = assignment.allocationCriteria.length;
   const requiredAttributes = new Set(["email"]);
+  const attributeTypes = new Map();
   const criteria = assignment.allocationCriteria.map((c, i) => {
     if (c.name === "Skill coverage" && c?.skills == undefined) {
       c.skills = assignment.skills.map(s => s.name);
     }
     c.priority = numCriteria - i;
     if (c?.attribute) requiredAttributes.add(c.attribute);
+    // Gather the data types for casting later on, and check that there aren't
+    // e.g. a textual and a boolean criteria for the same attribute.
+    const fullCriterion = criteriaOptionsMap.get(c.name);
+    const dataType = fullCriterion?.type;
+    if (dataType && c?.attribute) {
+      if (attributeTypes.has(c.attribute)) {
+        if (attributeTypes.get(c.attribute) !== dataType) {
+          throw new InvalidParametersError(`There are conflicting data types for the attribute "${c.attribute}". Please adjust your criteria and deal-breakers and try again.`);
+        }
+      } else {
+        attributeTypes.set(c.attribute, dataType);
+      }
+    }
     return c;
   });
   const dealbreakers = assignment.allocationDealbreakers.map(d => {
@@ -224,6 +243,18 @@ exports.runAllocation = async (req, res) => {
     if (d.importance === 2) d.penalty = 0.2;
     if (d.importance === 3) d.penalty = 0.5;
     if (d?.attribute) requiredAttributes.add(d.attribute);
+    // As above, gather and check data types.
+    const fullDealbreaker = dealbreakerOptionsMap.get(d.name);
+    const dataType = fullDealbreaker?.type;
+    if (dataType && d?.attribute) {
+      if (attributeTypes.has(d.attribute)) {
+        if (attributeTypes.get(d.attribute) !== dataType) {
+          throw new InvalidParametersError(`There are conflicting data types for the attribute "${d.attribute}". Please adjust your criteria and deal-breakers and try again.`);
+        }
+      } else {
+        attributeTypes.set(d.attribute, dataType);
+      }
+    }
     return d;
   });
   // If provided, parse the uploaded dataset file.

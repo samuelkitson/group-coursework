@@ -25,6 +25,7 @@ const criteriaOptions = [
     category: "data",
     options: ["goal"],
     attribute: "marks",
+    type: "numeric",
   },{
     name: "Degree programme",
     description: "Allocate using students' degree programmes.",
@@ -32,6 +33,7 @@ const criteriaOptions = [
     category: "data",
     options: ["goal"],
     attribute: "degree",
+    type: "textual",
   },{
     name: "Enrolment",
     description: "Group together or split up students who are unenrolled.",
@@ -39,6 +41,7 @@ const criteriaOptions = [
     category: "data",
     options: ["goal"],
     attribute: "enrolled",
+    type: "boolean",
   },{
     name: "Meeting preference",
     description: "Split up students who prefer to meet online and in-person.",
@@ -50,21 +53,25 @@ const criteriaOptions = [
     category: "language",
     options: ["goal"],
     attribute: "international",
+    type: "boolean",
   },{
     name: "Custom (textual)",
     description: "A custom criterion for a textual dataset column.",
     category: "custom",
     options: ["attribute", "goal", "ignoreMissing"],
+    type: "textual",
   },{
     name: "Custom (numeric)",
     description: "A custom criterion for a numeric dataset column.",
     category: "custom",
     options: ["attribute", "goal", "ignoreMissing"],
+    type: "numeric",
   },{
     name: "Custom (boolean)",
     description: "A custom criterion for a boolean dataset column.",
     category: "custom",
     options: ["attribute", "goal"],
+    type: "boolean",
   }
 ];
 
@@ -74,16 +81,19 @@ const dealbreakerOptions = [
     description: "Avoid teams that have exactly one male, female or non-binary student.",
     category: "personal",
     attribute: "gender",
+    type: "textual",
   },{
     name: "Lone female/non-binary",
     description: "Specifically avoid teams with only one female or non-binary student. Allows teams with one male student.",
     category: "personal",
     attribute: "gender",
+    type: "textual",
   },{
     name: "All international students",
     description: "Don't make teams where everyone is an international student.",
     category: "language",
     attribute: "international",
+    type: "boolean",
   },{
     name: "Assignment crossover",
     description: "Don't put students together who are already in a team for another assignment.",
@@ -93,11 +103,13 @@ const dealbreakerOptions = [
     description: "A custom deal-breaker for a textual dataset column.",
     category: "custom",
     options: ["attribute", "operator", "operand", "ignoreMissing"],
+    type: "textual",
   },{
     name: "Custom (boolean)",
     description: "A custom deal-breaker for a boolean dataset column.",
     category: "custom",
     options: ["attribute", "operator", "operand"],
+    type: "boolean",
   },
 ];
 

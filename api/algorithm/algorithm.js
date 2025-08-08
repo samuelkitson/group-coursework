@@ -403,24 +403,62 @@ class AllocationAlgorithm {
   }
 
   /**
-   * Checks if a specific penalty should be applied to a group
-   * @param {*} group A group of student IDs
-   * @param {*} penalty The penalty details
-   * @returns True if the penalty should be applied to this group
+   * Checks if a specific deal-breaker should be applied to a group.
+   * @param {*} group A group of student IDs.
+   * @param {*} penalty The deal-breaker details.
+   * @returns True if the penalty should be applied to this group.
    */
-  checkGroupPenalty(group, groupDetails, penalty) {
-    if (penalty["tag"] === "all-international") {
-      return groupDetails.every((student) => student["international"] || false);
-    } else if (penalty["tag"] === "lone-gender") {
-      const maleCount = groupDetails.filter((s) => s?.gender === "male").length;
-      const femaleCount = groupDetails.filter((s) => s?.gender === "female").length;
-      return maleCount == 1 || femaleCount == 1;
-    } else if (penalty["tag"] === "inter-module-clash" && this.otherTeamMembers) {
+  groupDealbreakerCheck(group, groupDetails, dealbreaker) {
+    if (dealbreaker.name === "All international students") {
+      return groupDetails.every((student) => student?.international || false);
+    } else if (["Lone gender", "Lone female/non-binary"].includes(dealbreaker.name)) {
+      const groupGenders = groupDetails.map(s => s?.gender).filter(g => g !== null);
+      const genders = countOccurrences(groupGenders);
+      const maleCount = genders?.male ?? 0;
+      const femaleCount = genders?.female ?? 0;
+      const nbCount = groupGenders.length - maleCount - femaleCount;
+      if (dealbreaker.name === "Lone gender" && [maleCount, femaleCount, nbCount].includes(1)) return true;
+      if (dealbreaker.name === "Lone female/non-binary" && femaleCount + nbCount === 1) return true;
+      return false;
+    } else if (dealbreaker.name === "Assignment crossover" && this.otherTeamMembers) {
       const teamMembersOtherModules = [...new Set(group.flatMap(id => this.otherTeamMembers[id] || []))];
-      // Check for crossovers
+      // Check for crossovers between this assignment and others.
       const crossovers = teamMembersOtherModules.filter(id => group.includes(id));
       return crossovers.length > 0; 
+    } else if (dealbreaker.name.startsWith("Custom")) {
+      const values = dealbreaker?.ignoreMissing ? groupDetails.map(s => s?.[dealbreaker.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[dealbreaker.attribute]);
+      if (values.length == 0) return false;
+      if (dealbreaker.name === "Custom (textual)") {
+        const occurrences = countOccurrences(values);
+        if (dealbreaker?.operator === "max_per_value") {
+          const mostFrequent = Math.max(...Object.values(occurrences));
+          return mostFrequent > dealbreaker?.operand;
+        } else if (dealbreaker?.operator === "min_per_value") {
+          const leastFrequent = Math.min(...Object.values(occurrences));
+          return leastFrequent < dealbreaker?.operand;
+        } else if (dealbreaker?.operator === "max_unique") {
+          const uniqueCount = Object.values(occurrences).length;
+          return uniqueCount > dealbreaker?.operand;
+        } else if (dealbreaker?.operator === "min_unique") {
+          const uniqueCount = Object.values(occurrences).length;
+          return uniqueCount < dealbreaker?.operand;
+        }
+      } else if (dealbreaker.name === "Custom (boolean)") {
+        const trueCount = values.filter(v => v === true).length;
+        const falseCount = values.filter(v => v === false).length;
+        console.log(`${values.join(",")} ${trueCount} ${falseCount}`);
+        if (dealbreaker?.operator === "min_true") {
+          return trueCount < dealbreaker?.operand;
+        } else if (dealbreaker?.operator === "max_true") {
+          return trueCount > dealbreaker?.operand;
+        } if (dealbreaker?.operator === "min_false") {
+          return falseCount < dealbreaker?.operand;
+        } if (dealbreaker?.operator === "max_false") {
+          return falseCount > dealbreaker?.operand;
+        }
+      }
     }
+    return false;
   }
 
   allocationFitness(allocation) {
@@ -436,11 +474,10 @@ class AllocationAlgorithm {
       let criteriaWeights = this.criteria.map((crit) => crit["priority"]);
       let tempFitness = sumArray(multiplyArrays(criteriaWeights, criteriaScores)) / sumArray(criteriaWeights);
       group["dealbreakers"] = [];
-      this.dealbreakers.forEach((p) => {
-        if (this.checkGroupPenalty(group.members, groupDetails, p)) {
-          // console.log("Penalty applied");
-          tempFitness = tempFitness * (1 - p["penalty"]);
-          group["dealbreakers"].push(p["name"]);
+      this.dealbreakers.forEach((dealbreaker) => {
+        if (this.groupDealbreakerCheck(group.members, groupDetails, dealbreaker)) {
+          tempFitness = tempFitness * (1 - dealbreaker.penalty);
+          group["dealbreakers"].push(dealbreaker.name);
         }
       });
       // Flag small and large groups (where numbers aren't perfectly divisible)
