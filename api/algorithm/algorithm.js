@@ -285,48 +285,7 @@ class AllocationAlgorithm {
    * @param {*} criterion The criterion to evaluate against
    */
   groupCriterionFitness(group, groupDetails, criterion) {
-    if (criterion["name"] === "Past performance") {
-      const datasetAvg = this.getDatasetStatistic("marks-mean");
-      const datasetRange = this.getDatasetStatistic("marks-range");
-      const marks = groupDetails.map((student) => student["marks"] ?? datasetAvg);
-      const groupRange = range(marks);
-      const groupAvg = meanAverage(marks);
-      if (criterion["goal"] === "diverse") {
-        // Keep group average mark close to the cohort average mark.
-        return 1 - (Math.abs(groupAvg - datasetAvg) / (datasetRange / 2));
-      } else if (criterion["goal"] === "similar") {
-        // Minimise the range of marks within groups.
-        const score = 1 - (groupRange / datasetRange);
-        return logistic(score, 10, 0.5);
-      } else {
-        throw new AllocationError(`Invalid goal type "${criterion["goal"]}" for past-performance criterion.`);
-      }
-    }
-
-    // Comparison to class average
-    // High similarity score indicates group avg is similar to class avg
-    if (criterion["function"] == "classavg") {
-      let attributeValues = groupDetails.map((s) => s[criterion["attribute"]]);
-      let groupAvg = meanAverage(attributeValues);
-      let datasetAvg = this.getDatasetStatistic(
-        criterion["attribute"] + "-mean",
-      );
-      let datasetRange = this.getDatasetStatistic(
-        criterion["attribute"] + "-range",
-      );
-      let fitness;
-      if (datasetRange == 0) {
-        fitness = 1;
-      } else {
-        fitness = Math.abs(groupAvg - datasetAvg) / (datasetRange / 2);
-      }
-      // console.log("Values: " + attributeValues.toString() + "  Group Avg: " + groupAvg.toString() + "  Dataset Avg: " + datasetAvg.toString() + "  Similarity: " + (1-fitness).toString());
-      if (criterion["goal"] == "similar") {
-        return 1 - fitness;
-      } else if (criterion["goal"] == "diverse") {
-        return fitness;
-      }
-    } else if (criterion["name"] == "Skill coverage") {
+    if (criterion["name"] == "Skill coverage") {
       // Aim for at least one member to be confident in each skill
       // For each skill, get the maximum score within the group and scale with
       // a logistic curve (assuming skills are rated 1-7). This makes high
@@ -365,6 +324,7 @@ class AllocationAlgorithm {
     } else {
       let functionMode = "discrete";
       if (["Enrolment", "International", "Custom (boolean)"].includes(criterion.name)) functionMode = "boolean";
+      if (["Past performance", "Custom (numeric)"].includes(criterion.name)) functionMode = "numeric";
       if (functionMode === "discrete") {
         const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
         if (values.length == 0) return 1;
@@ -405,6 +365,38 @@ class AllocationAlgorithm {
           // proportion as possible.
           const groupPropTrue = trues / (trues + falses);
           return 1 - (Math.abs(groupPropTrue - classPropTrue) / Math.max(classPropTrue, 1 - classPropTrue));
+        }
+      } else if (functionMode === "numeric") {
+        const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
+        if (values.length == 0) return 1;
+        if (criterion.goal === "similar") {
+          // Minimise the range of values in this group, compared to the cohort.
+          const datasetRange = this.getDatasetStatistic(`${criterion.attribute}-range`);
+          const groupRange = range(values);
+          if (datasetRange <= 0 || groupRange <= 0) return 1;
+          const score = 1 - (groupRange / datasetRange);
+          if (criterion.name === "Past performance") {
+            // For the marks criterion, use quite a steep logistic curve.
+            return logistic(score, 10, 0.5);
+          }
+          return logistic(score, 5, 0.5);
+        } else if (criterion.goal === "diverse") {
+          // Maximise the standard deviation of the group, in comparison to the
+          // standard deviation of the cohort. If the group's standard deviation
+          // is higher, just cap the fitness at 1.
+          const datasetStdDev = this.getDatasetStatistic(`${criterion.attribute}-stddev`);
+          const groupStdDev = standardDeviation(values);
+          if (datasetStdDev <= 0 || groupStdDev > datasetStdDev) return 1;
+          const score = groupStdDev / datasetStdDev;
+          return score;
+        } else if (criterion.goal === "average") {
+          // Get the group average as close as possible to the cohort average.
+          // This may result in some very tight distributions and others more
+          // broad.
+          const datasetAvg = this.getDatasetStatistic(`${criterion.attribute}-mean`);
+          const datasetRange = this.getDatasetStatistic(`${criterion.attribute}-range`);
+          const groupAvg = mean(values);
+          return 1 - (Math.abs(groupAvg - datasetAvg) / (datasetRange / 2));
         }
       }
     }
