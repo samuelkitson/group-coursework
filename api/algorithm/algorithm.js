@@ -100,6 +100,48 @@ function binomialChoose(n, k) {
   return result;
 }
 
+/**
+ * A fast way to hash MongoDB ObjectIds to 32 bit integers.
+ * @param {ObjectId} objectId A MongoDB 12 byte ObjecctId (as a 24 character
+ * hex string).
+ * @returns {uint32} Unsigned 32 bit integer.
+ */
+function objectIdTo32Int(objectId) {
+  let h = 0;
+  // Split the 24 hex chars into 3 chunks of 8 (32 bits each).
+  // XOR these together to produce a single 32 bit integer.
+  for (let i = 0; i < objectId.length; i += 8) {
+    h ^= parseInt(objectId.slice(i, i + 8), 16) >>> 0;
+  }
+  // Multiply by a mixing constant to shuffle the bits around.
+  return Math.imul(h, 0x9e3779b1) >>> 0;
+}
+
+function generateAllocationHash(allocation) {
+  // For each group, XOR the member ObjectId hashes together. XOR is important
+  // because the order doesn't matter, so the same group hash is generated no
+  // matter the order of the members within.
+  const groupHashes = allocation.allocation.map(group => {
+    let gh = 0;
+    for (const id of group.members) {
+      gh ^= objectIdTo32Int(id);
+    }
+    return gh >>> 0;
+  });
+  // Sort the group hashes, as the order of groups within the allocation doesn't
+  // matter.
+  groupHashes.sort((a, b) => a - b);
+  // Combine the group hashes with XOR, and multiply by a mixing constant again.
+  // The multiply after each XOR helps to mix the bits around and ensure hashes
+  // are spread out.
+  // 3. Combine all group hashes with XOR + prime multiply
+  let finalHash = 0;
+  for (const gh of groupHashes) {
+    finalHash = Math.imul(finalHash ^ gh, 0x9e3779b1) >>> 0;
+  }
+  return finalHash >>> 0;
+}
+
 class AllocationAlgorithm {
   // Configurable parameters
   selectionPercent = 0.4;
@@ -215,6 +257,23 @@ class AllocationAlgorithm {
     this.population = Array.from({ length: this.populationTargetSize }, () => {
       return { allocation: this.createRandomAllocation() };
     });
+  }
+
+  /**
+   * Deduplicates a list of allocations by using the canonical string
+   * represenation.
+   * @param {list} allocations The population of allocation.
+   * @returns The deduplicated list.
+   */
+  deduplicateAllocations(allocations) {
+    const uniques = new Map();
+    for (const allocation of allocations) {
+      const hash = generateAllocationHash(allocation);
+      if (!uniques.has(hash)) {
+        uniques.set(hash, allocation);
+      }
+    }
+    return Array.from(uniques.values());
   }
 
   /**
@@ -489,7 +548,7 @@ class AllocationAlgorithm {
       }
       // STEP 4: Mutation
       let mutants = [];
-      let mutantsNeeded = Math.max(3, (this.populationTargetSize - this.population.length - elites.length) / 2);
+      let mutantsNeeded = Math.max(3, (this.populationTargetSize - this.population.length - elites.length));
       let swapCount = Math.ceil(this.mutationPercent * this.population.length);
       for (let i = 0; i < this.population.length; i++) {
         if (i >= mutantsNeeded) break;
@@ -518,11 +577,7 @@ class AllocationAlgorithm {
       // STEP 5: Elitism
       this.population.push(...elites);
       // STEP 6: Deduplication
-      this.population = Array.from(
-        new Map(
-          this.population.map((obj) => [JSON.stringify(obj), obj]),
-        ).values(),
-      );
+      this.population = this.deduplicateAllocations(this.population);
       // STEP 7: Cutting down to the target population size
       this.population.sort((a, b) => b.fitness - a.fitness);
       this.population = this.population.slice(0, this.populationTargetSize);
