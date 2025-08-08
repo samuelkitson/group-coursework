@@ -161,6 +161,7 @@ class AllocationAlgorithm {
   population = [];
   datasetStatistics = {};
   fitnessAggregation = "minimum"; // average/minimum/maximum
+  groupsNeeded = 0;
 
   constructor({ studentData, criteria, dealbreakers, groupSize, surplusLargerGroups, otherTeamMembers, fitnessAggregation="minimum", }) {
     this.students = studentData;
@@ -174,6 +175,13 @@ class AllocationAlgorithm {
     this.fitnessAggregation = fitnessAggregation ?? "minimum";
     if (this.students.length < this.groupSize)
       throw new AllocationError(`The group size must be at most ${this.students.length} for this class size.`);
+    if (surplusLargerGroups) {
+      // If creating larger groups in case of uneven student numbers.
+      this.groupsNeeded = Math.floor(studentData.length / this.groupSize);
+    } else {
+      // If creating smaller groups in case of uneven student numbers.
+      this.groupsNeeded = Math.ceil(studentData.length / this.groupSize);
+    }
   }
 
   /**
@@ -226,23 +234,15 @@ class AllocationAlgorithm {
   createRandomAllocation() {
     // Copy the list of student IDs and shuffle.
     let shuffled = shuffleArray([...this.studentIDs]);
-    let groupsCount;
-    if (this.surplusLargerGroups) {
-      // If creating larger groups in case of uneven student numbers.
-      groupsCount = Math.floor(shuffled.length / this.groupSize);
-    } else {
-      // If creating smaller groups in case of uneven student numbers.
-      groupsCount = Math.ceil(shuffled.length / this.groupSize);
-    }
     // Create the correct number of empty groups.
-    const allocation = Array.from({ length: groupsCount }, () => {return {members: []}});
+    const allocation = Array.from({ length: this.groupsNeeded }, () => {return {members: []}});
     // Allocate students to groups from the shuffled list in a "round-robin"
     // style, which makes sure that groups have at most one missing member.
     let groupCounter = 0;
     for (let i = 0; i < shuffled.length; i++) {
       allocation[groupCounter].members.push(shuffled[i]);
       groupCounter += 1;
-      if (groupCounter === groupsCount) groupCounter = 0;
+      if (groupCounter === this.groupsNeeded) groupCounter = 0;
     }
     // Return the generated allocation.
     return allocation;
@@ -488,11 +488,56 @@ class AllocationAlgorithm {
     this.population.sort((a, b) => b.fitness - a.fitness);
   }
 
+  crossoverStep(studentIds, parentIndexA, parentIndexB) {
+    const parentA = this.population[parentIndexA].allocation;
+    const parentB = this.population[parentIndexB].allocation;
+    // Combine groups from both parents, sorted by fitness.
+    const combinedGroups = [...parentA, ...parentB].sort((a, b) => b.fitness - a.fitness);
+    // Work out target group sizes.
+    const totalStudents = studentIds.length;
+    const base = Math.floor(totalStudents / this.groupsNeeded);
+    const remainder = totalStudents % this.groupsNeeded;
+    const targetSizes = Array(this.groupsNeeded).fill(base);
+    if (this.surplusLargerGroups) {
+      for (let i = 0; i < remainder; i++) targetSizes[i] += 1;
+    } else {
+      for (let i = this.groupsNeeded - remainder; i < this.groupsNeeded; i++) targetSizes[i] += 1;
+    }
+    // Prepare child groups.
+    const childGroups = targetSizes.map(size => ({ members: [], capacity: size }));
+    const assigned = new Set();
+    // Fill groups with best parent groups where they fit.
+    for (const group of combinedGroups) {
+      const members = group.members.filter(s => !assigned.has(s));
+      for (const cg of childGroups) {
+        const space = cg.capacity - cg.members.length;
+        if (space >= members.length) {
+          cg.members.push(...members);
+          members.forEach(s => assigned.add(s));
+          break;
+        }
+      }
+    }
+    // Put leftover students in remaining spaces.
+    const unassigned = studentIds.filter(s => !assigned.has(s));
+    let idx = 0;
+    for (const s of unassigned) {
+      while (childGroups[idx].members.length >= childGroups[idx].capacity) {
+        idx = (idx + 1) % this.groupsNeeded;
+      }
+      childGroups[idx].members.push(s);
+      assigned.add(s);
+    }
+    this.population.push({ allocation: childGroups.map(g => ({ members: g.members })) });
+  }
+
   run() {
     const studentIds = this.students.map(s => s._id);
     for (let round = 0; round < this.rounds; round++) {
+
       // STEP 1: Fitness evaluation
       this.computePopulationFitness();
+
       // STEP 2: Selection/elitism
       // Keep only the top % by fitness score
       let elites = JSON.parse(
@@ -507,52 +552,20 @@ class AllocationAlgorithm {
         0,
         Math.ceil(this.selectionPercent * this.population.length),
       );
+
       // STEP 3: Crossover
       // Keep the parents, and make new children that have the top groups from
       // some randomly selected parent allocations.
       let crossoversNeeded = Math.max(3, (this.populationTargetSize - this.population.length - elites.length) / 2);
       const parentsMaxIndex = this.population.length;
       for (let i = 0; i < crossoversNeeded; i++) {
-        // Randomly select 2 parent allocations to create a child allocation from
-        const indexA = Math.floor(Math.random() * parentsMaxIndex);
-        const indexB = Math.floor(Math.random() * parentsMaxIndex);
-        if (indexA == indexB) continue;
-        const parentA = this.population[indexA].allocation;
-        const parentB = this.population[indexB].allocation;
-        // Combine groups from both parents and sort by the group fitness
-        const combinedGroups = [...parentA, ...parentB];
-        combinedGroups.sort((a, b) => b.fitness - a.fitness);
-        // Keep track of assigned students in the child allocation
-        const assigned = new Set();
-        const childGroups = [];
-        for (const group of combinedGroups) {
-          // Skip over this group if any of the students have already been allocated
-          if (group.members.some(s => assigned.has(s))) {
-            // console.log(`Crossover: skipping group ${group.fitness}`);
-            continue
-          };
-          // Copy the group to the child allocation and mark the students as allocated
-          const copiedGroup = {members: [...group.members]};
-          copiedGroup.members.forEach(s => assigned.add(s));
-          childGroups.push(copiedGroup);
-          // console.log(`Crossover: adding group ${group.fitness}`);
-        }
-        // Now handle the leftover students who haven't been allocated. Start by
-        // making as many new full groups as possible.
-        const unassignedStudents = studentIds.filter(s => !assigned.has(s));
-        const fullGroupsToCreate = Math.floor(unassignedStudents.length / this.groupSize);
-        for (let j=0; j<fullGroupsToCreate; j++) {
-          childGroups.push({ members: unassignedStudents.splice(0, this.groupSize)});
-        }
-        // With the other leftover students, allocate them round-robin style to
-        // the emptiest remaining groups.
-        let groupCounter = 0;
-        while (unassignedStudents.length > 0) {
-          if (groupCounter == childGroups.length) groupCounter = 0;
-          childGroups[groupCounter].members.push(unassignedStudents.pop());
-        }
-        this.population.push({ allocation: childGroups });
+        // Pick two different parents
+        let indexA = Math.floor(Math.random() * parentsMaxIndex);
+        let indexB = Math.floor(Math.random() * parentsMaxIndex);
+        while (indexB === indexA) indexB = Math.floor(Math.random() * parentsMaxIndex);
+        this.crossoverStep(studentIds, indexA, indexB);
       }
+
       // STEP 4: Mutation
       let mutants = [];
       let mutantsNeeded = Math.max(3, (this.populationTargetSize - this.population.length - elites.length));
