@@ -48,7 +48,7 @@ const castObjKeyToBool = (object, key, castError=true, nullError=false) => {
 
 /**
  * Given an object (such as a student record), attempt to cast one of its values
- * to an integer from a string.
+ * to a float from a string.
  * 
  * @param object The object with the value to cast.
  * @param {String} key The key of the value to cast.
@@ -56,13 +56,13 @@ const castObjKeyToBool = (object, key, castError=true, nullError=false) => {
  * @param {Boolean} nullError If true, throw an error if the vlaue is missing. If false, just default to null.
  * @returns The object with the value re-cast.
  */
-const castObjKeyToInt = (object, key, castError=true, nullError=false) => {
+const castObjKeyToFloat = (object, key, castError=true, nullError=false) => {
   if (!object?.[key]) {
     if (nullError) throw new InvalidFileError(`A missing value was found for the ${key} attribute. Please provide a value for every student.`);
     object[key] = null;
     return object;
   }
-  const parsed = parseInt(object?.[key], 10);
+  const parsed = parseFloat(object?.[key], 10);
   if (isNaN(parsed)) {
     if (castError) throw new InvalidFileError(`An invalid value was found for the ${key} attribute. "${object?.[key]}" is not a valid integer.`);
     object[key] = null;
@@ -292,13 +292,15 @@ exports.runAllocation = async (req, res) => {
         if (!datasetMap.has(email))
           throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
         const mergedRecord = {...datasetMap.get(email), ...s, _id: s._id.toString(), };
-        // Cast attribute types as appropriate
-        if (requiredAttributes.has("international"))
-          castObjKeyToBool(mergedRecord, "international", true, true);
-        if (requiredAttributes.has("enrolled"))
-          castObjKeyToBool(mergedRecord, "enrolled", true, true);
-        if (requiredAttributes.has("marks"))
-          castObjKeyToInt(mergedRecord, "marks", true, true);
+        // Cast attribute types as appropriate.
+        attributeTypes.forEach((type, attribute) => {
+          const nullError = ["international", "enrolled", "marks"].includes(attribute);
+          if (type === "numeric") {
+            castObjKeyToFloat(mergedRecord, attribute, true, nullError);
+          } else if (type === "boolean") {
+            castObjKeyToBool(mergedRecord, attribute, true, nullError);
+          }
+        });
         return mergedRecord;
       });
     } finally {
