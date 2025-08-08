@@ -59,12 +59,12 @@ function avgPairwiseDistance(data) {
   return distanceSum / pairs;
 }
 
-function countOccurences(data) {
-  const occurences = {};
+function countOccurrences(data) {
+  const occurrences = {};
   data.forEach((x) => {
-    occurences[x] = (occurences[x] || 0) + 1;
+    occurrences[x] = (occurrences[x] || 0) + 1;
   });
-  return occurences;
+  return occurrences;
 }
 
 function getMostCommonFrequency(data) {
@@ -214,6 +214,9 @@ class AllocationAlgorithm {
         } else {
           value = values.filter(Boolean).length / values.length;
         }
+      } else if (measure == "uniques") {
+        const occurrences = countOccurrences(values);
+        value = Object.keys(occurrences).length;
       }
       this.datasetStatistics[statistic] = value;
     }
@@ -365,14 +368,16 @@ class AllocationAlgorithm {
       if (functionMode === "discrete") {
         const values = criterion?.ignoreMissing ? groupDetails.map(s => s?.[criterion.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[criterion.attribute]);
         if (values.length == 0) return 1;
-        const occurrences = countOccurences(values);
+        const occurrences = countOccurrences(values);
         if (criterion.goal === "similar") {
           const maxCount = Math.max(...Object.values(occurrences));
           return maxCount / values.length;
         } else if (criterion.goal === "diverse") {
           if (values.length <= 1) return 1;
+          const datasetUniques = this.getDatasetStatistic(`${criterion.attribute}-uniques`);
+          if (datasetUniques <= 1) return 1;
           const uniques = Object.keys(occurrences).length;
-          return (uniques - 1) / (values.length - 1);
+          return (uniques - 1) / (datasetUniques - 1);
         }
       } else if (functionMode === "boolean") {
         const trues = groupDetails.filter(s => s?.[criterion.attribute]).length;
@@ -651,6 +656,6 @@ function generateGroups(students, criteria) {}
 
 module.exports = {
   generateGroups,
-  countOccurences,
+  countOccurrences,
   AllocationAlgorithm,
 };

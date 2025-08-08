@@ -145,7 +145,7 @@ common value in the group divided by the number of values. For boolean values,
 the function is simplified but works similarly.
 
 - `diverse` attempts to split up students with matching values. For discrete
-attributes, the function is (number of unique values - 1) / (number of values - 
+attributes, the function is (number of unique values - 1) / (dataset uniques - 
 1). For boolean values, the function aims to get the group's proportion of true
 values to be as close to the cohort average as possible.
 
