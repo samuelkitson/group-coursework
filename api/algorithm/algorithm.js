@@ -485,7 +485,6 @@ class AllocationAlgorithm {
     for (let round = 0; round < this.rounds; round++) {
       // STEP 1: Fitness evaluation
       this.computePopulationFitness();
-      // console.log(this.population);
       // STEP 2: Selection/elitism
       // Keep only the top % by fitness score
       let elites = JSON.parse(
@@ -578,9 +577,6 @@ class AllocationAlgorithm {
       this.population.push(...elites);
       // STEP 6: Deduplication
       this.population = this.deduplicateAllocations(this.population);
-      // STEP 7: Cutting down to the target population size
-      this.population.sort((a, b) => b.fitness - a.fitness);
-      this.population = this.population.slice(0, this.populationTargetSize);
     }
   }
 
