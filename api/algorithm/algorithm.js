@@ -377,21 +377,29 @@ class AllocationAlgorithm {
       } else if (functionMode === "boolean") {
         const trues = groupDetails.filter(s => s?.[criterion.attribute]).length;
         const falses = groupDetails.length - trues;
+        const classPropTrue = this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
         if (criterion.goal === "separate-true") {
           // Penalise if the group's true proportion is higher than the class
           // true proportion. Prevents over-represetation.
           if (trues <= 1) return 1;
-          const classPropTrue = this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
           const groupPropTrue = trues / (trues + falses);
           if (groupPropTrue <= classPropTrue) return 1;
           return 1 - (groupPropTrue - classPropTrue) / (1 - classPropTrue);
         } else if (criterion.goal === "separate-false") {
           // The same as above but in reverse.
           if (falses <= 1) return 1;
-          const classPropFalse = 1 - this.getDatasetStatistic(`${criterion.attribute}-proportiontrue`);
+          const classPropFalse = 1 - classPropTrue;
           const groupPropFalse = falses / (trues + falses);
           if (groupPropFalse <= classPropFalse) return 1;
           return 1 - ((groupPropFalse - classPropFalse) / (1 - classPropFalse));
+        } else if (criterion.goal === "similar") {
+          // Simplified version of the "similar" function for discrete.
+          return (Math.max(trues, falses) / groupDetails.length);
+        } else if (criterion.goal === "diverse") {
+          // Get the group's true proportion to be as close to the cohort true
+          // proportion as possible.
+          const groupPropTrue = trues / (trues + falses);
+          return 1 - (Math.abs(groupPropTrue - classPropTrue) / Math.max(classPropTrue, 1 - classPropTrue));
         }
       }
     }
