@@ -164,18 +164,18 @@ exports.getAllForAssignment = async (req, res) => {
   if (req.query.mode === "simple") {
     let teams;
     if (role === "lecturer") {
-      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), "members.0": { $exists: true }, }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
     } else {
-      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] }, "members.0": { $exists: true }, }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
     }
     return res.json({ teams });
   }
   // Get the teams for this assignment (if supervisor, only show their teams)
   let teams;
   if (role === "lecturer") {
-    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), "members.0": { $exists: true }, }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
   } else {
-    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] }, "members.0": { $exists: true }, }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
   }
   // Add in their last meeting time/date
   let teamsWithLastMeeting = await Promise.all(
