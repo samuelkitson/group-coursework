@@ -36,8 +36,14 @@ const transporterReadyPromise = new Promise((resolve) => {
 const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, subject, headerText, bodyText, templateId, redHeader, bccMode=false, }) => {
   const ready = await transporterReadyPromise;
   if (!ready) throw new CustomError("Email sending not configured", 500);
-  if (recipientEmail.includes("example.org"))
-    throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+  if (Array.isArray(recipientEmail)) {
+    if (recipientEmail.some(e => e.endsWith("@example.org"))) {
+      throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+    }
+  } else {
+    if (recipientEmail.endsWith("@example.org"))
+      throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+  }
   if (!subject || !recipientEmail || !headerText || !bodyText)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const headerColour = redHeader ? "#B11717" : "#005C84";
