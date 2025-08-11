@@ -35,9 +35,9 @@ const DatasetUpload = ({ showModal, onHide, currentFileName, datasetColumns, req
           handleDatasetUpload(selectedFile, headers);
           
           if (colsDiff.size === 0) {
-            toast.success("Dataset uploaded successfully with all required columns.");
+            toast.success("Dataset uploaded successfully.");
           } else {
-            toast.error(`Dataset uploaded but is missing required columns: ${Array.from(colsDiff).join(", ")}.`);
+            toast.error(`Some required columns are missing: ${Array.from(colsDiff).join(", ")}.`);
           }
         },
       });

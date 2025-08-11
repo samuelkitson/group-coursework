@@ -187,8 +187,8 @@ function AllocationControls() {
     }
     const requiredCols = getRequiredDatasetCols();
     if (requiredCols.length > 1 && !datasetFile) {
-      toast.error("You need to upload a dataset before starting allocation.");
-      setActiveModal("dataset-upload");
+      toast.error("You need to upload a dataset first.");
+      // setActiveModal("dataset-upload");
       return;
     }
     // Add the dataset (if provided)
