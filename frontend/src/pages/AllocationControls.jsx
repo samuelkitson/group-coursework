@@ -120,10 +120,12 @@ function AllocationControls() {
     newDealbreaker.expanded = false;
     // Add default values
     if (newDealbreaker?.options?.includes("operator")) {
-      if (newDealbreaker.name.includes("boolean")) {
-        newDealbreaker.operator = "max_true";
-      } else {
+      if (newDealbreaker?.type === "textual") {
         newDealbreaker.operator = "max_per_value";
+      } else if (newDealbreaker?.type === "numeric") {
+        newDealbreaker.operator = "max_sum";
+      } else if (newDealbreaker?.type === "boolean") {
+        newDealbreaker.operator = "max_true";
       }
       newDealbreaker.operand = 1;
     }

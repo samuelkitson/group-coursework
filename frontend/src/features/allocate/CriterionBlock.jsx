@@ -67,15 +67,29 @@ const CriterionBlock = ({ index, remove, move, isFirst, isLast }) => {
 
   const goalOptions = getGoalOptions(criterion);
   const hasOptions = criterion?.options?.length > 0;
+  const isCustom = criterion.name.startsWith("Custom");
 
   let description = criterion.description;
-  if (criterion?.fillerText && criterion?.goal) {
-    description = `${criterion.goal == "similar" ? "Group together" : "Split up"} ${criterion.fillerText}`;
-  }
-  if (criterion?.name.startsWith("Custom") && criterion?.attribute && criterion?.goal) {
-    description = `${criterion.goal == "similar" ? "Group together" : "Split up"} students who have matching "${criterion?.attribute}" attributes.`;
-    if (criterion?.options.includes("ignoreMissing")) {
-      description += (criterion?.ignoreMissing ? " Students without this attribute will be ignored." : " Students without this attribute will be treated as matching.");
+  if (criterion?.goal) {
+    let fillerText = criterion?.attribute ?? criterion.name.toLowerCase();
+    if (isCustom && !criterion?.attribute) {
+      description = criterion.description;
+    } else if (criterion.goal == "similar") {
+      description = `Group together students with similar "${fillerText}" values.`;
+    } else if (criterion.goal == "diverse") {
+      description = `Split up students with similar "${fillerText}" values.`;
+    } else if (criterion.goal == "average") {
+      description = `Create groups with an average "${fillerText}" value similar to the whole cohort's.`;
+    } else if (criterion.goal == "proportional") {
+      description = `Create groups whose proportion of "${fillerText}" is similar to the whole cohort's.`;
+    } else if (criterion.goal == "group-true") {
+      description = isCustom ? `Group together students with true values for "${criterion.attribute}".`: `Group together ${fillerText} students.`;
+    } else if (criterion.goal == "group-false") {
+      description = isCustom ? `Group together students with false values for "${criterion.attribute}".`: `Group together not ${fillerText} students.`;
+    } else if (criterion.goal == "separate-true") {
+      description = isCustom ? `Separate students with true values for "${criterion.attribute}".`: `Separate ${fillerText} students.`;
+    } else if (criterion.goal == "separate-false") {
+      description = isCustom ? `Separate students with false values for "${criterion.attribute}".`: `Separate not ${fillerText} students.`;
     }
   }
 

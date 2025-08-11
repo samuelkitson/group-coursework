@@ -433,9 +433,9 @@ class AllocationAlgorithm {
     } else if (dealbreaker.name.startsWith("Custom")) {
       const values = dealbreaker?.ignoreMissing ? groupDetails.map(s => s?.[dealbreaker.attribute]).filter(v => v !== null) : groupDetails.map(s => s?.[dealbreaker.attribute]);
       if (values.length == 0) return false;
-      if (dealbreaker.name === "Custom (textual)") {
+      if (dealbreaker?.type === "textual") {
         const occurrences = countOccurrences(values);
-        if (dealbreaker?.type === "numeric") {
+        if (dealbreaker?.operator === "max_per_value") {
           const mostFrequent = Math.max(...Object.values(occurrences));
           return mostFrequent > dealbreaker?.operand;
         } else if (dealbreaker?.operator === "min_per_value") {
@@ -448,10 +448,16 @@ class AllocationAlgorithm {
           const uniqueCount = Object.values(occurrences).length;
           return uniqueCount < dealbreaker?.operand;
         }
+      } else if (dealbreaker?.type === "numeric") {
+        const sum = sumArray(values) ?? 0;
+        if (dealbreaker?.operator === "min_sum") {
+          return sum < dealbreaker?.operand;
+        } else if (dealbreaker?.operator === "max_sum") {
+          return sum > dealbreaker?.operand;
+        }
       } else if (dealbreaker?.type === "boolean") {
         const trueCount = values.filter(v => v === true).length;
         const falseCount = values.filter(v => v === false).length;
-        console.log(`${values.join(",")} ${trueCount} ${falseCount}`);
         if (dealbreaker?.operator === "min_true") {
           return trueCount < dealbreaker?.operand;
         } else if (dealbreaker?.operator === "max_true") {

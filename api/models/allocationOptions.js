@@ -8,7 +8,6 @@
  * 
  * There are a few description fields used in various ways.
  *   - description: the basic description shown in the selector
- *   - fillerText: preceded by "Group together " or "Split up " (optional, only if goal is selectable)
  * 
  * - attribute: if this data comes from a dataset upload, the name of the column
  */
@@ -21,7 +20,6 @@ const criteriaOptions = [
   },{
     name: "Past performance",
     description: "Allocate based on students' past performance and marks.",
-    fillerText: "students with similar past performance.",
     category: "data",
     options: ["goal"],
     attribute: "marks",
@@ -29,18 +27,16 @@ const criteriaOptions = [
   },{
     name: "Degree programme",
     description: "Allocate using students' degree programmes.",
-    fillerText: "students on the same degree programme.",
     category: "data",
     options: ["goal"],
     attribute: "degree",
     type: "textual",
   },{
     name: "Enrolment",
-    description: "Group together or split up students who are unenrolled.",
-    fillerText: "students by their enrolment status.",
+    description: "Group together or split up students who are unenrolled."
     category: "data",
     options: ["goal"],
-    attribute: "enrolled",
+    attribute: "enrolled ",
     type: "boolean",
   },{
     name: "Meeting preference",
@@ -49,7 +45,6 @@ const criteriaOptions = [
   },{
     name: "International",
     description: "Group international students together or split them up.",
-    fillerText: "international students.",
     category: "language",
     options: ["goal"],
     attribute: "international",
@@ -104,6 +99,12 @@ const dealbreakerOptions = [
     category: "custom",
     options: ["attribute", "operator", "operand", "ignoreMissing"],
     type: "textual",
+  },{
+    name: "Custom (numeric)",
+    description: "A custom deal-breaker for a numeric dataset column.",
+    category: "custom",
+    options: ["attribute", "operator", "operand"],
+    type: "numeric",
   },{
     name: "Custom (boolean)",
     description: "A custom deal-breaker for a boolean dataset column.",

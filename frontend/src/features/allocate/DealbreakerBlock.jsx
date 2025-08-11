@@ -51,7 +51,12 @@ const operationsListBoolean = [
   { value: "min_true", label: "Minimum true per group", },
   { value: "max_true", label: "Maximum true per group", },
   { value: "min_false", label: "Minimum false per group", },
-  { value: "max_False", label: "Maximum false per group", },
+  { value: "max_false", label: "Maximum false per group", },
+];
+
+const operationsListNumeric = [
+  { value: "min_sum", label: "Minimum sum per group", },
+  { value: "max_sum", label: "Maximum sum per group", },
 ];
 
 const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
@@ -63,19 +68,32 @@ const DealbreakerBlock = ({ index, remove, isFirst, isLast }) => {
   let operatorOptions = [];
   if (dealbreaker?.name == "Custom (textual)") operatorOptions = operationsListTextual;
   if (dealbreaker?.name == "Custom (boolean)") operatorOptions = operationsListBoolean;
+  if (dealbreaker?.name == "Custom (numeric)") operatorOptions = operationsListNumeric;
 
   let description = dealbreaker.description;
   if (dealbreaker?.name.startsWith("Custom") && dealbreaker?.attribute && dealbreaker?.operator && dealbreaker?.operand && dealbreaker?.operand > 0) {
     if (dealbreaker.operator == "max_per_value") {
-      description = `Don't create groups where more than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+      description = `Don't create groups where more than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`;
     } else if (dealbreaker.operator == "min_per_value") {
-      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`;
     } else if (dealbreaker.operator == "min_per_value") {
-      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} the same value for "${dealbreaker.attribute}".`;
     } else if (dealbreaker.operator == "max_unique") {
-      description = `Don't create groups with more than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`
+      description = `Don't create groups with more than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`;
     } else if (dealbreaker.operator == "min_unique") {
-      description = `Don't create groups with fewer than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`
+      description = `Don't create groups with fewer than ${dealbreaker.operand} different value${dealbreaker.operand != 1 ? "s" : ""} for "${dealbreaker.attribute}".`;
+    } else if (dealbreaker.operator == "min_true") {
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} a true value for "${dealbreaker.attribute}".`;
+    } else if (dealbreaker.operator == "max_true") {
+      description = `Don't create groups where more than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} a true value for "${dealbreaker.attribute}".`;
+    } else if (dealbreaker.operator == "min_false") {
+      description = `Don't create groups where fewer than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} a false value for "${dealbreaker.attribute}".`;
+    } else if (dealbreaker.operator == "max_false") {
+      description = `Don't create groups where more than ${dealbreaker.operand} student${dealbreaker.operand != 1 ? "s have" : " has"} a false value for "${dealbreaker.attribute}".`;
+    } else if (dealbreaker.operator == "min_sum") {
+      description = `Don't create groups where the values for "${dealbreaker.attribute}" sum to less than ${dealbreaker.operand}.`;
+    } else if (dealbreaker.operator == "max_sum") {
+      description = `Don't create groups where the values for "${dealbreaker.attribute}" sum to more than ${dealbreaker.operand}.`;
     }
     if (dealbreaker?.options.includes("ignoreMissing")) {
       description += (dealbreaker?.ignoreMissing ? " Students without this attribute will be ignored." : " Missing values for this attribute will still be counted.");
