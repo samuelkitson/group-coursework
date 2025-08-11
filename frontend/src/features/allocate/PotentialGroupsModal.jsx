@@ -1,3 +1,5 @@
+import { toTitleCase } from "@/utility/helpers";
+import { useEffect, useState } from "react";
 import {
   Modal,
   Button,
@@ -5,6 +7,8 @@ import {
   Row,
   Col,
   ListGroup,
+  Badge,
+  Dropdown,
 } from "react-bootstrap";
 import {
   FlagFill,
@@ -14,9 +18,21 @@ import {
   CheckCircleFill,
   Trash3Fill,
   Shuffle,
+  Search,
+  QuestionCircle,
+  XCircleFill,
+  BarChartFill,
+  InfoCircleFill,
+  InfoCircle,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, criteriaOptions, dealbreakerOptions}) => {
+const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes}) => {
+  const [spotlightAttribute, setSpotlightAttribute] = useState(null);
+
+  const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
+  const skillsList = allocation?.criteria?.find(c => c.name === "Skill coverage")?.skills?.map(s => [s, true]);
+  if (skillsList) spotlightOptions.push(...skillsList);
+
   const criterionIcon = (quality) => {
     if (quality < 0.4) {
       return <XCircle />;
@@ -51,14 +67,51 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
   };
 
   const getCriterionName = (criterionIndex) => {
-    const tag = allocation.criteria[criterionIndex]?.tag;
-    if (!tag) return "Unknown criterion";
-    return criteriaOptions.find(c => c.tag === tag)?.title ?? "Unknown criterion";
+    const criterion = allocation.criteria[criterionIndex];
+    if (!criterion) return "Unknown criterion";
+    const name = criterion.name.startsWith("Custom") ? toTitleCase(criterion.attribute) : criterion.name;
+    if (criterion?.goal) {
+      return `${name} (${criterion.goal})`;
+    } else {
+      return name;
+    }
   }
 
-  const getDealbreakerName = (tag) => {
-    return dealbreakerOptions.find(c => c.tag === tag)?.title ?? "Unknown dealbreaker";
-  }
+  const getSpotlightValue = (student) => {
+    const className = "ms-2 d-flex-inline align-items-center small";
+    if (!spotlightAttribute) return null;
+    let studentValue;
+    if (spotlightAttribute[1]) {
+      // Fetch skill rating specifically.
+      studentValue = student.skills[spotlightAttribute[0]]?.toString();
+    } else {
+      // Fetch normal attribute value.
+      studentValue = student[spotlightAttribute[0]];
+    }
+    if (studentValue === null || studentValue === undefined) return (<span className={`${className} text-muted`}>
+      <QuestionCircle className="me-1" />no data
+    </span>);
+    if (typeof studentValue == "boolean") {
+      if (studentValue) {
+        return (
+          <span className={`${className} text-success`}>
+            <CheckCircle className="me-1" />{spotlightAttribute[0]}
+          </span>
+        ); 
+      } else {
+        return (
+          <span className={`${className} text-danger`}>
+            <XCircle className="me-1" />not {spotlightAttribute[0]}
+          </span>
+        ); 
+      }
+    }
+    return (
+      <span className={`${className} text-primary`}>
+        {studentValue}
+      </span>
+    ); 
+  };
 
   if (allocation == null) { return <></> }
 
@@ -80,38 +133,81 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           We've created a group allocation based on your preferences, as shown
           below.
           <br /> Each group has been evaluated against how well it meets your
-          criteria and dealbreakers, with the worst groups listed first.
+          criteria and deal-breakers, with the worst groups listed first.
         </p>
         <Row className="mt-3">
           <Col
             xs={12}
             md={4}
-            className="h-100 overflow-auto sticky-md-top pt-3"
+            className="h-100 sticky-md-top pt-3"
           >
-            <ListGroup variant="flush">
-              <ListGroup.Item>
-                Allocation quality: {(allocation.fitness * 100).toFixed(1)}%
-              </ListGroup.Item>
-              <ListGroup.Item>
-                Number of groups: {allocation.allocation.length}
-              </ListGroup.Item>
-            </ListGroup>
+            <h5 className="fw-semibold">
+              <Search className="me-1" /> Data spotlight
+            </h5>
+            <p className="text-muted small mb-2">
+              Select an attribute to display its value for each student.
+            </p>
+
+            <Dropdown>
+              <Dropdown.Toggle variant="light" size="sm" className="border">
+                <span className="pe-1">
+                  { spotlightAttribute ? `Showing "${spotlightAttribute?.[0]}" data` : "No attribute selected"}
+                </span>
+              </Dropdown.Toggle>
+              <Dropdown.Menu size="sm" style={{ maxHeight: "calc(100vh - 300px)", overflowY: "auto" }}>
+                <Dropdown.Item
+                  onClick={() => setSpotlightAttribute(null)}
+                  className="text-muted"
+                >
+                  Hide data spotlight
+                </Dropdown.Item>
+                {spotlightOptions.map(([attribute, isSkill], index) => (
+                  <Dropdown.Item
+                    key={`attribute-selector-${index}`}
+                    onClick={() => setSpotlightAttribute([attribute, isSkill])}
+                    active={spotlightAttribute?.[0] === attribute}
+                  >
+                    { isSkill ? 
+                      `skills > ${attribute}`
+                    :
+                      attribute
+                    }
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
           </Col>
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
+            <div className="d-flex justify-content-between">
+              <p className="mb-0">
+                {allocation.allocation.length ?? 0} groups generated
+              </p>
+              <p className="mb-0">
+                Overall allocation quality: {(allocation.fitness * 100).toFixed(1)}%
+              </p>
+            </div>
+            
             {allocation.allocation.map((group, index) => (
-              <Card key={index} className="my-3" border={borderColour(group.fitness ,group.dealbreakers)}>
+              <Card
+                key={index}
+                className="my-3"
+                border={borderColour(group.fitness, group.dealbreakers)}
+              >
                 <Card.Body>
                   <Row>
                     <Col lg={6}>
                       <h6 className="mb-2">Members</h6>
                       <ul className="list-unstyled">
                         {group.members.map((student, i) => (
-                          <li key={student._id}>{student.displayName}</li>
+                          <li key={student._id}>
+                            {student.displayName}
+                            {getSpotlightValue(student)}
+                          </li>
                         ))}
                       </ul>
                     </Col>
                     <Col lg={6}>
-                      <h6 className="mb-2">Allocation quality ({Math.round(group.fitness * 100)}%)</h6>
+                      <h6 className="mb-2">Allocation quality - {Math.round(group.fitness * 100)}%</h6>
                       <ul className="list-unstyled">
                         {group.dealbreakers &&
                           group.dealbreakers
@@ -122,7 +218,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                                 className="d-flex align-items-center text-danger fw-semibold"
                               >
                                 <FlagFill className="me-2" />
-                                {getDealbreakerName(dealbreaker)} 
+                                {dealbreaker} 
                               </li>
                             ))}
                         {group.criteriaScores.map((criterion, index) => (
@@ -133,7 +229,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
                             <span className="me-2">
                               {criterionIcon(criterion)}
                             </span>
-                            {getCriterionName(index)} ({Math.round(criterion * 100)}%)
+                            {getCriterionName(index)} - {Math.round(criterion * 100)}%
                           </li>
                         ))}
                       </ul>

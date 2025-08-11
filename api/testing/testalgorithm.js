@@ -1,7 +1,7 @@
 const {
   generateGroups,
   variance,
-  countOccurences,
+  countOccurrences,
   AllocationAlgorithm,
 } = require("../algorithm/algorithm");
 
