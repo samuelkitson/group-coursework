@@ -3,7 +3,8 @@ const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
-const { questionnaireAvailableEmail } = require("../utility/emails");
+const { questionnaireAvailableEmail, newLecturerExistingEmail } = require("../utility/emails");
+const { setDifference } = require("../utility/maths");
 
 exports.createAssignment = async (req, res) => {
   if (req.session.role === "student")
@@ -160,9 +161,28 @@ exports.setStaff = async (req, res) => {
   const staffIds = req.body.staff.map(id => new Types.ObjectId(id));
   if (!staffIds.some(s => s.equals(req.session.userId)))
     throw new InvalidParametersError("You can't remove yourself from a module.");
-  const users = await userModel.find({_id: { $in: staffIds }, role: { $in: ["staff", "admin"] }}).select("_id").lean();
+  const users = await userModel.find({_id: { $in: staffIds }, role: { $in: ["staff", "admin"] }}).select("_id email displayName").lean();
   if (users.length !== staffIds.length)
     throw new InvalidParametersError("Some of the staff members selected either haven't logged in before, or are listed as students.");
-  await assignmentModel.updateOne({_id: req.params.assignment}, {lecturers: staffIds});
-  return res.json({message: "Module team updated successfully."});
+  const assignment = await assignmentModel.findById(req.params.assignment);
+  const previousStaff = new Set(assignment.lecturers.map(l => l.toString()));
+  const addedStaff = setDifference(new Set(req.body.staff), previousStaff);
+  assignment.lecturers = staffIds;
+  await assignment.save();
+  // Send alert emails to staff.
+  for (const lecturer of users) {
+    if (addedStaff.has(lecturer._id.toString())) {
+      newLecturerExistingEmail({
+        newStaffEmail: lecturer.email,
+        newStaffName: lecturer.displayName,
+        staffUserEmail: req.session.email, 
+        assignmentName: assignment.name, 
+      });
+    }
+  }
+  if (addedStaff.size > 0) {
+    return res.json({message: `${addedStaff.size} new staff member${addedStaff.size == 1 ? " has" : "s have"} been added and alerted by email.`});
+  } else {
+    return res.json({message: "Assignment staff list updated successfully."});
+  }
 };

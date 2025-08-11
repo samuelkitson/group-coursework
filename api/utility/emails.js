@@ -95,6 +95,15 @@ const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentNam
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
+const newLecturerExistingEmail = ({ newStaffEmail, newStaffName, staffUserEmail, assignmentName, }) => {
+  const templateId = "2-04";
+  if (!newStaffEmail || !newStaffName || !staffUserEmail || !assignmentName)
+    throw new InvalidParametersError("Missing required parameters to send email.");
+  const bodyText = `You've been added as a lecturer on ${assignmentName}.<br />You already have an account, so you just need to log in at ${homePageLink}. From that page you'll be able to help configure the assignment, add students, view teams' progress and more.`;
+  sendGenericEmail({ recipientEmail: newStaffEmail, recipientName: newStaffName, replyToEmail: staffUserEmail, subject: "You've been added as a lecturer", headerText: "You've been added as a lecturer", bodyText, templateId, })
+    .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
+};
+
 const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
   const templateId = "3-01";
   if (!recipients || !staffUserEmail || !assignmentName)
@@ -132,6 +141,7 @@ module.exports = {
   newSupervisorPlaceholderEmail,
   newSupervisorExistingEmail,
   questionnaireAvailableEmail,
+  newLecturerExistingEmail,
   checkInReminderEmails,
   teamsReleasedStudentEmail,
   teamsAllocatedToSupervisorsEmail,
