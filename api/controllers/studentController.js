@@ -1,13 +1,14 @@
+const Papa = require("papaparse");
 const fs = require("fs");
-const csvParser = require("csv-parser");
+const path = require("path");
 const { mongoose } = require("../config/db");
 const { Types } = require("mongoose");
-
 const userModel = require("../models/user");
 const assignmentModel = require("../models/assignment");
 const teamModel = require("../models/team");
-const { generateHash, checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError, CustomError, InvalidObjectIdError } = require("../errors/errors");
+const { checkAssignmentRole } = require("../utility/auth");
+const { InvalidParametersError, CustomError, InvalidObjectIdError, InvalidFileError, AssignmentInvalidStateError } = require("../errors/errors");
+const { setDifference } = require("../utility/maths");
 
 /*
   Allows staff to upload a CSV of student data from which to create new users.
@@ -16,77 +17,75 @@ const { InvalidParametersError, CustomError, InvalidObjectIdError } = require(".
   supplied email addresses already exist, they'll be ignored (but still added to
   the assignment if necessary). 
 */
-exports.upload = async (req, res) => {
+exports.enrolStudentsOnAssignment = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
   if (!req.file)
     return InvalidParametersError("You need to upload a valid CSV file of student data first.");
-
-  const studentsList = [];
-  var targetAssignment = req.body.assignment;
-  if (targetAssignment != null && targetAssignment !== "") {
-    // If target assignment is defined, check it actually exists and this user is a lecturer on it
-    await checkAssignmentRole(targetAssignment, req.session.userId, "lecturer");
-  } else {
-    targetAssignment = null;
-  }
-
-  // Open and parse the CSV file
-  // Required fields: email, name
-  fs.createReadStream(req.file.path)
-    .pipe(csvParser())
-    .on("data", (row) => studentsList.push(row))
-    .on("end", async () => {
-      try {
-        const newStudents = [];
-        const studentIds = [];
-        // Iterate through the list of students
-        for (const row of studentsList) {
-          if (!row.email || !row.displayName) {
-            // Row contains invalid or missing data, cancel operation
-            throw new InvalidParametersError("Invalid row data (missing either email or name)");
-          }
-          // Extract all the fields other than _id and performance data
-          let studentDataFields = {};
-          studentDataFields.displayName = row?.displayName ?? undefined;
-          // Check whether this user's email already exists (in which case just add them to the assignment)
-          const existingStudent = await userModel.findOne(
-            { email: row.email },
-          );
-          if (existingStudent) {
-            studentIds.push(existingStudent._id);
-            // Update the student details
-            await userModel.updateOne({ email: row.email }, { $set: studentDataFields });
-          } else {
-            // Student doesn't exist, so create a new document for them
-            const newStudentId = new Types.ObjectId();
-            // const passwordHash = await generateHash(row.email);
-            const passwordHash = undefined;
-            newStudents.push({
-              ...studentDataFields,
-              email: row.email,
-              _id: newStudentId,
-              passwordHash: passwordHash,
-              role: "student",
-              meetingPref: "either",
-            });
-            studentIds.push(newStudentId);
-          }
-        }
-        // Create new student documents
-        await userModel.insertMany(newStudents);
-        // If required, add the students to the assignment
-        if (targetAssignment) {
-          await assignmentModel.addStudents(targetAssignment, studentIds);
-        }
-        res.json({ message: "File uploaded successfully" });
-      } catch (error) {
-        // Something failed - probably malformed CSV - so abort
-        console.error("Error importing student CSV: " + error.message);
-        throw new CustomError("An error occurred processing your CSV. Please check the format and try agai.");
-      } finally {
-        // Delete the temporary CSV file
-        fs.unlink(req.file.path, () => {});
-      }
+  try {
+    // Attempt to load and parse the CSV.
+    const parsePromise = new Promise((resolve, reject) => {
+      const fileStream = fs.createReadStream(req.file.path);
+      Papa.parse(fileStream, {
+        header: true,
+        transform: (value) => (value === "" ? null : value),
+        complete: (results) => {
+          resolve({ parsedData: results.data, headers: results.meta.fields });
+        },
+        error: (err) => {
+          console.warn(`Dataset upload error: ${err.message}`);
+          reject(new InvalidFileError("The uploaded file was not valid. Please check the requested format and try again."));
+        },
+      });
     });
+    // Check whether all of the required attributes are present.
+    const { headers, parsedData } = await parsePromise;
+    const missingCols = Array.from(setDifference(new Set(["email", "name"]), new Set(headers)));
+    if (missingCols.length > 0)
+      throw new InvalidFileError(`CSV is missing some required columns: ${missingCols.join(", ")}.`);
+    const newStudents = [];
+    const seenEmails = [];
+    const studentIds = [];
+    // Iterate through the list of students.
+    for (const row of parsedData) {
+      if (!row.email || !row.name) {
+        // Row contains invalid or missing data, cancel operation.
+        throw new InvalidParametersError("Invalid row data (missing either email or name).");
+      }
+      if (seenEmails.includes(row.email)) {
+        throw new InvalidParametersError("The CSV file contains duplicate email addresses.");
+      }
+      // Check whether this user's email already exists (in which case just add them to the assignment).
+      const existingStudent = await userModel.findOne(
+        { email: row.email },
+      );
+      seenEmails.push(row.email);
+      if (existingStudent) {
+        // User exists, so just record that we need to add them to assignment.
+        studentIds.push(existingStudent._id);
+      } else {
+        // Student doesn't exist, so create a new document for them.
+        // As no password hash is set, they will only be able to log in via MS.
+        const newStudentId = new Types.ObjectId();
+        const displayName = row?.name ?? row.email;
+        newStudents.push({
+          email: row.email,
+          _id: newStudentId,
+          displayName,
+          role: "placeholder",
+          meetingPref: "either",
+        });
+        studentIds.push(newStudentId);
+      }
+    }
+    // Create new student documents.
+    await userModel.insertMany(newStudents);
+    await assignmentModel.addStudents(req.body.assignment, studentIds);
+    res.json({ message: `${studentIds.length} students added successfully.` });
+  } finally {
+    fs.unlink(req.file.path, (err) => {
+      if (err) console.error(`Failed to delete uploaded student list: `, err.message);
+    });
+  }
 };
 
 exports.removeFromAssignment = async (req, res) => {
@@ -102,6 +101,18 @@ exports.removeFromAssignment = async (req, res) => {
     { $pull: { members: req.body.student }},
   )
   return res.json({ message: "Student removed from assignment." });
+};
+
+exports.removeAllFromAssignment = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  // Get and check permissions on the assignment object.
+  // Get assignment object.
+  const assignment = await assignmentModel.findById(req.body.assignment);
+  if (assignment.state !== "pre-allocation")
+    throw new AssignmentInvalidStateError();
+  assignment.students = [];
+  await assignment.save();
+  return res.json({ message: "All students removed." });
 };
 
 exports.setPairingExclusions = async (req, res) => {
