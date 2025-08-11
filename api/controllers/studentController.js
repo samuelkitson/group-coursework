@@ -19,6 +19,12 @@ const { setDifference } = require("../utility/maths");
 */
 exports.enrolStudentsOnAssignment = async (req, res) => {
   await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const assignment = await assignmentModel.findById(req.body.assignment);
+  const existingStudents = new Set(assignment.students.map(s => s.toString()));
+  if (assignment.state === "closed")
+    return AssignmentInvalidStateError();
+  if (assignment.state === "live" && !["new", "existing"].includes(req.body?.mode))
+    return InvalidParametersError("Please choose either \"existing groups\" or \"new groups\".");
   if (!req.file)
     return InvalidParametersError("You need to upload a valid CSV file of student data first.");
   try {
@@ -43,22 +49,26 @@ exports.enrolStudentsOnAssignment = async (req, res) => {
     if (missingCols.length > 0)
       throw new InvalidFileError(`CSV is missing some required columns: ${missingCols.join(", ")}.`);
     const newStudents = [];
-    const seenEmails = [];
+    const newEmails = [];
     const studentIds = [];
     // Iterate through the list of students.
     for (const row of parsedData) {
+      if (!row.email && !row.name) {
+        // Skip empty row
+        continue;
+      }
       if (!row.email || !row.name) {
         // Row contains invalid or missing data, cancel operation.
         throw new InvalidParametersError("Invalid row data (missing either email or name).");
       }
-      if (seenEmails.includes(row.email)) {
+      if (newEmails.includes(row.email)) {
         throw new InvalidParametersError("The CSV file contains duplicate email addresses.");
       }
       // Check whether this user's email already exists (in which case just add them to the assignment).
       const existingStudent = await userModel.findOne(
         { email: row.email },
       );
-      seenEmails.push(row.email);
+      newEmails.push(row.email);
       if (existingStudent) {
         // User exists, so just record that we need to add them to assignment.
         studentIds.push(existingStudent._id);
@@ -80,7 +90,35 @@ exports.enrolStudentsOnAssignment = async (req, res) => {
     // Create new student documents.
     await userModel.insertMany(newStudents);
     await assignmentModel.addStudents(req.body.assignment, studentIds);
-    res.json({ message: `${studentIds.length} students added successfully.` });
+    // If the assignment is already live, these new students need to be added to
+    // teams according to the provided mode. This involves either adding them to
+    // existing groups (smallest first) or adding them all to one new group.
+    const actualNewIds = setDifference(new Set(studentIds.map(s => s.toString())), existingStudents);
+    if (actualNewIds.size > 0 && req.body.mode) {
+      if (req.body.mode === "new") {
+        // Add to new team.
+        const existingTeamsCount = await teamModel.countDocuments({ assignment: req.body.assignment });
+        const newTeam = await teamModel.create({
+          assignment: req.body.assignment,
+          teamNumber: existingTeamsCount + 1,
+          members: Array.from(actualNewIds)
+        });
+        return res.json({ message: `${studentIds.length} students added to Team ${newTeam.teamNumber}.` });
+      } else {
+        // Add to existing teams. Ignore any without members already.
+        const existingTeams = (await teamModel.find({ assignment: req.body.assignment }).select("_id members").lean()).filter(t => t.members.length > 0);
+        if (existingTeams.length == 0) return InvalidParametersError("There are no existing teams to add the students to.");
+        for (const newStudent of actualNewIds) {
+          // First sort the list so we add the student to the current smallest team.
+          existingTeams.sort((a, b) => a.members.length - b.members.length);
+          await teamModel.updateOne({ _id: existingTeams[0]._id }, { $addToSet: { members: new Types.ObjectId(newStudent), }});
+          existingTeams[0].members.push(newStudent);
+        }
+        return res.json({ message: `${studentIds.length} students added to existing teams.` });
+      }
+    } else {
+      return res.json({ message: `${studentIds.length} students added successfully.` });
+    }
   } finally {
     fs.unlink(req.file.path, (err) => {
       if (err) console.error(`Failed to delete uploaded student list: `, err.message);

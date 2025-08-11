@@ -23,6 +23,7 @@ function AssignmentStudents() {
   const [uploading, setIsUploading] = useState(false);
   const [showModal, setShowModal] = useState(null);
   const [studentToRemove, setStudentToRemove] = useState(null);
+  const [whileLiveNewGroup, setWhileLiveNewGroup] = useState(null);
 
   const [pairingExclusionsStudent, setPairingExclusionsStudent] = useState(null);
   const [pairingExclusionsOthers, setPairingExclusionsOthers] = useState([]);
@@ -130,12 +131,24 @@ function AssignmentStudents() {
       });
   };
 
+  const handlePreSubmitFile = () => {
+    setWhileLiveNewGroup(null);
+    if (selectedAssignment.state === "live") {
+      setShowModal("upload-while-live");
+    } else {
+      handleSubmitFile();
+    }
+  }
+
   const handleSubmitFile = async () => {
     if (!csvFile) return;
 
     const formData = new FormData();
     formData.append("students", csvFile);
     formData.append("assignment", selectedAssignment._id);
+    if (whileLiveNewGroup !== null) {
+      formData.append("mode", whileLiveNewGroup);
+    }
 
     await toast.promise(
       api.post("/api/student/enrol", formData, {
@@ -149,6 +162,7 @@ function AssignmentStudents() {
       success: () => {
         refreshData();
         setCsvFile(null);
+        setShowModal(null);
         return "File uploaded successfully!";
       },
     });
@@ -187,7 +201,7 @@ function AssignmentStudents() {
         </Col>
       </Row>
 
-      <Row className="mb-4">
+      <Row className="mb-4 gy-3">
         <Col lg={8} sm={12}>
           <Card>
             <Card.Header>Enrolled students</Card.Header>
@@ -250,6 +264,7 @@ function AssignmentStudents() {
           </Card>
         </Col>
         <Col lg={4} sm={12}>
+          { selectedAssignment.state !== "closed" && <>
           <h3>Add students</h3>
           <p>Add students to the assignment by uploading a CSV below.</p>
 
@@ -267,12 +282,13 @@ function AssignmentStudents() {
             <Button
               variant="primary"
               disabled={uploading || !csvFile } 
-              onClick={handleSubmitFile}
+              onClick={handlePreSubmitFile}
               className="d-flex align-items-center"
             >
               <Upload className="me-2" />Upload
             </Button>
           </div>
+          </>}
 
           { (selectedAssignment.state === "pre-allocation" && studentsList.length > 0) && <>
             <h3 className="mt-5">Start again</h3>
@@ -354,6 +370,45 @@ function AssignmentStudents() {
             Cancel
           </Button>
           <Button variant="danger" onClick={handleRemoveAll} disabled={pending}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showModal === "upload-while-live"} onHide={() => setShowModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Teams already allocated</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            You're about to add students to an assignment where teams have
+            already been allocated. Please confirm that you meant to do this and
+            then decide how you want them to be added to teams.
+          </p>
+          <Form.Group>
+            <Form.Check
+              type="radio"
+              label="Distribute new students among existing teams"
+              checked={whileLiveNewGroup === "existing"}
+              onChange={() => setWhileLiveNewGroup("existing")}
+            />
+            <Form.Check
+              type="radio"
+              label="Add new students to a single new team"
+              checked={whileLiveNewGroup === "new"}
+              onChange={() => setWhileLiveNewGroup("new")}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowModal(null)}
+            disabled={pending}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleSubmitFile} disabled={pending || whileLiveNewGroup == null}>
             Confirm
           </Button>
         </Modal.Footer>
