@@ -33,10 +33,10 @@ const criteriaOptions = [
     type: "textual",
   },{
     name: "Enrolment",
-    description: "Group together or split up students who are unenrolled."
+    description: "Group together or split up students who are unenrolled.",
     category: "data",
     options: ["goal"],
-    attribute: "enrolled ",
+    attribute: "enrolled",
     type: "boolean",
   },{
     name: "Meeting preference",
