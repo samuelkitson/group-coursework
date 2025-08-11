@@ -9,6 +9,10 @@ const teamModel = require("../models/team");
 const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError, CustomError, InvalidObjectIdError, InvalidFileError, AssignmentInvalidStateError } = require("../errors/errors");
 const { setDifference } = require("../utility/maths");
+const { ALLOWED_EMAIL_DOMAINS } = process.env;
+
+// Provide a list of allowed emails domains as a comma separated list
+const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
 
 /*
   Allows staff to upload a CSV of student data from which to create new users.
@@ -61,6 +65,9 @@ exports.enrolStudentsOnAssignment = async (req, res) => {
         // Row contains invalid or missing data, cancel operation.
         throw new InvalidParametersError("Invalid row data (missing either email or name).");
       }
+      // First check if their email domain is allowed.
+      const domain = row.email.split("@")[1];
+        if (!allowedDomains.includes(domain)) throw new InvalidParametersError(`${row.email} is not a permitted email domain.`);
       if (newEmails.includes(row.email)) {
         throw new InvalidParametersError("The CSV file contains duplicate email addresses.");
       }

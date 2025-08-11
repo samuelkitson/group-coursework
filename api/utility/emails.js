@@ -1,8 +1,11 @@
 const nodemailer = require("nodemailer");
-const { BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS } = process.env;
+const { BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS, ALLOWED_EMAIL_DOMAINS, } = process.env;
 const { InvalidParametersError, ConfigurationError, CustomError } = require("../errors/errors");
 const ejs = require("ejs");
 const path = require("path");
+
+// Provide a list of allowed emails domains as a comma separated list
+const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
 
 /**
  * In any function that needs to send emails, first check that email sending is
@@ -36,8 +39,19 @@ const transporterReadyPromise = new Promise((resolve) => {
 const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, subject, headerText, bodyText, templateId, redHeader, bccMode=false, }) => {
   const ready = await transporterReadyPromise;
   if (!ready) throw new CustomError("Email sending not configured", 500);
-  if (recipientEmail.includes("example.org"))
-    throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+  // Check whether these are allowed domains for emails.
+  // Emails to @example.org will always be blocked.
+  if (Array.isArray(recipientEmail)) {
+    if (recipientEmail.some(e => e.endsWith("@example.org"))) throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+    recipientEmail.forEach(e => {
+      const domain = e.split("@")[1];
+      if (!allowedDomains.includes(domain)) throw new InvalidParametersError(`Not allowed to send emails to ${e}.`);
+    });
+  } else {
+    const domain = recipientEmail.split("@")[1];
+    if (domain == "example.org") throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+    if (!allowedDomains.includes(domain)) throw new InvalidParametersError(`Not allowed to send emails to ${recipientEmail}.`);
+  }
   if (!subject || !recipientEmail || !headerText || !bodyText)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const headerColour = redHeader ? "#B11717" : "#005C84";
