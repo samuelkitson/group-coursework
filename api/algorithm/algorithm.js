@@ -1,4 +1,4 @@
-const { AllocationError } = require("../errors/errors");
+const { AllocationError, InvalidParametersError } = require("../errors/errors");
 
 /**
  * Shuffles the input array in-place.
@@ -173,8 +173,8 @@ class AllocationAlgorithm {
     this.otherTeamMembers = otherTeamMembers;
     this.studentIDs = studentData.map((s) => s._id);
     this.fitnessAggregation = fitnessAggregation ?? "minimum";
-    if (this.students.length < this.groupSize)
-      throw new AllocationError(`The group size must be at most ${this.students.length} for this class size.`);
+    if (this.students.length <= this.groupSize)
+      throw new InvalidParametersError(`The group size must be at most ${this.students.length - 1} for this class size.`);
     if (surplusLargerGroups) {
       // If creating larger groups in case of uneven student numbers.
       this.groupsNeeded = Math.floor(studentData.length / this.groupSize);
