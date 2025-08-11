@@ -115,12 +115,7 @@ const runAlgorithmWoker = (workerData) => {
       if (data.success) {
         resolve(data.result);
       } else {
-        if (typeof data?.error == InvalidParametersError) {
-          // User has supplied some dodgy parameters, so show them the error.
-          reject(new InvalidParametersError(data?.error?.message));
-        } else {
-          reject(new AllocationError(data?.error?.stack));
-        }
+        reject(new AllocationError(data?.error?.stack, data?.error?.message));
       }
     })
     // Listen for unhandled errors.

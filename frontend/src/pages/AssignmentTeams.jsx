@@ -160,21 +160,39 @@ function AssignmentTeams() {
   }
 
   const selectTeamMove = (team) => {
-    if (moveMode === 2 && studentToMove && team) {
-      setMoveMode(null);
-      toast.dismiss();
-      api
-      .post(`/api/team/${team._id}/new-member`, { student: studentToMove._id, }, {
-        successToasts: true,
-      })
-      .then(() => {
-        // Refresh the teams list
-        refreshData();
-      })
-      .catch(() => {
-        setMoveMode(2);
-        toast(`Now click ${studentToMove.displayName}'s new team.`, { icon: "ℹ️", duration: Infinity, });
-      });
+    if (moveMode === 2 && studentToMove) {
+      if (team) {
+        setMoveMode(null);
+        toast.dismiss();
+        api
+        .post(`/api/team/${team._id}/new-member`, { student: studentToMove._id, }, {
+          successToasts: true,
+        })
+        .then(() => {
+          // Refresh the teams list
+          refreshData();
+        })
+        .catch(() => {
+          setMoveMode(2);
+          toast(`Now click ${studentToMove.displayName}'s new team.`, { icon: "ℹ️", duration: Infinity, });
+        });
+      } else {
+        // Add to a new empty team.
+        setMoveMode(null);
+        toast.dismiss();
+        api
+        .post(`/api/team/new`, { student: studentToMove._id, assignment: selectedAssignment._id, }, {
+          successToasts: true,
+        })
+        .then(() => {
+          // Refresh the teams list
+          refreshData();
+        })
+        .catch(() => {
+          setMoveMode(2);
+          toast(`Now click ${studentToMove.displayName}'s new team.`, { icon: "ℹ️", duration: Infinity, });
+        });
+      }
     }
   }
 
@@ -305,6 +323,16 @@ function AssignmentTeams() {
                 </p>
               </Card.Body>
             </Card>
+          }
+          { moveMode == 2 && 
+          <div className="mt-2">
+            <a
+              onClick={() => selectTeamMove(null)}
+              variant="link"
+              className=""
+              role="button"
+            >Add to a new empty team</a>
+          </div>
           }
           {filteredTeams.map((group, index) => (
             <Card key={index} className="my-3" id={`team-card-${group._id}`}>

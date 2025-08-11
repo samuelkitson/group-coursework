@@ -164,18 +164,18 @@ exports.getAllForAssignment = async (req, res) => {
   if (req.query.mode === "simple") {
     let teams;
     if (role === "lecturer") {
-      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), "members.0": { $exists: true }, }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
     } else {
-      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
+      teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] }, "members.0": { $exists: true }, }).select("_id teamNumber").sort({ teamNumber: 1 }).lean();
     }
     return res.json({ teams });
   }
   // Get the teams for this assignment (if supervisor, only show their teams)
   let teams;
   if (role === "lecturer") {
-    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment) }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), "members.0": { $exists: true }, }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
   } else {
-    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] } }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
+    teams = await teamModel.find({ assignment: new Types.ObjectId(req.query.assignment), supervisors: { $in: [req.session.userId] }, "members.0": { $exists: true }, }).populate("members supervisors", "email displayName").sort({ teamNumber: 1 }).lean();
   }
   // Add in their last meeting time/date
   let teamsWithLastMeeting = await Promise.all(
@@ -295,19 +295,46 @@ exports.getMyTeam = async (req, res) => {
 
 exports.addMember = async (req, res) => {
   await checkTeamRole(req.params.team, req.session.userId, "lecturer");
-  // Check valid student ID
+  // Check valid student ID.
   if (req.body.student && !Types.ObjectId.isValid(req.body.student))
     throw new InvalidObjectIdError("The provided student ID is invalid.");
-  // Get the team object and check permissions
+  // Get the team object and check permissions.
   const team = await teamModel.findById(req.params.team);
-  // Remove the student from their previous team on this assignment
+  // Remove the student from their previous team on this assignment.
   const removedStudents = await teamModel.updateMany(
     { assignment: team.assignment, members: { $in: req.body.student }},
     { $pull: { members: req.body.student }},
   );
+  // If the student wasn't even on the assignment, it will be caught here.
   if (removedStudents.modifiedCount === 0)
     throw new GenericNotFoundError("Student not found. Please try again.");
   team.members.push(req.body.student);
   await team.save();
   return res.json({message: "Student moved to new team successfully. Please contact the student to let them know."});
+};
+
+exports.newTeam = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  // Check valid student ID.
+  if (req.body.student && !Types.ObjectId.isValid(req.body.student))
+    throw new InvalidObjectIdError("The provided student ID is invalid.");
+  // Remove the student from their previous team on this assignment.
+  const removedStudents = await teamModel.updateMany(
+    { assignment: req.body.assignment, members: { $in: req.body.student }},
+    { $pull: { members: req.body.student }},
+  );
+  // If the student wasn't even on the assignment, it will be caught here.
+  if (removedStudents.modifiedCount === 0)
+    throw new GenericNotFoundError("Student not found. Please try again.");
+  // Create a new team.
+  const existingTeamsCount = await teamModel.countDocuments({ assignment: req.body.assignment });
+  const newTeam = await teamModel.create({
+    assignment: req.body.assignment,
+    teamNumber: existingTeamsCount + 1,
+    members: [req.body.student],
+  });
+  return res.json({
+    message: "Student moved to new team successfully. Please contact the student to let them know.",
+    team: newTeam,
+  }); 
 };

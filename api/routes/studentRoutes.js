@@ -7,15 +7,20 @@ const { fileUpload } = require("../config/uploads");
 const router = express.Router();
 
 router.post(
-  "/upload",
+  "/enrol",
   requireLoggedIn("staff"),
-  fileUpload.single("csv"),
-  asyncHandler(studentC.upload),
+  fileUpload.single("students"),
+  asyncHandler(studentC.enrolStudentsOnAssignment),
 );
 router.patch(
   "/unenrol",
   requireLoggedIn(),
   asyncHandler(studentC.removeFromAssignment),
+);
+router.post(
+  "/unenrol-all",
+  requireLoggedIn(),
+  asyncHandler(studentC.removeAllFromAssignment),
 );
 router.put(
   "/exclusions",

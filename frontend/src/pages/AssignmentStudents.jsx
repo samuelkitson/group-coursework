@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
+import Papa from "papaparse";
 import { Row, Col, Card, ListGroup, Spinner, Button, Form, OverlayTrigger, Tooltip, Modal, Table } from "react-bootstrap";
 
 import "./style/AssignmentOverview.css";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import api from "@/services/apiMiddleware";
 import toast from "react-hot-toast";
-import { Envelope, InfoCircle, PersonFillSlash, PersonSlash, XCircle, XLg } from "react-bootstrap-icons";
+import { Download, Envelope, InfoCircle, PersonFillSlash, PersonSlash, Trash3Fill, Upload, XCircle, XLg } from "react-bootstrap-icons";
 import Select from 'react-select';
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
@@ -22,6 +23,7 @@ function AssignmentStudents() {
   const [uploading, setIsUploading] = useState(false);
   const [showModal, setShowModal] = useState(null);
   const [studentToRemove, setStudentToRemove] = useState(null);
+  const [whileLiveNewGroup, setWhileLiveNewGroup] = useState(null);
 
   const [pairingExclusionsStudent, setPairingExclusionsStudent] = useState(null);
   const [pairingExclusionsOthers, setPairingExclusionsOthers] = useState([]);
@@ -72,6 +74,45 @@ function AssignmentStudents() {
       });
   };
 
+  const showRemoveAllModal = () => {
+    setShowModal("remove-all");
+  };
+
+  const handleRemoveAll = () => {
+    const reqObject = {
+      assignment: selectedAssignment._id,
+    }
+    api
+      .post("/api/student/unenrol-all", reqObject, { successToasts: true })
+      .then((resp) => {
+        return resp.data;
+      })
+      .then((data) => {
+        setStudentsList([]);
+        setShowModal(null);
+      }).finally(() => {
+        setPending(false);
+      });
+  };
+
+  const downloadCsvTemplate = () => {
+    // Create CSV content with headers.
+    const csvContent = Papa.unparse([["email", "name"], ["js1g25@soton.ac.uk", "John Smith"]]);
+    // Create blob and download.
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Student template.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success("Template CSV downloaded successfully.");
+  };
+
   const removeStudent = () => {
     const reqObject = {
       assignment: selectedAssignment._id,
@@ -90,15 +131,27 @@ function AssignmentStudents() {
       });
   };
 
+  const handlePreSubmitFile = () => {
+    setWhileLiveNewGroup(null);
+    if (selectedAssignment.state === "live") {
+      setShowModal("upload-while-live");
+    } else {
+      handleSubmitFile();
+    }
+  }
+
   const handleSubmitFile = async () => {
     if (!csvFile) return;
 
     const formData = new FormData();
-    formData.append("csv", csvFile);
+    formData.append("students", csvFile);
     formData.append("assignment", selectedAssignment._id);
+    if (whileLiveNewGroup !== null) {
+      formData.append("mode", whileLiveNewGroup);
+    }
 
     await toast.promise(
-      api.post("/api/student/upload", formData, {
+      api.post("/api/student/enrol", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
@@ -109,6 +162,7 @@ function AssignmentStudents() {
       success: () => {
         refreshData();
         setCsvFile(null);
+        setShowModal(null);
         return "File uploaded successfully!";
       },
     });
@@ -147,7 +201,7 @@ function AssignmentStudents() {
         </Col>
       </Row>
 
-      <Row className="mb-4">
+      <Row className="mb-4 gy-3">
         <Col lg={8} sm={12}>
           <Card>
             <Card.Header>Enrolled students</Card.Header>
@@ -210,66 +264,69 @@ function AssignmentStudents() {
           </Card>
         </Col>
         <Col lg={4} sm={12}>
+          { selectedAssignment.state !== "closed" && <>
           <h3>Add students</h3>
-          <p>Add and update student data by uploading a CSV file. Use email
-          addresses to identify students.</p>
+          <p>Add students to the assignment by uploading a CSV below.</p>
 
           <Form.Control type="file" accept=".csv" className="mb-3" onChange={handleFileUpload}/>
 
-          <Button
-            className="d-flex align-items-center mb-3 p-0"
-            variant="link"
-            onClick={() => setShowModal("csv-help")}
-          >
-            <InfoCircle className="me-2" />See help guide
-          </Button>
+          <div className="d-flex justify-content-between">
+            <Button
+              className="d-flex align-items-center"
+              variant="secondary"
+              onClick={() => setShowModal("csv-help")}
+            >
+              <InfoCircle className="me-2" />Templates
+            </Button>
 
-          <Button variant="primary" disabled={uploading || !csvFile } onClick={handleSubmitFile}>
-            {uploading ? "Uploading..." : "Upload CSV"}
-          </Button>
+            <Button
+              variant="primary"
+              disabled={uploading || !csvFile } 
+              onClick={handlePreSubmitFile}
+              className="d-flex align-items-center"
+            >
+              <Upload className="me-2" />Upload
+            </Button>
+          </div>
+          </>}
+
+          { (selectedAssignment.state === "pre-allocation" && studentsList.length > 0) && <>
+            <h3 className="mt-5">Start again</h3>
+            <p>
+              If you've made a mistake and want to clear the student list, click
+              the button below.
+            </p>
+            <Button variant="outline-danger" className="d-flex align-items-center" onClick={showRemoveAllModal}>
+              <Trash3Fill className="me-1" />
+              Remove all students
+            </Button>
+          </>}
         </Col>
       </Row>
 
-      <Modal show={showModal === "csv-help"} onHide={() => setShowModal(null)} centered size="lg">
+      <Modal show={showModal === "csv-help"} onHide={() => setShowModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Uploading student data</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <p>
-            New accounts will be created for any students with email addresses
-            not already in the system. Student data will be updated for those
-            already registered.
+            Identify students by their email addresses in a column called <code>email</code>.
+            Some students may have multiple email addresses, but you must use
+            the format "aa1g25@soton.ac.uk". 
           </p>
-          <Table striped bordered>
-            <thead>
-              <tr>
-                <th>CSV column name</th>
-                <th>Details</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>email</td>
-                <td>The user's email address, used to uniquely identify them. <b>Required.</b></td>
-              </tr>
-              <tr>
-                <td>displayName</td>
-                <td>The user's name as it will be shown to others. <b>Required for new students.</b></td>
-              </tr>
-              <tr>
-                <td>international</td>
-                <td>Set to true if they're an international student, or false if they're a home student.</td>
-              </tr>
-              <tr>
-                <td>gender</td>
-                <td>Can be any string. Use "male" and "female" where appropriate for consistency.</td>
-              </tr>
-              <tr>
-                <td>marks.overall</td>
-                <td>An integer from 0 to 100 representing average mark so far. To provide mark data for a specific module, use a column name like "marks.comp1234".</td>
-              </tr>
-            </tbody>
-          </Table>
+          <p>
+            If possible, you should also provide student names in a column
+            called <code>name</code>. Please use the students' first and
+            surnames. When they log in for the first time, these names will
+            automatically update from their University account.
+          </p>
+          <Button
+            className="d-flex align-items-center"
+            variant="primary"
+            onClick={downloadCsvTemplate}
+          >
+            <Download className="me-2" />Download template CSV
+          </Button>
         </Modal.Body>
       </Modal>
 
@@ -290,6 +347,68 @@ function AssignmentStudents() {
             Cancel
           </Button>
           <Button variant="danger" onClick={removeStudent} disabled={pending}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showModal === "remove-all"} onHide={() => setShowModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Remove all students</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to remove all students from {selectedAssignment.name}?
+          You should only do this if you've accidentally uploaded the wrong list
+          of students and need to start again.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowModal(null)}
+            disabled={pending}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleRemoveAll} disabled={pending}>
+            Confirm
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showModal === "upload-while-live"} onHide={() => setShowModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Teams already allocated</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>
+            You're about to add students to an assignment where teams have
+            already been allocated. Please confirm that you meant to do this and
+            then decide how you want them to be added to teams.
+          </p>
+          <Form.Group>
+            <Form.Check
+              type="radio"
+              label="Distribute new students among existing teams"
+              checked={whileLiveNewGroup === "existing"}
+              onChange={() => setWhileLiveNewGroup("existing")}
+            />
+            <Form.Check
+              type="radio"
+              label="Add new students to a single new team"
+              checked={whileLiveNewGroup === "new"}
+              onChange={() => setWhileLiveNewGroup("new")}
+            />
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button
+            variant="secondary"
+            onClick={() => setShowModal(null)}
+            disabled={pending}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleSubmitFile} disabled={pending || whileLiveNewGroup == null}>
             Confirm
           </Button>
         </Modal.Footer>

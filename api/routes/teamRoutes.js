@@ -12,6 +12,7 @@ router.get(
   requireLoggedIn(),
   asyncHandler(teamC.getMyTeam),
 );
+router.post("/new", requireLoggedIn(), asyncHandler(teamC.newTeam));
 router.post("/:team/new-member", requireLoggedIn(), asyncHandler(teamC.addMember));
 
 module.exports = router;
