@@ -4,6 +4,7 @@ const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
+const { setDifference } = require("../utility/maths");
 const { GenericNotFoundError } = require("../errors/errors");
 
 /*
@@ -65,6 +66,29 @@ exports.teamSkillsBreakdown = async (req, res) => {
     skillScores.push(skillObj);
   }
   return res.json({ skills: skillScores });
+};
+
+exports.questionnaireEngagement = async (req, res) => {
+  await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
+  // Fetch data about assignment, skills and students
+  const assignment = await assignmentModel
+    .findById(req.query.assignment)
+    .populate("students", "skills")
+    .lean();
+  const requiredSkills = new Set(assignment.skills.map(s => s.name));
+  if (!requiredSkills || requiredSkills.size == 0)
+    throw new GenericNotFoundError("You need to set up some required skills for this assignment first.")
+  let questionnairesComplete = 0;
+  for (const student of assignment.students) {
+    const studentSkills = new Set(Object.keys(student?.skills ?? {}));
+    const missingSkills = setDifference(requiredSkills, studentSkills);
+    if (missingSkills.size == 0) questionnairesComplete += 1;
+  }
+  return res.json({
+    complete: questionnairesComplete,
+    incomplete: assignment.students.length - questionnairesComplete,
+    total: assignment.students.length,
+  });
 };
 
 exports.teamMeetingsBreakdown = async (req, res) => {
