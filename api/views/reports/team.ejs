@@ -22,9 +22,11 @@
           Generated on <%= generatedDate %>
           <% if (typeof peerReview !== "undefined") { %>
           for the peer review week beginning <%= peerReview?.periodStart %>
-          <% } %>
+
           <% if (typeof peerReview.name !== "undefined") { %>
           (<%= peerReview.name %>)
+
+          <% } %>
           <% } %>
         </small>
       </div>
@@ -173,17 +175,17 @@
                                 checkinBarColour = "progress-green";
                               }
                               
-                              const avgLength = commentLengths[member.displayName] ?? 0;
-                              const lengthPercent = Math.min(avgLength / 175 * 100, 100);
+                              const avgLength = commentLengths[member.displayName];
+                              const lengthPercent = avgLength ? Math.min(avgLength / 175 * 100, 100) : 0;
                               let lengthBarColour = "";
-                              let lengthLabel = "Average";
-                              if (avgLength <= 50) {
+                              let lengthLabel = "N/A";
+                              if (avgLength <= 60) {
                                 lengthBarColour = "progress-red";
                                 lengthLabel = "Short";
                               } else if (avgLength <= 125) {
                                 lengthBarColour = "progress-yellow";
                                 lengthLabel = "Average";
-                              } else {
+                              } else if (avgLength > 125) {
                                 lengthBarColour = "progress-green";
                                 lengthLabel = "Detailed";
                               }
