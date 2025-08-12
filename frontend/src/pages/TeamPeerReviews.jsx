@@ -16,7 +16,7 @@ function TeamPeerReviews() {
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
 
   const [peerReviewPoints, setPeerReviewPoints] = useState([]); // Generic details of all previous review points
-  const [selectedReviewIndex, setSelectedReviewIndex] = useState(0); // The index of the selected review point
+  const [selectedReviewIndex, setSelectedReviewIndex] = useState(null); // The index of the selected review point
   const [studentOptions, setStudentOptions] = useState([]); // The list of student names for the selected review point
   const [selectedStudentIndex, setSelectedStudentIndex] = useState(null); // The ID of the selected student
   const [currentPeerReview, setCurrentPeerReview] = useState(null); // The full submissions of the selected review point
@@ -92,7 +92,6 @@ function TeamPeerReviews() {
   };
 
   const refreshData = () => {
-    setSelectedReviewIndex(0);
     setCurrentPeerReview(null);
     setSelectedStudentIndex(null);
     setStudentOptions([]);
