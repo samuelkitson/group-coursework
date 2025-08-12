@@ -24,6 +24,8 @@ const peerReviewSchema = new Schema(
   { timestamps: false },
 );
 
+peerReviewSchema.index({ assignment: 1, periodEnd: 1, periodStart: 1 });
+
 peerReviewSchema.statics.findByAssignment = async function (
   assignmentId,
   searchDate = new Date(),
@@ -32,8 +34,8 @@ peerReviewSchema.statics.findByAssignment = async function (
   return this.findOne(
     {
       assignment: assignmentId,
-      periodStart: { $lte: searchDate, },
       periodEnd: { $gte: searchDate, },
+      periodStart: { $lte: searchDate, },
     },
   ).select(selectFields);
 };

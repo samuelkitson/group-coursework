@@ -51,4 +51,6 @@ const meetingSchema = new Schema(
   { timestamps: true },
 );
 
+meetingSchema.index({ team: 1, dateTime: 1 });
+
 module.exports = model("meeting", meetingSchema);

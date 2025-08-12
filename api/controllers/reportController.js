@@ -197,8 +197,8 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
   // Fetch peer review point data
   const allPeerReviews = await peerReviewModel.find({
     assignment: assignmentInfo._id,
-    periodStart: { $gte: searchStartDate, },
     periodEnd: { $lte: searchEndDate, },
+    periodStart: { $gte: searchStartDate, },
   }).sort({ periodStart: -1, }).lean();
   let peerReviewDetails;
   if (peerReviewId) {
