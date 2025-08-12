@@ -160,21 +160,7 @@
                         <div class="col-12 col-sm-6 col-xl-3 d-flex">
                           <div class="metric-card flex-fill">
                             <div class="section-title">Engagement</div>
-                            <% 
-                              const engagementRate = 85;
-                              let engagementBarColour = "";
-                              let engagementLabel = "Good";
-                              if (engagementRate <= 50) {
-                                engagementBarColour = "progress-red";
-                                engagementLabel = "Poor";
-                              } else if (engagementRate <= 80) {
-                                engagementBarColour = "progress-yellow";
-                                engagementLabel = "Average";
-                              } else {
-                                engagementBarColour = "progress-green";
-                                engagementLabel = "Great";
-                              }
-
+                            <%
                               const checkinsCompleted = checkinsSubmitted[member.displayName] ?? 0;
                               const checkinsTotal = peerReviewCount ?? 0;
                               const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
@@ -186,17 +172,23 @@
                               } else {
                                 checkinBarColour = "progress-green";
                               }
-                            %>
+                              
+                              const avgLength = commentLengths[member.displayName] ?? 0;
+                              const lengthPercent = Math.min(avgLength / 175 * 100, 100);
+                              let lengthBarColour = "";
+                              let lengthLabel = "Average";
+                              if (avgLength <= 50) {
+                                lengthBarColour = "progress-red";
+                                lengthLabel = "Short";
+                              } else if (avgLength <= 125) {
+                                lengthBarColour = "progress-yellow";
+                                lengthLabel = "Average";
+                              } else {
+                                lengthBarColour = "progress-green";
+                                lengthLabel = "Detailed";
+                              }
 
-                            <div class="metric-row">
-                              <div class="d-flex justify-content-between align-items-center">
-                                <span class="small text-muted">Login frequency</span>
-                                <span class="small fw-medium"><%= engagementLabel %></span>
-                              </div>
-                              <div class="progress compact-progress">
-                                <div class="progress-bar <%= engagementBarColour %>" style="width: <%= engagementRate %>%"></div>
-                              </div>
-                            </div>
+                            %>
 
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
@@ -205,6 +197,16 @@
                               </div>
                               <div class="progress compact-progress">
                                 <div class="progress-bar <%= checkinBarColour %>" style="width: <%= checkinRate %>%"></div>
+                              </div>
+                            </div>
+
+                            <div class="metric-row">
+                              <div class="d-flex justify-content-between align-items-center">
+                                <span class="small text-muted">Review comment length</span>
+                                <span class="small fw-medium"><%= lengthLabel %></span>
+                              </div>
+                              <div class="progress compact-progress">
+                                <div class="progress-bar <%= lengthBarColour %>" style="width: <%= lengthPercent %>%"></div>
                               </div>
                             </div>
                           </div>

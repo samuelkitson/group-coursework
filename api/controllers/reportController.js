@@ -75,6 +75,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     }).select("_id reviewer effortPoints reviews");
     // Add in comments
     const commentsByRecipient = {};
+    const commentLengthByReviewer = {};
     for (const review of fullReviews) {
       const reviewerName = idsToNames[review.reviewer] ?? "[Ex-team member]";
       Object.keys(review?.reviews ?? {}).forEach(forId => {
@@ -86,15 +87,30 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
         } else {
           commentsByRecipient[recipientName].push(commentObj);
         }
+        // Keep track of the comment lengths by each reviewer.
+        const wordCount = (commentObj?.originalComment ?? commentObj?.comment)?.length ?? 0;
+        if (!commentLengthByReviewer.hasOwnProperty(reviewerName)) {
+          commentLengthByReviewer[reviewerName] = wordCount;
+        } else {
+          commentLengthByReviewer[reviewerName] += wordCount;
+        }
       });
     }
+    // Normalise the comment lengths.
+    Object.keys(commentLengthByReviewer).forEach(function(key, index) {
+      const normalised = commentLengthByReviewer[key] / team.members.length ?? 0;
+      commentLengthByReviewer[key] = Math.round(normalised);
+    });
+    console.log(commentLengthByReviewer);
     renderObj.reviewComments = commentsByRecipient;
+    renderObj.commentLengths = commentLengthByReviewer;
     // Add in skill ratings
     const skillsRatingsSummary = peerReviewSkillsStatistics(fullReviews, averages=true);
     renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {}) ?? {};
   } else {
     renderObj.reviewComments = {};
     renderObj.skillRatings = {};
+    renderObj.commentLengths = {};
   }
   // Add in workload balance scores from check-ins
   const allCheckins = await checkinModel.aggregate([
