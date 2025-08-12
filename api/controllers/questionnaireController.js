@@ -3,6 +3,8 @@ const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
 const { InvalidParametersError } = require("../errors/errors");
+const { setDifference } = require("../utility/maths");
+const { questionnaireAvailableEmail } = require("../utility/emails");
 
 /*
   For students, get the questionnaire for them to complete for a given
@@ -50,4 +52,24 @@ exports.updateUserSkills = async (req, res) => {
 exports.allExistingSkills = async (req, res) => {
   const skills = await assignmentModel.allExistingSkills();
   return res.json(skills);
+};
+
+exports.sendReminders = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const assignment = await assignmentModel
+    .findById(req.body.assignment)
+    .populate("students", "email skills")
+    .lean();
+  const requiredSkills = new Set(assignment?.skills.map(s => s.name));
+  if (!requiredSkills || requiredSkills.size == 0)
+    throw new GenericNotFoundError("You need to set up some required skills for this assignment first.")
+  const studentRecipients = [];
+  for (const student of assignment.students) {
+    const studentSkills = new Set(Object.keys(student?.skills ?? {}));
+    const missingSkills = setDifference(requiredSkills, studentSkills);
+    if (missingSkills.size > 0) studentRecipients.push(student.email);
+  }
+  const recipients = studentRecipients.filter(e => e != null);
+  questionnaireAvailableEmail({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: req.body.assignment, });
+  return res.json({ message: `Reminder emails sent to ${recipients.length} students.` });
 };

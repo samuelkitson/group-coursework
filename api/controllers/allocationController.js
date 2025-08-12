@@ -136,11 +136,15 @@ const runAlgorithmWoker = (workerData) => {
 exports.getAllocationOptions = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const assignment = await assignmentModel.findById(req.params.assignment).select("skills");
-  return res.json({
+  const responseObj = {
     "criteria": criteriaOptions,
     "dealbreakers": dealbreakerOptions,
     "skills": assignment?.skills,
-  })
+  };
+  if (assignment.skills?.length == 0) {
+    responseObj.criteria = criteriaOptions.filter(c => c.name != "Skill coverage");
+  }
+  return res.json(responseObj)
 };
 
 exports.getAllocationSetup = async (req, res) => {
@@ -351,6 +355,6 @@ exports.confirmAllocation = async (req, res) => {
   await assignment.save();
   // Send emails to students
   const studentEmails = assignment.students.map(s => s.email);
-  teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, })
+  teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, })
   return res.json({"message": "Allocation confirmed and released to students. Your assignment is live!"});
 };

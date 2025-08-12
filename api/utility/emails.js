@@ -1,11 +1,16 @@
 const nodemailer = require("nodemailer");
-const { BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS, ALLOWED_EMAIL_DOMAINS, } = process.env;
+const { BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS, ALLOWED_EMAIL_DOMAINS, ALLOW_EXAMPLE_ORG, } = process.env;
 const { InvalidParametersError, ConfigurationError, CustomError } = require("../errors/errors");
 const ejs = require("ejs");
 const path = require("path");
+const emailModel = require("../models/email");
 
 // Provide a list of allowed emails domains as a comma separated list
 const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
+const blockExampleOrg = ALLOW_EXAMPLE_ORG != "true";  
+
+if (!blockExampleOrg)
+  console.warn("Email sending to @example.org has been explicitly allowed");
 
 /**
  * In any function that needs to send emails, first check that email sending is
@@ -42,14 +47,14 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
   // Check whether these are allowed domains for emails.
   // Emails to @example.org will always be blocked.
   if (Array.isArray(recipientEmail)) {
-    if (recipientEmail.some(e => e.endsWith("@example.org"))) throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+    if (blockExampleOrg && recipientEmail.some(e => e.endsWith("@example.org"))) throw new ConfigurationError(`Prevented sending bulkemail to ${recipientEmail}.`);
     recipientEmail.forEach(e => {
       const domain = e.split("@")[1];
       if (!allowedDomains.includes(domain)) throw new InvalidParametersError(`Not allowed to send emails to ${e}.`);
     });
   } else {
     const domain = recipientEmail.split("@")[1];
-    if (domain == "example.org") throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
+    if (blockExampleOrg && domain == "example.org") throw new ConfigurationError(`Prevented sending email to ${recipientEmail}.`);
     if (!allowedDomains.includes(domain)) throw new InvalidParametersError(`Not allowed to send emails to ${recipientEmail}.`);
   }
   if (!subject || !recipientEmail || !headerText || !bodyText)
@@ -74,6 +79,15 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
   transporter.sendMail(mailOptions);
 };
 
+const recordInDatabase = async ({ sender, recipients, assignment, team, templateId }) => {
+  let recipientsArr = recipients;
+  if (typeof recipients === "string") {
+    recipientsArr = [recipients];
+  }
+  const databaseObj = { sender, recipients, assignment, team, templateId };
+  await emailModel.create(databaseObj);
+};
+
 /**
  * Email are sent based on the templates below, each of which has an identifier.
  * The format is X-YY, where X is the email category and YY is the specific
@@ -84,57 +98,63 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
  *   * 4: automatic time-based reminders
  */
 
-const newSupervisorPlaceholderEmail = ({ supervisorEmail, staffUserEmail, assignmentName, }) => {
+const newSupervisorPlaceholderEmail = ({ supervisorEmail, staffUserEmail, assignmentName, assignmentId }) => {
   const templateId = "2-01";
   if (!supervisorEmail || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `You've been added as a supervisor on ${assignmentName}.<br />This group coursework is managed using a web-based system. Please go to ${homePageLink} to activate your account and get started.`;
   sendGenericEmail({ recipientEmail: supervisorEmail, replyToEmail: staffUserEmail, subject: "Activate your supervisor account", headerText: "Activate your supervisor account", bodyText, templateId, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients: supervisorEmail, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const newSupervisorExistingEmail = ({ supervisorEmail, supervisorName, staffUserEmail, assignmentName, }) => {
+const newSupervisorExistingEmail = ({ supervisorEmail, supervisorName, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "2-02";
   if (!supervisorEmail || !supervisorName || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `You've been added as a supervisor on ${assignmentName}.<br />You already have an account on the group coursework management system. When they're ready, you'll be able to view your teams at ${homePageLink}.`;
   sendGenericEmail({ recipientEmail: supervisorEmail, recipientName: supervisorName, replyToEmail: staffUserEmail, subject: "You've been added as a supervisor", headerText: "You've been added as a supervisor", bodyText, templateId, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients: supervisorEmail, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "2-03";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
-  const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. This only takes a few minutes to complete and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
+  const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. It only takes a few minutes to rate your skills and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
   sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "Action needed: allocation questionnaire available", headerText: "Allocation questionnaire", bodyText, templateId, bccMode: true, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const newLecturerExistingEmail = ({ newStaffEmail, newStaffName, staffUserEmail, assignmentName, }) => {
+const newLecturerExistingEmail = ({ newStaffEmail, newStaffName, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "2-04";
   if (!newStaffEmail || !newStaffName || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `You've been added as a lecturer on ${assignmentName}.<br />You already have an account, so you just need to log in at ${homePageLink}. From that page you'll be able to help configure the assignment, add students, view teams' progress and more.`;
   sendGenericEmail({ recipientEmail: newStaffEmail, recipientName: newStaffName, replyToEmail: staffUserEmail, subject: "You've been added as a lecturer", headerText: "You've been added as a lecturer", bodyText, templateId, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients: newStaffEmail, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "3-01";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `The teams for ${assignmentName} have been allocated and are now available to view at ${homePageLink}. Please meet with your team as soon as possible and report any issues with contacting them to the module team.`;
   sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: `Team allocations released for ${assignmentName}`, headerText: "Team allocations released", bodyText, templateId, bccMode: true, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const teamsAllocatedToSupervisorsEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+const teamsAllocatedToSupervisorsEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "3-02";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `The teams for ${assignmentName} have been allocated and you can see who you're supervising at ${homePageLink}. Please meet with all of your teams as soon as possible and report any issues with contacting them to the module team.`;
   sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: `Team allocations released for ${assignmentName}`, headerText: "Team allocations released", bodyText, templateId, bccMode: true, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 

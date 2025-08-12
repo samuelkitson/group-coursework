@@ -114,10 +114,10 @@ exports.setState = async (req, res) => {
       changeAllowed = true;
       message = "The allocation questionnaire has been opened to students.";
       // Send email to students
-      if ((assignment?.skills ?? []).length > 0) {
-        const studentEmails = assignment.students.map(s => s.email);
-        questionnaireAvailableEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, });
-      }
+      // if ((assignment?.skills ?? []).length > 0) {
+      //   const studentEmails = assignment.students.map(s => s.email);
+      //   questionnaireAvailableEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+      // }
     }
   }
   if (newState === "allocation") {
@@ -177,6 +177,7 @@ exports.setStaff = async (req, res) => {
         newStaffName: lecturer.displayName,
         staffUserEmail: req.session.email, 
         assignmentName: assignment.name, 
+        assignmentId: assignment._id,
       });
     }
   }

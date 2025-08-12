@@ -17,6 +17,9 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const updateSelectedAssignment = useBoundStore(
+    (state) => state.updateSelectedAssignment,
+  );
   const [pending, setPending] = useState(false);
 
   const [existingSkills, setExistingSkills] = useState([]);
@@ -110,6 +113,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
       .patch(`/api/assignment/${selectedAssignment._id}/skills`, updateObj, { successToasts: true })
       .then(() => {
         markSaved();
+        updateSelectedAssignment(updateObj);
       })
       .finally(() => {
         setPending(false);

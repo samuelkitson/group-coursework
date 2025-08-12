@@ -72,11 +72,11 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
 
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Header closeButton>
-          <Modal.Title>Confirm Action</Modal.Title>
+          <Modal.Title>Change assignment state</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to move this assignment to the state "
-          {nextState?.name}"?
+          {nextState?.name}"? You can't undo this action.
         </Modal.Body>
         <Modal.Footer>
           <Button

@@ -45,9 +45,9 @@ const assignmentSchema = new Schema(
       ],
       default: "pre-allocation",
     },
-    lecturers: [{ type: "ObjectId", ref: "user", index: true}],
-    students: [{ type: "ObjectId", ref: "user", index: true }],
-    supervisors: [{ type: "ObjectId", ref: "user", index: true }],
+    lecturers: [{ type: "ObjectId", ref: "user" }],
+    students: [{ type: "ObjectId", ref: "user" }],
+    supervisors: [{ type: "ObjectId", ref: "user" }],
     skills: [skillSchema],
     allocationCriteria: [criterionSchema],
     allocationDealbreakers: [dealbreakerSchema],
@@ -58,7 +58,7 @@ const assignmentSchema = new Schema(
 );
 
 assignmentSchema.statics.getAssignmentsByUser = async function (userId) {
-  const limitedFields = { _id: 1, name: 1, description: 1, state: 1, supervisors: 1, students: 1, lecturers: 1 };
+  const limitedFields = { _id: 1, name: 1, description: 1, state: 1, supervisors: 1, students: 1, lecturers: 1, skills: 1, };
   const userObjectId = new Types.ObjectId(userId);
   // Check for the student role first
   const assignmentsStudents = await this.find(
