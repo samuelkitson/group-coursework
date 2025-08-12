@@ -54,7 +54,8 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     const firstMeeting = teamMeetings[0];
     const lastMeeting = teamMeetings[teamMeetings.length - 1];
     meetingData.avgDaysBetween = Math.round(daysBetween(firstMeeting.dateTime, lastMeeting.dateTime) / teamMeetings.length);
-  }
+  };
+  meetingData.actionsCount = teamMeetings.flatMap(m => m?.newActions ?? []).length;
   renderObj.meetings = meetingData;
   renderObj.attendance = summariseMeetingAttendance(teamMeetings, "displayName");
   renderObj.minuteTakers = summariseMeetingMinuteTakers(teamMeetings, "displayName");
@@ -101,7 +102,6 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
       const normalised = commentLengthByReviewer[key] / team.members.length ?? 0;
       commentLengthByReviewer[key] = Math.round(normalised);
     });
-    console.log(commentLengthByReviewer);
     renderObj.reviewComments = commentsByRecipient;
     renderObj.commentLengths = commentLengthByReviewer;
     // Add in skill ratings
