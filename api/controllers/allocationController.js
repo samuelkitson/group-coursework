@@ -316,6 +316,12 @@ exports.runAllocation = async (req, res) => {
     // Dataset not provided and not required, so just use the data from the DB.
     studentData = assignment.students.map(s => ({ ...s, _id: s._id.toString(), }));
   }
+  // Convert any noPair ObjectIds to strings.
+  studentData = studentData.map(s => {
+    if (!s?.noPair || s?.noPair?.length == 0) return s;
+    const noPairStrings = s.noPair.map(n => n.toString());
+    return {...s, noPair: noPairStrings};
+  });
   // Check if the "clash with other assignments" dealbreaker is present, and if
   // so, generate the teammate matrix for it.
   const assignmentClashDealbreaker = dealbreakers.filter(d => d.name === "Assignment crossover");

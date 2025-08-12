@@ -501,7 +501,7 @@ class AllocationAlgorithm {
       }
       // Check whether any pairing exclusions are present in the group
       const exclusions = [...new Set(groupDetails.flatMap(s => s.noPair || []))];
-      const hitExclusions = exclusions.filter(s => group.members.includes(s._id.toString()));
+      const hitExclusions = exclusions.filter(s => group.members.includes(s));
       if (hitExclusions.length > 0) {
         tempFitness = tempFitness * 0.5;
         group["dealbreakers"].push("Pairing exclusion");
