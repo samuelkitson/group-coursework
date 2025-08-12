@@ -10,4 +10,6 @@ const observationSchema = new Schema(
   { timestamps: true },
 );
 
+observationSchema.index({ team: 1 });
+
 module.exports = model("observation", observationSchema);
