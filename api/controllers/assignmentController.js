@@ -177,6 +177,7 @@ exports.setStaff = async (req, res) => {
         newStaffName: lecturer.displayName,
         staffUserEmail: req.session.email, 
         assignmentName: assignment.name, 
+        assignmentId: assignment._id,
       });
     }
   }

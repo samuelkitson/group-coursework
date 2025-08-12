@@ -74,9 +74,9 @@ exports.addSupervisor = async (req, res) => {
   );
   // Send email to supervisor
   if (existingUser) {
-    newSupervisorExistingEmail({ supervisorEmail: req.body.supervisor, supervisorName: user.displayName, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+    newSupervisorExistingEmail({ supervisorEmail: req.body.supervisor, supervisorName: user.displayName, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
   } else {
-    newSupervisorPlaceholderEmail({ supervisorEmail: req.body.supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+    newSupervisorPlaceholderEmail({ supervisorEmail: req.body.supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
   }
   return res.json({ message: successMessage });
 };
@@ -103,7 +103,7 @@ exports.bulkAddSupervisors = async (req, res) => {
   );
   // Send emails to each
   for (const supervisor of req.body.supervisors) {
-    newSupervisorPlaceholderEmail({ supervisorEmail: supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+    newSupervisorPlaceholderEmail({ supervisorEmail: supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
   }
   return res.json({ message: `${supervisorIDs.length} supervisors have been added.` });
 };
