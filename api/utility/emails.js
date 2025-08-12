@@ -106,7 +106,7 @@ const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentNam
   const templateId = "2-03";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
-  const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. This only takes a few minutes to complete and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
+  const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. It only takes a few minutes to rate your skills and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
   sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "Action needed: allocation questionnaire available", headerText: "Allocation questionnaire", bodyText, templateId, bccMode: true, })
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };

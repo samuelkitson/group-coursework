@@ -20,5 +20,10 @@ router.get(
   requireLoggedIn("staff"),
   asyncHandler(questionnaireC.allExistingSkills),
 );
+router.post(
+  "/reminders",
+  requireLoggedIn("staff"),
+  asyncHandler(questionnaireC.sendReminders),
+);
 
 module.exports = router;
