@@ -120,7 +120,28 @@ function Questionnaire() {
         </Col>
       </Row>
 
-      <Row>
+      <Row className="mb-4">
+        <Col md={8}>
+          <h6 className="d-flex align-items-center">
+            <QuestionCircleFill className="me-1" />
+            How is this data used?
+          </h6>
+          <p className="text-muted">
+            Staff can use these ratings to make teams with good coverage of the
+            key skills for this assignment. Your best skills will also be shown
+            to your team, meaning you're more likely to be given tasks that suit
+            you.
+          </p>
+          <p className="text-muted">
+            <span className="fw-semibold">It's important to answer honestly</span>,
+            otherwise you may be placed in a team that's missing key skills.
+            Your responses will be visible to staff alongside your historic
+            marks.
+          </p>
+        </Col>
+      </Row>
+
+      <Row className="mb-4">
         <Col>
           <h3>
             Rate your skills
@@ -181,27 +202,6 @@ function Questionnaire() {
               <ChevronRight className="ms-2" />
             </Button>
           </Form>
-        </Col>
-      </Row>
-
-      <Row className="mt-5">
-        <Col md={8}>
-          <h6 className="d-flex align-items-center">
-            <QuestionCircleFill className="me-1" />
-            How is this data used?
-          </h6>
-          <p className="text-muted">
-            Staff can use these ratings to make teams with good coverage of the
-            key skills for this assignment. Your best skills will also be shown
-            to your team, meaning you're more likely to be given tasks that suit
-            you.
-          </p>
-          <p className="text-muted">
-            <span className="fw-semibold">It's important to answer honestly</span>,
-            otherwise you may be placed in a team that's missing key skills.
-            Your responses will be visible to staff alongside your historic
-            marks.
-          </p>
         </Col>
       </Row>
     </>
