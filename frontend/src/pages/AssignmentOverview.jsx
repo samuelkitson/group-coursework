@@ -137,7 +137,7 @@ function AssignmentOverview() {
       id: "staff-questionnaire-status",
       component: StaffQuestionnaireStatusCard,
       size: "small",
-      attemptLoad: () => (selectedAssignment.role === "lecturer" && selectedAssignment.state === "allocation-questions"),
+      attemptLoad: () => (selectedAssignment.role === "lecturer" && selectedAssignment.state === "allocation-questions" && selectedAssignment?.skills?.length > 0),
     },
     {
       id: "staff-checkin-status",
