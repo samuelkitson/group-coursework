@@ -2,6 +2,7 @@ const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
+const emailModel = require("../models/email");
 const { Types } = require("mongoose");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
 const { setDifference } = require("../utility/maths");
@@ -84,11 +85,18 @@ exports.questionnaireEngagement = async (req, res) => {
     const missingSkills = setDifference(requiredSkills, studentSkills);
     if (missingSkills.size == 0) questionnairesComplete += 1;
   }
-  return res.json({
+  const resultObj = {
     complete: questionnairesComplete,
     incomplete: assignment.students.length - questionnairesComplete,
     total: assignment.students.length,
-  });
+    reminderSent: false,
+  };
+  // Check if a reminder email has already been sent.
+  const previousEmail = await emailModel.findOne({ templateId: "2-03", assignment: req.query.assignment, }).lean();
+  if (previousEmail) {
+    resultObj.reminderSent = true;
+  }
+  return res.json(resultObj);
 };
 
 exports.teamMeetingsBreakdown = async (req, res) => {

@@ -70,6 +70,6 @@ exports.sendReminders = async (req, res) => {
     if (missingSkills.size > 0) studentRecipients.push(student.email);
   }
   const recipients = studentRecipients.filter(e => e != null);
-  questionnaireAvailableEmail({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, });
+  questionnaireAvailableEmail({ recipients, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: req.body.assignment, });
   return res.json({ message: `Reminder emails sent to ${recipients.length} students.` });
 };

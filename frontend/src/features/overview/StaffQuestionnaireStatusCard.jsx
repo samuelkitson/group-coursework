@@ -105,6 +105,7 @@ StaffQuestionnaireStatusCard.loadData = async () => {
       complete: data?.complete ?? 0,
       incomplete: data?.incomplete ?? 0,
       total: data?.total ?? assignment?.students?.length,
+      reminderSent: data?.reminderSent,
     };
   } catch (e) {
     return null;

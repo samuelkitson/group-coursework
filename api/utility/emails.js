@@ -3,6 +3,7 @@ const { BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_SECURE, SMTP_FROM_ADDRESS, ALLOWE
 const { InvalidParametersError, ConfigurationError, CustomError } = require("../errors/errors");
 const ejs = require("ejs");
 const path = require("path");
+const emailModel = require("../models/email");
 
 // Provide a list of allowed emails domains as a comma separated list
 const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
@@ -74,6 +75,15 @@ const sendGenericEmail = async ({ recipientEmail, recipientName, replyToEmail, s
   transporter.sendMail(mailOptions);
 };
 
+const recordInDatabase = async ({ sender, recipients, assignment, team, templateId }) => {
+  let recipientsArr = recipients;
+  if (typeof recipients === "string") {
+    recipientsArr = [recipients];
+  }
+  const databaseObj = { sender, recipients, assignment, team, templateId };
+  await emailModel.create(databaseObj);
+};
+
 /**
  * Email are sent based on the templates below, each of which has an identifier.
  * The format is X-YY, where X is the email category and YY is the specific
@@ -102,12 +112,13 @@ const newSupervisorExistingEmail = ({ supervisorEmail, supervisorName, staffUser
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
-const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentName, }) => {
+const questionnaireAvailableEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "2-03";
   if (!recipients || !staffUserEmail || !assignmentName)
     throw new InvalidParametersError("Missing required parameters to send email.");
   const bodyText = `It's time to complete the allocation questionnaire for ${assignmentName}. It only takes a few minutes to rate your skills and helps us create fairer teams that are more likely to work well.<br/><br/>Please log in at ${homePageLink} to answer the questions within the next few days.`;
   sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "Action needed: allocation questionnaire available", headerText: "Allocation questionnaire", bodyText, templateId, bccMode: true, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients, assignment: assignmentId, templateId, }))
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
