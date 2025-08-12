@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import "./style/Questionnaire.css";
 import toast from "react-hot-toast";
 import { EMOJI_RATINGS, toTitleCase } from "@/utility/helpers";
-import { ChevronRight, InfoCircle, QuestionCircle, QuestionCircleFill } from "react-bootstrap-icons";
+import { ChevronRight, Eye, InfoCircle, QuestionCircle, QuestionCircleFill } from "react-bootstrap-icons";
 
 function Questionnaire() {
   const navigate = useNavigate();
@@ -59,6 +59,9 @@ function Questionnaire() {
         return toast.error("Please rate all of the skills before saving.");
       }
       updatedSkills[skill.name] = skill.rating;
+    }
+    if (skillsList.length > 1 && Object.values(updatedSkills).every((val, i, arr) => val === arr[0])) {
+      return toast.error("You can't give every skill the same score.");
     }
     // Send to the server
     setIsSaving(true);
@@ -122,7 +125,7 @@ function Questionnaire() {
           <h3>
             Rate your skills
             <OverlayTrigger overlay={<Tooltip>Visible to module staff.<br />Top skill visible to your teammates.</Tooltip>}>
-              <InfoCircle className="ms-3" size={16} />
+              <Eye className="ms-2" size={16} />
             </OverlayTrigger>
           </h3>
           <Form onSubmit={handleSubmit}>
