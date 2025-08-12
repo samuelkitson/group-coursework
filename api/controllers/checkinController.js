@@ -63,8 +63,8 @@ exports.getCheckinStateStudent = async (req, res) => {
   }
   // Check existing check-ins for this team for the current period
   const existing = (await checkinModel.find({
-    peerReview: peerReview._id,
     team: req.query.team,
+    peerReview: peerReview._id,
   }).lean()) ?? [];
   const reviewersSubmitted = existing.map(c => c.reviewer);
   const alreadyCompleted = reviewersSubmitted.some(r => r.equals(req.session.userId));
@@ -97,8 +97,9 @@ exports.submitCheckIn = async (req, res) => {
     throw new InvalidParametersError("Invalid effort points allocation.");
   // Make sure that the user hasn't already submitted
   const existing = await checkinModel.findOne({
-    reviewer: req.session.userId,
+    team: req.body.team,
     peerReview: peerReview._id,
+    reviewer: req.session.userId,
   });
   if (existing)
     throw new InvalidParametersError("You've already completed this week's check-in.");
@@ -179,8 +180,8 @@ exports.getCheckInResponse = async (req, res) => {
     return acc;
   }, {});
   const checkIns = await checkinModel.find({
-    peerReview: req.query.peerReview,
     team: req.query.team,
+    peerReview: req.query.peerReview,
   }).select("_id reviewer effortPoints reviews").lean();
   // Generate the summaries
   const {normScores, totalScores} = checkinStatistics(checkIns);
@@ -228,8 +229,8 @@ exports.moderateResponse = async (req, res) => {
   await checkTeamRole(req.body.team, req.session.userId, "supervisor/lecturer");
   // Find the check-in
   const checkIn = await checkinModel.findOne({
-    peerReview: req.body.peerReview,
     team: req.body.team,
+    peerReview: req.body.peerReview,
     reviewer: req.body.reviewer,
   });
   if (!checkIn)

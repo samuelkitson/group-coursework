@@ -42,6 +42,8 @@ const userSchema = new Schema(
   { timestamps: true },
 );
 
+userSchema.index({ email: 1 }, { unique: true });
+
 userSchema.statics.getSkills = async function (userId) {
   return this.findById(userId).select("skills");
 };

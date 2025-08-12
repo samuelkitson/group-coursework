@@ -22,6 +22,8 @@ const checkinSchema = new Schema(
   { _id: true, timestamps: true, },
 );
 
+checkinSchema.index({ team: 1, peerReview: 1, reviewer: 1 }, { unique: true });
+
 checkinSchema.statics.findByTeamAndPeerReview = async function (
   teamId,
   peerReviewId,
