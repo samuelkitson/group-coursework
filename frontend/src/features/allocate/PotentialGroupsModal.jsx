@@ -83,10 +83,10 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
     let studentValue;
     if (spotlightAttribute[1]) {
       // Fetch skill rating specifically.
-      studentValue = student.skills[spotlightAttribute[0]]?.toString();
+      studentValue = student.skills?.[spotlightAttribute[0]]?.toString();
     } else {
       // Fetch normal attribute value.
-      studentValue = student[spotlightAttribute[0]];
+      studentValue = student?.[spotlightAttribute[0]];
     }
     if (studentValue === null || studentValue === undefined) return (<span className={`${className} text-muted`}>
       <QuestionCircle className="me-1" />no data
