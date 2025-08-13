@@ -89,7 +89,7 @@ function Dashboard() {
           <h1>Good {timeOfDayName()}, {extractNameParts(user.displayName)}</h1>
           <p className="text-muted">Here's an overview of your current group coursework assignments.</p>
         </Col>
-        {(user.role === "staff" || user.role === "admin") &&
+        {(user?.canCreateAssignments) &&
           <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
             <Button
               variant="primary"

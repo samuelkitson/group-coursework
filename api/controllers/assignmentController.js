@@ -14,7 +14,7 @@ exports.createAssignment = async (req, res) => {
   if (!req.body.description)
     throw new InvalidParametersError("You must provide an assignment description.");
   // If ASSIGNMENTS_ADMIN_LOCK is set, only allow admins to create assignments
-  if (process.env?.ASSIGNMENTS_ADMIN_LOCK && req.session.role !== "admin")
+  if (process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" && req.session.role !== "admin")
     throw new IncorrectRoleError("You must be an admin to create new assignments.");
   const newAssignment = await assignmentModel.create({
     name: req.body.name,
