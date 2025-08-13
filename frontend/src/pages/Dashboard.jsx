@@ -158,7 +158,6 @@ function Dashboard() {
         </Col>
       </Row>
 
-      {/* Modal to add new criteria */}
       <Modal
         show={activeModal === "new-assignment"}
         size="lg"
