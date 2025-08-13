@@ -36,14 +36,20 @@ import "./style/Navigation.css";
 import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
 import { getAllowedPages } from "@/utility/assignmentPageMapping";
+import { shallow } from "zustand/shallow";
 
 // Extracted navigation menu items to a separate component
 function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }) {
   const navigate = useNavigate();
-  const { isAuthenticated, user, logout } = useAuthStore();
   const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
   const assignments = useBoundStore((state) => state.assignments);
+  const isAuthenticated = useAuthStore(
+    (state) => state.isAuthenticated, shallow
+  );
+  const logout = useAuthStore(
+    (state) => state.logout,
+  );
   const setSelectedAssignment = useBoundStore(
     (state) => state.setSelectedAssignment,
   );
@@ -57,12 +63,11 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
   const resetDataStores = useBoundStore((state) => state.resetAll);
 
   useEffect(() => {
-    // Fetch assignments when the navbar is first loaded and the user is logged in
     if (isAuthenticated) {
       fetchAssignments();
       fetchTeams();
     }
-  }, [fetchAssignments, fetchTeams, user]);
+  }, []);
 
   const logoutAndHide = () => {
     hideOffcanvas();

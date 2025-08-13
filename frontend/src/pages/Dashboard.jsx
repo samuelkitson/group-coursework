@@ -77,7 +77,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    // Force update assignment states
+    // Force update assignment states.
     fetchAssignments(true);
     fetchTeams(true);
   }, []);
