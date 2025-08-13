@@ -20,7 +20,6 @@ function AssignmentStudents() {
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
-  const [uploading, setIsUploading] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [studentToRemove, setStudentToRemove] = useState(null);
   const [whileLiveNewGroup, setWhileLiveNewGroup] = useState(null);
@@ -59,6 +58,7 @@ function AssignmentStudents() {
       student: pairingExclusionsStudent._id,
       others: pairingExclusionsOthers.map(s => s.value),
     };
+    setIsPending(true);
     api
       .put("/api/student/exclusions", reqObject, {successToasts: true})
       .then((resp) => {
@@ -81,7 +81,8 @@ function AssignmentStudents() {
   const handleRemoveAll = () => {
     const reqObject = {
       assignment: selectedAssignment._id,
-    }
+    };
+    setIsPending(true);
     api
       .post("/api/student/unenrol-all", reqObject, { successToasts: true })
       .then((resp) => {
@@ -118,6 +119,7 @@ function AssignmentStudents() {
       assignment: selectedAssignment._id,
       student: studentToRemove._id,
     }
+    setIsPending(true);
     api
       .patch("/api/student/unenrol", reqObject, {successToasts: true})
       .then((resp) => {
@@ -149,25 +151,21 @@ function AssignmentStudents() {
     if (whileLiveNewGroup !== null) {
       formData.append("mode", whileLiveNewGroup);
     }
-
-    await toast.promise(
-      api.post("/api/student/enrol", formData, {
+    setIsPending(true);
+    api.post("/api/student/enrol", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         genericError: true,
-      }),
-    {
-      loading: "Uploading file. This may take a minute...",
-      success: () => {
+      })
+      .then((resp) => {
         refreshData();
         setCsvFile(null);
         setActiveModal(null);
-        return "File uploaded successfully!";
-      },
-    });
-    
-    setIsUploading(false);
+      })
+      .finally(() => {
+        setIsPending(false);
+      });
   };
 
   const refreshData = () => {
@@ -281,7 +279,7 @@ function AssignmentStudents() {
 
             <Button
               variant="primary"
-              disabled={uploading || !csvFile } 
+              disabled={isLoading || isPending || !csvFile } 
               onClick={handlePreSubmitFile}
               className="d-flex align-items-center"
             >
@@ -347,7 +345,11 @@ function AssignmentStudents() {
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={removeStudent} disabled={isPending}>
+          <Button
+            variant="danger"
+            onClick={removeStudent}
+            disabled={isPending}
+          >
             Confirm
           </Button>
         </Modal.Footer>
@@ -370,7 +372,11 @@ function AssignmentStudents() {
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleRemoveAll} disabled={isPending}>
+          <Button
+            variant="danger"
+            onClick={handleRemoveAll}
+            disabled={isPending}
+          >
             Confirm
           </Button>
         </Modal.Footer>
@@ -447,7 +453,11 @@ function AssignmentStudents() {
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={submitPairingExclusions} disabled={isPending}>
+          <Button
+            variant="primary"
+            onClick={submitPairingExclusions}
+            disabled={isPending}
+          >
             Confirm
           </Button>
         </Modal.Footer>
