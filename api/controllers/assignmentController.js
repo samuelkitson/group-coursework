@@ -29,8 +29,12 @@ exports.createAssignment = async (req, res) => {
 // Only allowed in pre-allocation state
 exports.deleteAssignment = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
-  await assignmentModel.deleteOne({_id: new Types.ObjectId(req.params.assignment), state: "pre-allocation"});
-  return res.json({message: "Assignment deleted successfully"});
+  const assignment = await assignmentModel.findById(req.params.assignment);
+  if (!["pre-allocation"].includes(assignment?.state) && !req.query.force) {
+    throw new InvalidParametersError("Please confirm your intentions first.");
+  }
+  await assignmentModel.findByIdAndDelete(req.params.assignment);
+  return res.json({message: "Assignment deleted."});
 };
 
 exports.updateAssignmentInfo = async (req, res) => {

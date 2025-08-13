@@ -1,5 +1,6 @@
 import UnsavedChanges from "@/components/UnsavedChanges";
 import AssignmentSettings from "@/features/configure/AssignmentSettings";
+import DangerZoneSettings from "@/features/configure/DangerZoneSettings";
 import ModuleStaffSettings from "@/features/configure/ModuleStaffSettings";
 import PeerReviewSettings from "@/features/configure/PeerReviewSettings";
 import SkillsConfigure from "@/features/configure/SkillsConfigure";
@@ -29,7 +30,11 @@ function ConfigureAssignment() {
       name: "Peer reviews",
       key: "prism",
       component: PeerReviewSettings,
-    }
+    },{
+      name: "Danger zone",
+      key: "danger",
+      component: DangerZoneSettings,
+    },
   ];
 
   const [unsavedChanges, setUnsavedChanges] = useState(settingsPanes.reduce((acc, p) => {
