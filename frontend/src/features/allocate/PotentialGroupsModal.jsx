@@ -27,7 +27,7 @@ import {
   InfoCircle,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, pending}) => {
+const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, isPending}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
 
   const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
@@ -128,7 +128,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           onClick={regnerateAllocation}
           variant="primary"
           className="d-flex align-items-center"
-          disabled={pending}
+          disabled={isPending}
         >
           <Shuffle className="me-2" />
           Regenerate
@@ -186,14 +186,14 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
             <div className="d-flex justify-content-between">
               <p className="mb-0">
-                { pending ? "Regenerating groups..." : `${allocation.allocation.length ?? 0} groups generated` }
+                { isPending ? "Regenerating groups..." : `${allocation.allocation.length ?? 0} groups generated` }
               </p>
               <p className="mb-0">
-                { !pending && `Overall allocation quality: ${(allocation.fitness * 100).toFixed(1)}%`}
+                { !isPending && `Overall allocation quality: ${(allocation.fitness * 100).toFixed(1)}%`}
               </p>
             </div>
             
-            { pending ? Array.from({ length: Math.min(allocation.allocation.length, 5) }, (_, index) => (
+            { isPending ? Array.from({ length: Math.min(allocation.allocation.length, 5) }, (_, index) => (
               <Card className="placeholder-glow my-3">
                 <Card.Body>
                   <Row>
@@ -274,7 +274,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
       <Modal.Footer className="d-flex justify-content-between">
         <Button
           variant="danger"
-          disabled={pending}
+          disabled={isPending}
           className="d-flex align-items-center"
           onClick={handleCancel}
         >
@@ -282,7 +282,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
         </Button>
         <Button
           variant="success"
-          disabled={pending}
+          disabled={isPending}
           className="d-flex align-items-center"
           onClick={handleConfirm}
         >

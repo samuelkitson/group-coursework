@@ -8,27 +8,16 @@ import {
   Button,
   Modal,
   ListGroup,
-  Form,
-  InputGroup,
   Dropdown,
-  FloatingLabel,
-  Table,
   Placeholder,
 } from "react-bootstrap";
 import {
   ArrowsCollapseVertical,
   CardChecklist,
   CheckCircleFill,
-  ChevronDown,
   ChevronRight,
-  ChevronUp,
   Clipboard2Data,
-  CloudUpload,
-  CloudUploadFill,
-  File,
-  FiletypeCsv,
   Floppy2Fill,
-  GearWideConnected,
   Globe2,
   HourglassSplit,
   PencilSquare,
@@ -37,7 +26,6 @@ import {
   PlusCircleFill,
   QuestionCircle,
   Upload,
-  XLg,
 } from "react-bootstrap-icons";
 
 import "./style/AllocationControls.css";
@@ -59,15 +47,12 @@ function AllocationControls() {
     (state) => state.updateSelectedAssignment,
   );
 
-  const [isLoading, setisLoading] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   // Stores the different criteria/dealbreaker blocks the user can select
   const [criteriaOptions, setCriteriaOptions] = useState([]);
   const [dealbreakerOptions, setDealbreakerOptions] = useState([]);
-
-  // Extra data used for some criteria block types
-  const [requiredSkills, setRequiredSkills] = useState([]);
 
   // Stores the current allocation setup (a React-Hook-Form to reduce renders)
   const defaultValues = {
@@ -78,7 +63,7 @@ function AllocationControls() {
   };
   const formMethods = useForm(defaultValues);
   const { control, getValues, trigger, reset, register, } = formMethods;
-  const { isDirty, dirtyFields } = useFormState({ control });
+  const { isDirty, } = useFormState({ control });
   const { fields: criteriaFields, append: appendCriterion, remove: removeCriterion, move: moveCriterion }
    = useFieldArray({ control, name: "criteria" });
   const { fields: dealbreakersFields, append: appendDealbreaker, remove: removeDealbreaker }
@@ -163,7 +148,7 @@ function AllocationControls() {
 
   const refreshData = () => {
     setCriteriaOptions([]);
-    setisLoading(true);
+    setIsLoading(true);
     reset(defaultValues);
     Promise.all([
       api.get(`/api/allocation/${selectedAssignment._id}/options`),
@@ -175,11 +160,10 @@ function AllocationControls() {
 
         setCriteriaOptions(optionsData?.criteria ?? []);
         setDealbreakerOptions(optionsData?.dealbreakers ?? []);
-        setRequiredSkills(optionsData?.skills ?? []);
         reset(setupData);
       })
       .finally(() => {
-        setisLoading(false);
+        setIsLoading(false);
       });
   };
   
@@ -199,7 +183,7 @@ function AllocationControls() {
     if (datasetFile) {
       formData.append("dataset", datasetFile);
     }
-    setPending(true);
+    setIsPending(true);
     const apiPromise = api.post(`/api/allocation/${selectedAssignment._id}/run`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -216,7 +200,7 @@ function AllocationControls() {
         if (activeModal !== "allocation") setActiveModal("allocation");
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -257,7 +241,7 @@ function AllocationControls() {
     const isValid = await trigger();
     if (!isValid)
       return toast.error("Please complete all fields before saving.");
-    setPending(true);
+    setIsPending(true);
     const { criteria, dealbreakers, groupSize, surplusLargerGroups } = getValues();
     const updateObj = {
       criteria: criteria.map(c => ({ name: c.name, goal: c?.goal, attribute: c?.attribute, ignoreMissing: c?.ignoreMissing, })),
@@ -273,7 +257,7 @@ function AllocationControls() {
         reset(getValues());
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -287,7 +271,7 @@ function AllocationControls() {
 
   const handleReleaseAllocation = () => {
     const groupsList = generatedAllocation.allocation.map(group => group.members.map(student => student._id));
-    setPending(true);
+    setIsPending(true);
     const updateObj = {
       allocation: groupsList,
     };
@@ -301,7 +285,7 @@ function AllocationControls() {
         navigate("/assignment/overview");
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -392,18 +376,18 @@ function AllocationControls() {
             <Button
               className="d-flex align-items-center"
               onClick={showDatasetUploadModal}
-              disabled={isLoading || pending}
+              disabled={isLoading || isPending}
             >
               <Upload className="me-2" />
               { datasetFile ? "Change dataset" : "Upload dataset" }
             </Button>
             { isDirty &&
               <Button
-                disabled={isLoading || pending || !isDirty}
+                disabled={isLoading || isPending || !isDirty}
                 onClick={saveChanges}
                 className="d-flex align-items-center"
               >
-                {pending ? (
+                {isPending ? (
                   <>
                     <HourglassSplit className="me-2" />
                     Saving...
@@ -418,7 +402,7 @@ function AllocationControls() {
             }
             { !isDirty &&
             <Button
-              disabled={isLoading || pending || isDirty}
+              disabled={isLoading || isPending || isDirty}
               variant="success"
               className="d-flex align-items-center"
               onClick={startAllocation}
@@ -530,30 +514,41 @@ function AllocationControls() {
         allocation={generatedAllocation}
         regnerateAllocation={startAllocation}
         requiredAttributes={requiredColumns}
-        pending={isLoading || pending}
+        isPending={isLoading || isPending}
       />
 
       <Modal show={activeModal === "release-allocation"} centered>
         <Modal.Header>
-          <Modal.Title>Confirm Allocation</Modal.Title>
+          <Modal.Title>Confirm allocation</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to confirm this allocation and release it to
-          students on "
-          {selectedAssignment?.name}"?
-          Students will immediately be able to access their team details and
-          start working.
+          <p>
+            Are you sure you want to confirm this allocation and release it to
+            students on "
+            {selectedAssignment?.name}"?
+            Students will immediately be able to access their team details and
+            start working.
+          </p>
+          <p>
+            Once confirmed, you'll be able to notify students by email from the
+            assignment overview page.
+          </p>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal("allocation")}
-            disabled={pending}
+            disabled={isPending}
           >
-            Go Back
+            Go back
           </Button>
-          <Button variant="primary" onClick={handleReleaseAllocation} disabled={pending}>
-            Confirm
+          <Button 
+            variant="success" 
+            onClick={handleReleaseAllocation} 
+            disabled={isPending}
+            className="d-flex align-items-center"
+          >
+            <CheckCircleFill className="me-2" /> Confirm
           </Button>
         </Modal.Footer>
       </Modal>
