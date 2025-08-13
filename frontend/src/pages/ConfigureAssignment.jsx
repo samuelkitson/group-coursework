@@ -73,6 +73,7 @@ function ConfigureAssignment() {
                   unsaved={unsavedChanges[p.key]}
                   markUnsaved={() => setSaveState(p.key, true)}
                   markSaved={() => setSaveState(p.key, false)}
+                  eventKey={p.key}
                 />
               </Accordion.Body>
             </Accordion.Item>

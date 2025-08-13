@@ -1,7 +1,7 @@
 import SaveButton from "@/components/SaveButton";
 import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Form,
   Button,
@@ -9,11 +9,14 @@ import {
   InputGroup,
   Card,
   Container,
+  AccordionContext,
+  Spinner,
+  Placeholder,
 } from "react-bootstrap";
 import { XLg } from "react-bootstrap-icons";
 import toast from "react-hot-toast";
 
-function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
+function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
@@ -21,35 +24,34 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
     (state) => state.updateSelectedAssignment,
   );
   const [isPending, setIsPending] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [existingSkills, setExistingSkills] = useState([]);
   const [skills, setSkills] = useState([]);
   const [newSkillName, setNewSkillName] = useState("");
   const [skillSuggestions, setSkillSuggestions] = useState([]);
+  const { activeEventKey } = useContext(AccordionContext);
+  const isExpanded = activeEventKey === eventKey;
 
   const refreshData = () => {
+    if (!isExpanded || isLoaded) return;
     setExistingSkills([]);
-    // Get the current required skills
-    api
-      .get(`/api/assignment/${selectedAssignment._id}/skills`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setSkills(data?.skills ?? []);
-      });
-    // Get the suggested skills
-    api
-      .get("/api/questionnaire/existing-skills")
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setExistingSkills(data);
+    Promise.all([
+      api.get(`/api/assignment/${selectedAssignment._id}/skills`),
+      api.get(`/api/questionnaire/existing-skills`),
+    ])
+      .then(([skillsResp, existingSkillsReps]) => {
+        const skillsData = skillsResp.data;
+        const existingSkillsData = existingSkillsReps.data;
+
+        setSkills(skillsData.skills ?? []);
+        setExistingSkills(existingSkillsData ?? []);
+        setIsLoaded(true);
       });
   };
 
   const addSkill = (name, description = null) => {
+    if (isPending) return;
     // Don't allow duplicates or blanks
     if (name === "" || name == null) return;
     if (skills.some((s) => s.name === name))
@@ -85,6 +87,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
 
   // Remove a specific skill from the list
   const handleDeleteSkill = (index) => {
+    if (isPending) return;
     setSkills(skills.filter((_, i) => i !== index));
     markUnsaved();
   };
@@ -99,6 +102,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
 
   // Select a suggestion and add it to the skills list
   const useSuggestion = (suggestionname) => {
+    if (isPending) return;
     const suggestion = existingSkills.find((s) => s.name === suggestionname);
     if (suggestion == undefined) return;
     addSkill(suggestion.name, suggestion.description, suggestion.name);
@@ -121,7 +125,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
   };
 
   // Refresh data on page load
-  useEffect(refreshData, [selectedAssignment]);
+  useEffect(refreshData, [isExpanded]);
 
   return (
     <>
@@ -169,6 +173,13 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
       )}
 
       <Container className="d-flex flex-column gap-2 mt-3 px-0">
+        {!isLoaded &&
+          <Placeholder animation="glow">
+            <Placeholder xs={6} /><br />
+            <Placeholder xs={4} /><br /><br />
+          </Placeholder>
+        }
+
         {skills.map((skill, index) => (
           <Container
             key={index}
