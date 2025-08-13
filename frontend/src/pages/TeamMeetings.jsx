@@ -252,11 +252,12 @@ function TeamMeetings() {
             {timestampToHumanFriendly(deleteMeeting?.dateTime ?? deleteMeeting?.createdAt)}?{" "}
             This cannot be undone.
           </p>
-          {["lecturer", "supervisor"].includes(getSelectedAssignment().role) && 
+          {(["lecturer", "supervisor"].includes(getSelectedAssignment().role) && deleteMeeting?.disputes?.length > 0) && 
           <p>
-            If there are disputes about this meeting, please add a private note
-            describing these and your actions before proceeding. Disputes are
-            lost when the linked meeting is deleted.
+            <span className="fw-semibold">This meeting has been disputed. </span>
+            When a meeting is deleted, any linked disputes are lost. You should
+            make a note of why you're deleting this meeting on the obvservations
+            page.
           </p>
           }
         </Modal.Body>
