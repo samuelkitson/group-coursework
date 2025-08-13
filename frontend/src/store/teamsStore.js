@@ -5,9 +5,9 @@ const defaultMaxAge = 60 * 60 * 1000; // 1 hour
 const initialState = {
   teams: [],
   selectedTeam: null,
-  hasFetched: false,
-  fetchPromise: null,
-  lastFetched: null,
+  hasFetchedTeams: false,
+  fetchPromiseTeams: null,
+  lastFetchedTeams: null,
 };
 
 const createTeamsStore = (set, get) => ({
@@ -25,12 +25,12 @@ const createTeamsStore = (set, get) => ({
     const state = get();
     const now = Date.now();
     // If expiration time is set, check if the cached data is still fresh.
-    if (!forceRefresh && state.hasFetched && state.lastFetched && now - state.lastFetched < maxAge) {
+    if (!forceRefresh && state.hasFetchedTeams && state.lastFetchedTeams && now - state.lastFetchedTeams < maxAge) {
       return state.teams;
     }
     // Avoid duplicate in-flight requests.
-    if (state.fetchPromise) {
-      return state.fetchPromise;
+    if (state.fetchPromiseTeams) {
+      return state.fetchPromiseTeams;
     }
     // Uses promises to prevent race conditions.
     const promise = (async () => {
@@ -41,19 +41,19 @@ const createTeamsStore = (set, get) => ({
         const teams = response.data.teams || [];
         set({
           teams,
-          hasFetched: true,
-          fetchPromise: null,
-          lastFetched: Date.now(),
+          hasFetchedTeams: true,
+          fetchPromiseTeams: null,
+          lastFetchedTeams: Date.now(),
         });
         return teams;
       } catch (error) {
         console.error("Error refreshing teams store:", error);
-        set({ fetchPromise: null });
+        set({ fetchPromiseTeams: null });
         throw error;
       }
     })();
 
-    set({ fetchPromise: promise });
+    set({ fetchPromiseTeams: promise });
     return promise;
   },
 

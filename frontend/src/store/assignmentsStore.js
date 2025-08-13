@@ -5,9 +5,9 @@ const defaultMaxAge = 60 * 60 * 1000; // 1 hour
 const initialState = {
   assignments: [],
   selectedAssignment: null,
-  hasFetched: false,
-  fetchPromise: null,
-  lastFetched: null,
+  hasFetchedAssignments: false,
+  fetchPromiseAssignments: null,
+  lastFetchedAssignments: null,
 };
 
 const createAssignmentsStore = (set, get) => ({
@@ -25,12 +25,12 @@ const createAssignmentsStore = (set, get) => ({
     const state = get();
     const now = Date.now();
     // If expiration time is set, check if the cached data is still fresh.
-    if (!forceRefresh && state.hasFetched && state.lastFetched && now - state.lastFetched < maxAge) {
+    if (!forceRefresh && state.hasFetchedAssignments && state.lastFetchedAssignments && now - state.lastFetchedAssignments < maxAge) {
       return state.assignments;
     }
     // Avoid duplicate in-flight requests.
-    if (state.fetchPromise) {
-      return state.fetchPromise;
+    if (state.fetchPromiseAssignments) {
+      return state.fetchPromiseAssignments;
     }
     // Uses promises to prevent race conditions.
     const promise = (async () => {
@@ -40,18 +40,18 @@ const createAssignmentsStore = (set, get) => ({
         assignments.sort((a, b) => a.name.localeCompare(b.name));
         set({
           assignments,
-          hasFetched: true,
-          fetchPromise: null,
-          lastFetched: Date.now(),
+          hasFetchedAssignments: true,
+          fetchPromiseAssignments: null,
+          lastFetchedAssignments: Date.now(),
         });
         return assignments;
       } catch (error) {
         console.error("Error refreshing assignments store:", error);
-        set({ fetchPromise: null });
+        set({ fetchPromiseAssignments: null });
         throw error;
       }
     })();
-    set({ fetchPromise: promise });
+    set({ fetchPromiseAssignments: promise });
     return promise;
   },
   setSelectedAssignment: (id) => set({ selectedAssignment: id }),
