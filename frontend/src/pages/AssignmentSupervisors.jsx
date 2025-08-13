@@ -348,7 +348,7 @@ function AssignmentSupervisors() {
             make sure to allocate a new supervisor to those teams if necessary.
           </Modal.Body>
         }
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
@@ -387,7 +387,7 @@ function AssignmentSupervisors() {
             )}
           />
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}

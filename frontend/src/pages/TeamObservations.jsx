@@ -187,7 +187,7 @@ function TeamObservations() {
           Are you sure you want to delete this observation? You can't undo this
           action.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={hideModal}
@@ -239,7 +239,7 @@ function TeamObservations() {
               />
           </div>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={hideModal}

@@ -260,7 +260,7 @@ function TeamMeetings() {
           </p>
           }
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}

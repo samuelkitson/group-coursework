@@ -3,6 +3,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Modal } from "react-bootstrap";
+import { Trash3Fill } from "react-bootstrap-icons";
 
 const DeleteAssignmentCard = () => {
   const selectedAssignment = useBoundStore((state) =>
@@ -46,7 +47,7 @@ const DeleteAssignmentCard = () => {
           onClick={() => setActiveModal("confirm-delete")}
           disabled={pending}
         >
-          Delete
+          <Trash3Fill className="me-2" /> Delete
         </Button>
       </Card.Body>
 
@@ -58,7 +59,7 @@ const DeleteAssignmentCard = () => {
           Are you sure you want to delete the assignment "{selectedAssignment.name}"?
           This cannot be undone.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}

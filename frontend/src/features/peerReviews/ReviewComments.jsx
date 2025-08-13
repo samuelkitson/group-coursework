@@ -139,7 +139,7 @@ const ReviewComments = ({peerReviewId, teamId, reviewComments, currentStudent, r
             placeholder="The comment has been deleted, but you can input a summary here."
           />
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
@@ -147,13 +147,13 @@ const ReviewComments = ({peerReviewId, teamId, reviewComments, currentStudent, r
             Cancel
           </Button>
           <Button variant="primary" onClick={handleSubmitEdit}>
-            Confirm
+            Confirm edits
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={activeModal === "delete-comment"} size="lg" centered>
-        <Modal.Header>
+      <Modal show={activeModal === "delete-comment"} size="lg" centered onHide={() => setActiveModal(null)}>
+        <Modal.Header closeButton>
           <Modal.Title>Delete review comment</Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -165,7 +165,7 @@ const ReviewComments = ({peerReviewId, teamId, reviewComments, currentStudent, r
           Are you sure you want to delete this comment, rather than editing it?
           You can't undo this action.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
