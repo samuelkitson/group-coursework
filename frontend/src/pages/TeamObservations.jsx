@@ -143,7 +143,7 @@ function TeamObservations() {
       <Row>
         <Col md={9}>
           { observations.map((observation, idx) => (
-            <Card className="mt-2 mb-3 shadow" key={observation._id}>
+            <Card className="mt-2 mb-3 shadow-sm" key={observation._id}>
               <Card.Body className="py-2">
                 <Row>
                   <Col xs={10}>
