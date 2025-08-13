@@ -16,7 +16,7 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const updateSelectedAssignment = useBoundStore(
     (state) => state.updateSelectedAssignment,
   );
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const [peerReviewEnabled, setPeerReviewEnabled] = useState(false);
   const [peerReviews, setPeerReviews] = useState([]);
@@ -79,7 +79,7 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   };
 
   const saveChanges = async () => {
-    setPending(true);
+    setIsPending(true);
     let updateObj = { assignment: selectedAssignment._id, };
     if (peerReviewEnabled) {
       updateObj.peerReviews = peerReviews;
@@ -92,12 +92,12 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
         markSaved();
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
   const refreshData = () => {
-    setPending(true);
+    setIsPending(true);
     // Get the current setup
     api
       .get(`/api/peer-review?assignment=${selectedAssignment._id}`)
@@ -129,7 +129,7 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
           setOverallPeriodEnd(format(latest, "yyyy-MM-dd"));
         }
         markSaved();
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -178,7 +178,7 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
     <>
       <div className="d-flex justify-content-between align-items-center">
         <h3>Peer reviews</h3>
-        <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
+        <SaveButton {...{ isPending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted mb-1">
         These settings allow you to configure the weekly peer review feature.

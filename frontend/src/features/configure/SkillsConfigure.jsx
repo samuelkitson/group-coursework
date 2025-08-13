@@ -20,7 +20,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
   const updateSelectedAssignment = useBoundStore(
     (state) => state.updateSelectedAssignment,
   );
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const [existingSkills, setExistingSkills] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -105,7 +105,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
   };
 
   const saveChanges = async () => {
-    setPending(true);
+    setIsPending(true);
     const updateObj = {
       skills: skills,
     };
@@ -116,7 +116,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
         updateSelectedAssignment(updateObj);
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -127,7 +127,7 @@ function SkillsConfigure({ unsaved, markUnsaved, markSaved }) {
     <>
       <div className="d-flex justify-content-between align-items-center">
         <h3>Required skills</h3>
-        <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
+        <SaveButton {...{ isPending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted">
         Students will be asked to self-assess their abilities in these skills

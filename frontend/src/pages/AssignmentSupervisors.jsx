@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, HourglassSplit, InfoCircle, People, Shuffle, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, People, Shuffle, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -22,7 +22,7 @@ function AssignmentSupervisors() {
   );
   const [supervisorsList, setSupervisorsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [pending, setIsPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [teamsList, setTeamsList] = useState([]);
   const [supervisorToEdit, setSupervisorToEdit] = useState(null);
   const [supervisorToDelete, setSupervisorToDelete] = useState(null);
@@ -34,7 +34,7 @@ function AssignmentSupervisors() {
   const { control, register, reset, getValues, } = useForm({
     defaultValues, mode: "onTouched"
   });
-  const { isValid, errors, } = useFormState({ control });
+  const { errors } = useFormState({ control });
 
   const teamsHelpText = (teamsList) => {
     if (!teamsList || teamsList.length === 0)
@@ -277,7 +277,7 @@ function AssignmentSupervisors() {
             <Form.Control
               placeholder="Email address"
               className={errors?.newSupervisor && "border-danger"}
-              disabled={pending}
+              disabled={isPending}
               {...register("newSupervisor", {
                 pattern: {
                   value: /\S+@\S+\.\S+/,
@@ -288,7 +288,7 @@ function AssignmentSupervisors() {
             <Button
               onClick={addOneSupervisor}
               variant="primary"
-              disabled={pending || errors?.newSupervisor}
+              disabled={isPending || errors?.newSupervisor}
             >
               Add
             </Button>
@@ -304,7 +304,7 @@ function AssignmentSupervisors() {
             <Button
               onClick={sendUploadedFile}
               variant="primary"
-              disabled={pending || !uploadedFileContent}
+              disabled={isPending || !uploadedFileContent}
             >
               Add
             </Button>
@@ -317,7 +317,7 @@ function AssignmentSupervisors() {
               automatically assign them to teams.
             </p>
             <Button
-              disabled={pending}
+              disabled={isPending}
               variant="success"
               className="d-flex align-items-center"
               onClick={autoAllocate}
@@ -352,11 +352,11 @@ function AssignmentSupervisors() {
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={removeSupervisor} disabled={pending}>
+          <Button variant="danger" onClick={removeSupervisor} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>
@@ -391,11 +391,11 @@ function AssignmentSupervisors() {
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={saveSupervisorTeams} disabled={pending}>
+          <Button variant="primary" onClick={saveSupervisorTeams} disabled={isPending}>
             Save
           </Button>
         </Modal.Footer>

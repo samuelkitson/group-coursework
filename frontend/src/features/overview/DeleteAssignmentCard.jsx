@@ -14,21 +14,21 @@ const DeleteAssignmentCard = () => {
   );
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const confirmDelete = async () => {
-    setPending(true);
+    setIsPending(true);
     api
       .delete(`/api/assignment/${selectedAssignment._id}`, {
         successToasts: true,
       })
       .then(() => {
-        setPending(false);
+        setIsPending(false);
         navigate("/dashboard");
         updateSelectedAssignment(null);
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
         setActiveModal(null);
       });
   };
@@ -45,7 +45,7 @@ const DeleteAssignmentCard = () => {
           variant="danger"
           className="d-flex align-items-center"
           onClick={() => setActiveModal("confirm-delete")}
-          disabled={pending}
+          disabled={isPending}
         >
           <Trash3Fill className="me-2" /> Delete
         </Button>
@@ -63,11 +63,11 @@ const DeleteAssignmentCard = () => {
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete} disabled={pending}>
+          <Button variant="danger" onClick={confirmDelete} disabled={isPending}>
             Delete
           </Button>
         </Modal.Footer>

@@ -9,7 +9,7 @@ import { MortarboardFill, PersonBadge, PersonBadgeFill, QuestionCircleFill, Shie
 
 function Profile() {
   const { user } = useAuthStore();
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const { control, register, reset, getValues, } = useForm({
     defaultValues: {
@@ -21,7 +21,7 @@ function Profile() {
 
   const submitProfileUpdates = () => {
     const { bio, meetingPref } = getValues();
-    setPending(true);
+    setIsPending(true);
     api
       .patch(
         `/api/student/profile`,
@@ -33,7 +33,7 @@ function Profile() {
         reset({ bio, meetingPref });
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -114,7 +114,7 @@ function Profile() {
           className="d-flex flex-column align-items-end mt-md-2"
         >
           <SaveButton
-            pending={pending}
+            isPending={isPending}
             unsaved={isDirty}
             saveChanges={submitProfileUpdates}
             doNotHide={true}
@@ -150,7 +150,7 @@ function Profile() {
                 as="textarea"
                 rows={3}
                 placeholder="Add a short intro for other students"
-                disabled={pending}
+                disabled={isPending}
                 {...register("bio")}
               />
             </Col>
@@ -159,7 +159,7 @@ function Profile() {
           <Form.Group as={Row} className="mb-2 mb-md-3">
             <Form.Label column sm="2">Meeting preference</Form.Label>
             <Col sm="10">
-              <Form.Select disabled={pending} {...register("meetingPref")}>
+              <Form.Select disabled={isPending} {...register("meetingPref")}>
                 <option value="either">No preference</option>
                 <option value="in-person">Prefer in-person</option>
                 <option value="online">Prefer online</option>

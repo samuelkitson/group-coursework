@@ -18,7 +18,7 @@ function Dashboard() {
   const assignments = useBoundStore((state) => state.assignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
   const [activeModal, setActiveModal] = useState(null);
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [newAssignmentName, setNewAssignmentName] = useState("");
   const [newAssignmentDesc, setNewAssignmentDesc] = useState("");
 
@@ -39,7 +39,7 @@ function Dashboard() {
       name: newAssignmentName,
       description: newAssignmentDesc,
     }
-    setPending(true);
+    setIsPending(true);
     api
       .post(`/api/assignment/`, submitObj, { successToasts: true, })
       .then((resp) => {
@@ -52,7 +52,7 @@ function Dashboard() {
         // Update assignments list
         fetchAssignments(true);
       }).finally(() => {
-        setPending(false);
+        setIsPending(false);
       })
   };
 
@@ -202,11 +202,11 @@ function Dashboard() {
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={submitCreateAssignment} disabled={pending || !(newAssignmentName && newAssignmentDesc)}>
+          <Button variant="primary" onClick={submitCreateAssignment} disabled={isPending || !(newAssignmentName && newAssignmentDesc)}>
             Confirm
           </Button>
         </Modal.Footer>

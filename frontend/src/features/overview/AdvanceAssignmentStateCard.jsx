@@ -13,7 +13,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
     (state) => state.updateSelectedAssignment,
   );
   const [activeModal, setActiveModal] = useState(null);
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   const nextState = nextAssignmentState(selectedAssignment.state);
   
@@ -35,7 +35,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
 
   const saveChanges = async () => {
     if (!nextState) return;
-    setPending(true);
+    setIsPending(true);
     const updateObj = {
       newState: nextState.id,
     };
@@ -44,11 +44,11 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         successToasts: true,
       })
       .then(() => {
-        setPending(false);
+        setIsPending(false);
         updateSelectedAssignment({ state: nextState.id });
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
         setActiveModal(null);
       });
   };
@@ -64,7 +64,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
           variant="primary"
           className="d-flex align-items-center"
           onClick={() => setActiveModal("confirm-state-change")}
-          disabled={pending}
+          disabled={isPending}
         >
           {buttonText} <ChevronRight className="ms-2" />
         </Button>}
@@ -82,11 +82,11 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={saveChanges} disabled={pending}>
+          <Button variant="primary" onClick={saveChanges} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>
