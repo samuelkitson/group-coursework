@@ -103,24 +103,24 @@ function AssignmentTeams() {
   const generateInsights = (insights) => {
     return (
       <ul className="list-unstyled">
-      { insights.map(insight => {
+      { insights.map((insight, i) => {
         if (insight.type === "positive") {
           return (
-            <li className="d-flex align-items-center">
+            <li className="d-flex align-items-center" key={i}>
               <HandThumbsUpFill className="me-2 text-success"/>
               { insight.text }
             </li>
           )
         } else if (insight.type === "warning") {
           return (
-            <li className="d-flex align-items-center">
+            <li className="d-flex align-items-center"> key={i}
               <ExclamationTriangleFill className="me-2 text-warning"/>
               { insight.text }
             </li>
           )
         } else if (insight.type === "severe") {
           return (
-            <li className="d-flex align-items-center text-danger fw-semibold">
+            <li className="d-flex align-items-center text-danger fw-semibold" key={i}>
               <ExclamationTriangleFill className="me-2 text-danger"/>
               { insight.text }
             </li>
@@ -399,7 +399,8 @@ function AssignmentTeams() {
                 <Row>
                   <Col md={5}>
                     <ul className="list-unstyled">
-                      {group.members.map((student, i) => ( <div className="d-flex align-items-center">
+                      {group.members.map((student, i) => (
+                        <div className="d-flex align-items-center" key={`move1-${student._id}`}>
                         { moveMode === 1 ? 
                         <>
                           <a
@@ -419,7 +420,7 @@ function AssignmentTeams() {
                       </div>))}
                     </ul>
                     <ul className="list-unstyled mb-0">
-                      {(group?.supervisors ?? []).map((supervisor, i) => ( <div className="d-flex align-items-center text-muted">
+                      {(group?.supervisors ?? []).map((supervisor, i) => ( <div className="d-flex align-items-center text-muted" key={`supervisor-${supervisor._id}`}>
                         <li key={supervisor._id}><Eyeglasses /> {supervisor.displayName}</li>
                       </div>))}
                     </ul>
