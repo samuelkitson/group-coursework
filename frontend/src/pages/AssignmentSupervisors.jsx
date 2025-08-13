@@ -21,7 +21,7 @@ function AssignmentSupervisors() {
     (state) => state.updateSelectedAssignment,
   );
   const [supervisorsList, setSupervisorsList] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPending, setIsPending] = useState(false);
   const [teamsList, setTeamsList] = useState([]);
   const [supervisorToEdit, setSupervisorToEdit] = useState(null);
@@ -55,7 +55,7 @@ function AssignmentSupervisors() {
       assignment: selectedAssignment._id,
       teams: supervisorEditTeams, 
     };
-    setIsLoading(true);
+    setIsPending(true);
     api
       .patch(`/api/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
       .then((resp) => {
@@ -64,7 +64,7 @@ function AssignmentSupervisors() {
         refreshData();
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsPending(false);
       });
   };
 
@@ -75,7 +75,7 @@ function AssignmentSupervisors() {
 
   const removeSupervisor = async () => {
     const newSupervisorsList = supervisorsList.filter(s => s._id !== supervisorToDelete._id);
-    setIsLoading(true);
+    setIsPending(true);
     api
       .delete(`/api/supervisor/${supervisorToDelete._id}?assignment=${selectedAssignment._id}`, { successToasts: true })
       .then((resp) => {
@@ -85,7 +85,7 @@ function AssignmentSupervisors() {
         updateSelectedAssignment({supervisors: newSupervisorsList});
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsPending(false);
       });
   };
 
@@ -109,6 +109,7 @@ function AssignmentSupervisors() {
 
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0];
+    setIsPending(true);
     if (!selectedFile) {
       setUploadedFileContent(null);
     }
@@ -120,10 +121,12 @@ function AssignmentSupervisors() {
     reader.onload = (e) => {
       const content  = e.target.result;
       setUploadedFileContent(content.split(/\r?\n/).filter(line => line.trim() !== ""));
+      setIsPending(false);
     }
     reader.onerror = () => {
       toast.error("The uploaded file was invalid. Please try again.");
       setUploadedFileContent(null);
+      setIsPending(false);
     };
     reader.readAsText(selectedFile);
   };
@@ -147,10 +150,14 @@ function AssignmentSupervisors() {
   };
 
   const autoAllocate = async () => {
+    setIsPending(true);
     api
       .post("/api/supervisor/allocate", { assignment: selectedAssignment._id }, { successToasts: true })
       .then((resp) => {
         refreshData();
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -158,25 +165,20 @@ function AssignmentSupervisors() {
     setSupervisorsList([]);
     setIsLoading(true);
     reset(defaultValues);
-    api
-      .get(`/api/supervisor?assignment=${selectedAssignment._id}`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setSupervisorsList(data.supervisors);
+    Promise.all([
+      api.get(`/api/supervisor?assignment=${selectedAssignment._id}`),
+      api.get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`),
+    ])
+      .then(([supervisorResp, teamResp]) => {
+        const supervisorData = supervisorResp.data;
+        const teamData = teamResp.data;
+
+        const teamsOptions = teamData.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
+        setSupervisorsList(supervisorData?.supervisors ?? []);
+        setTeamsList(teamsOptions);
       })
       .finally(() => {
         setIsLoading(false);
-      });
-    api
-      .get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        const teamsOptions = data.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
-        setTeamsList(teamsOptions);
       });
   };
 

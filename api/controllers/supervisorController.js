@@ -123,13 +123,14 @@ exports.changeSupervisorTeams = async (req, res) => {
   const teams = await teamModel.find({_id: { $in: teamIds }, assignment: req.body.assignment }).select("_id").lean();
   if (teams.length !== req.body.teams.length)
     throw new InvalidParametersError("Some of the teams selected weren't valid. Please try again.");
+  console.log(teams);
   // Remove them from any teams they currently supervise for this assignment
   await teamModel.updateMany(
     { assignment: req.body.assignment, supervisors: req.params.supervisor, },
     { $pull: { supervisors: req.params.supervisor }},
   );
   await teamModel.updateMany(
-    { assignment: req.body.assignment, _id: { $in: teamIds }, },
+    { assignment: req.body.assignment, _id: { $in: teamIds }, members: { $ne: [] }, },
     { $addToSet: { supervisors: req.params.supervisor }},
   );
   return res.json({ message: "Supervisor teams updated successfully."});
@@ -164,6 +165,7 @@ exports.autoAllocateSupervisors = async (req, res) => {
   const teamsWithoutSupervisors = await teamModel.find({
     assignment: req.body.assignment,
     supervisors: [],
+    members: { $ne: [] },
   }).sort({ "teamNumber": 1 });
   if (teamsWithoutSupervisors.length === 0)
     throw new InvalidParametersError("All teams have a supervisor already.");
