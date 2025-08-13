@@ -13,6 +13,7 @@ import {
   Dropdown,
   FloatingLabel,
   Table,
+  Placeholder,
 } from "react-bootstrap";
 import {
   ArrowsCollapseVertical,
@@ -58,6 +59,9 @@ function AllocationControls() {
     (state) => state.updateSelectedAssignment,
   );
 
+  const [isLoading, setisLoading] = useState(false);
+  const [pending, setPending] = useState(false);
+
   // Stores the different criteria/dealbreaker blocks the user can select
   const [criteriaOptions, setCriteriaOptions] = useState([]);
   const [dealbreakerOptions, setDealbreakerOptions] = useState([]);
@@ -82,7 +86,6 @@ function AllocationControls() {
 
   const groupSize = useWatch({ name: "groupSize", control });
 
-  const [pending, setPending] = useState(false);
   const [datasetFile, setDatasetFile] = useState(null);
   const [requiredColumns, setRequiredColumns] = useState(null);
   const [datasetColumns, setDatasetColumns] = useState(null);
@@ -160,25 +163,23 @@ function AllocationControls() {
 
   const refreshData = () => {
     setCriteriaOptions([]);
+    setisLoading(true);
     reset(defaultValues);
-    api
-      .get(`/api/allocation/${selectedAssignment._id}/options`)
-      .then((resp) => {
-        return resp.data;
+    Promise.all([
+      api.get(`/api/allocation/${selectedAssignment._id}/options`),
+      api.get(`/api/allocation/${selectedAssignment._id}/setup`),
+    ])
+      .then(([optionsResp, setupResp]) => {
+        const optionsData = optionsResp.data;
+        const setupData = setupResp.data;
+
+        setCriteriaOptions(optionsData?.criteria ?? []);
+        setDealbreakerOptions(optionsData?.dealbreakers ?? []);
+        setRequiredSkills(optionsData?.skills ?? []);
+        reset(setupData);
       })
-      .then((data) => {
-        setCriteriaOptions(data?.criteria ?? []);
-        setDealbreakerOptions(data?.dealbreakers ?? []);
-        setRequiredSkills(data?.skills ?? []);
-      });
-    api
-      .get(`/api/allocation/${selectedAssignment._id}/setup`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        // Load the returned data into the form
-        reset(data);
+      .finally(() => {
+        setisLoading(false);
       });
   };
   
@@ -199,15 +200,18 @@ function AllocationControls() {
       formData.append("dataset", datasetFile);
     }
     setPending(true);
-    api
-      .post(`/api/allocation/${selectedAssignment._id}/run`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-      }})
+    const apiPromise = api.post(`/api/allocation/${selectedAssignment._id}/run`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      }
+    });
+    toast.promise(apiPromise, {
+      loading: "Generating allocations can take up to a minute...",
+      success: "All done!",
+    });
+    apiPromise
       .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
+        const data = resp.data;
         setGeneratedAllocation(data);
         if (activeModal !== "allocation") setActiveModal("allocation");
       })
@@ -388,13 +392,14 @@ function AllocationControls() {
             <Button
               className="d-flex align-items-center"
               onClick={showDatasetUploadModal}
+              disabled={isLoading || pending}
             >
               <Upload className="me-2" />
               { datasetFile ? "Change dataset" : "Upload dataset" }
             </Button>
             { isDirty &&
               <Button
-                disabled={pending || !isDirty}
+                disabled={isLoading || pending || !isDirty}
                 onClick={saveChanges}
                 className="d-flex align-items-center"
               >
@@ -413,7 +418,7 @@ function AllocationControls() {
             }
             { !isDirty &&
             <Button
-              disabled={pending || isDirty}
+              disabled={isLoading || pending || isDirty}
               variant="success"
               className="d-flex align-items-center"
               onClick={startAllocation}
@@ -443,7 +448,17 @@ function AllocationControls() {
             allocation. Criteria are prioritised with the most important listed
             first.
           </p>
-          {criteriaFields.length === 0 ? (
+          { isLoading ?
+            <Card className="placeholder-glow mb-3" border="success">
+              <Card.Body>
+                <Placeholder as={Card.Text} animation="glow">
+                  <Placeholder xs={7} /><br />
+                  <Placeholder xs={4} />
+                </Placeholder>
+              </Card.Body>
+            </Card>
+          :
+          criteriaFields.length === 0 ? (
             <p className="text-muted">
               Click the <PlusCircleFill /> button to add a new allocation
               criterion.
@@ -479,8 +494,16 @@ function AllocationControls() {
             Use deal-breakers to avoid specific group properties known to be
             problematic. If possible, the system won't create groups like this.
           </p>
-
-          {dealbreakersFields.length === 0 ? (
+          { isLoading ?
+            <Card className="placeholder-glow mb-3" border="danger">
+              <Card.Body>
+                <Placeholder as={Card.Text} animation="glow">
+                  <Placeholder xs={7} /><br />
+                  <Placeholder xs={4} />
+                </Placeholder>
+              </Card.Body>
+            </Card>
+          : dealbreakersFields.length === 0 ? (
             <p className="text-muted">
               Click the <PlusCircleFill /> button to add a new allocation
               dealbreaker.
@@ -507,6 +530,7 @@ function AllocationControls() {
         allocation={generatedAllocation}
         regnerateAllocation={startAllocation}
         requiredAttributes={requiredColumns}
+        pending={isLoading || pending}
       />
 
       <Modal show={activeModal === "release-allocation"} centered>

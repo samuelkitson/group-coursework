@@ -9,6 +9,7 @@ import {
   ListGroup,
   Badge,
   Dropdown,
+  Placeholder,
 } from "react-bootstrap";
 import {
   FlagFill,
@@ -26,7 +27,7 @@ import {
   InfoCircle,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes}) => {
+const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, pending}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
 
   const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
@@ -123,7 +124,12 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
     >
       <Modal.Header className="d-flex justify-content-between">
         <Modal.Title>Generated allocation</Modal.Title>
-        <Button onClick={regnerateAllocation} variant="primary" className="d-flex align-items-center">
+        <Button
+          onClick={regnerateAllocation}
+          variant="primary"
+          className="d-flex align-items-center"
+          disabled={pending}
+        >
           <Shuffle className="me-2" />
           Regenerate
         </Button>
@@ -180,14 +186,38 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
             <div className="d-flex justify-content-between">
               <p className="mb-0">
-                {allocation.allocation.length ?? 0} groups generated
+                { pending ? "Regenerating groups..." : `${allocation.allocation.length ?? 0} groups generated` }
               </p>
               <p className="mb-0">
-                Overall allocation quality: {(allocation.fitness * 100).toFixed(1)}%
+                { !pending && `Overall allocation quality: ${(allocation.fitness * 100).toFixed(1)}%`}
               </p>
             </div>
             
-            {allocation.allocation.map((group, index) => (
+            { pending ? Array.from({ length: Math.min(allocation.allocation.length, 5) }, (_, index) => (
+              <Card className="placeholder-glow my-3">
+                <Card.Body>
+                  <Row>
+                    <Col lg={6}>
+                      <Placeholder as={Card.Text} animation="glow">
+                        <Placeholder xs={6} /><br />
+                        <Placeholder xs={3} /><br />
+                        <Placeholder xs={5} /><br />
+                        <Placeholder xs={4} />
+                      </Placeholder>
+                    </Col>
+                    <Col lg={6}>
+                      <Placeholder as={Card.Text} animation="glow">
+                        <Placeholder xs={3} /><br />
+                        <Placeholder xs={4} /><br />
+                        <Placeholder xs={6} /><br />
+                        <Placeholder xs={5} />
+                      </Placeholder>
+                    </Col>
+                  </Row>
+                  
+                </Card.Body>
+              </Card>
+            )) : allocation.allocation.map((group, index) => (
               <Card
                 key={index}
                 className="my-3"
@@ -244,6 +274,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
       <Modal.Footer className="d-flex justify-content-between">
         <Button
           variant="danger"
+          disabled={pending}
           className="d-flex align-items-center"
           onClick={handleCancel}
         >
@@ -251,6 +282,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
         </Button>
         <Button
           variant="success"
+          disabled={pending}
           className="d-flex align-items-center"
           onClick={handleConfirm}
         >
