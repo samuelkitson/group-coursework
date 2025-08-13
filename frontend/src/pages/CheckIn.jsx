@@ -1,7 +1,7 @@
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Accordion, Button, Card, Col, Modal, OverlayTrigger, Row, Tooltip } from "react-bootstrap";
+import { Accordion, Button, Card, Col, Modal, OverlayTrigger, Row, Spinner, Tooltip } from "react-bootstrap";
 
 import { Ban, CalendarEvent, Check2All, ChevronRight, DashCircle, ExclamationOctagonFill, ExclamationTriangle, Eye, EyeSlash, HourglassSplit, PlusCircle, QuestionCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
@@ -46,15 +46,13 @@ function CheckIn() {
   const selectedTeam = useBoundStore((state) =>
     state.getSelectedTeam(),
   );
-  const { user } = useAuthStore();
+  const [ isPending, setIsPending ] = useState(false);
   const [ activeModal, setActiveModal ] = useState(null);
   const [ completionRate, setCompletionRate ] = useState({done: 0, outOf: 0});
-  const [ pointsImbalance, setPointsImbalance ] = useState(0);
   const [ checkInType, setCheckInType ] = useState(null);
   const [ peerReviewName, setPeerReviewName ] = useState(undefined);
   const [ checkInAvailable, setCheckInAvailable ] = useState(false);
   const [ peerReviewQuestions, setPeerReviewQuestions ] = useState([]);
-  const [ peerReviewRecipients, setPeerReviewRecipients ] = useState([]);
   const [ peerReviewAnswers, setPeerReviewAnswers ] = useState([]);
 
   const { control, reset, getValues, } = useForm({ workloadBalance: [] });
@@ -99,6 +97,7 @@ function CheckIn() {
       effortPoints: ratingsObj,
       reviews,
     }
+    setIsPending(true);
     api
       .post(`/api/checkin`, submitObj, { successToasts: true, })
       .then((resp) => {
@@ -107,6 +106,9 @@ function CheckIn() {
       .then((data) => {
         setCheckInAvailable(false);
         setCompletionRate({...completionRate, done: completionRate.done + 1});
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -130,7 +132,6 @@ function CheckIn() {
         setCheckInType(data?.type);
         setCompletionRate(data?.completionRate ?? {done: 0, outOf: 0});
         setPeerReviewQuestions(data?.questions ?? []);
-        setPeerReviewRecipients(data?.teamMembers ?? []);
         setPeerReviewName(data?.name);
         if (data?.teamMembers) {
           const questionsMap = data?.questions.reduce((acc, q) => ({ ...acc, [q]: 0 }), {});
@@ -145,7 +146,7 @@ function CheckIn() {
         } else {
           setPeerReviewAnswers([]);
         }
-      })
+      });
   };
 
   useEffect(() => {
@@ -256,7 +257,7 @@ function CheckIn() {
           </h4>
           <p className="text-muted">
             Tell us a bit more about each of your team member's contributions
-            towards the most recent deliverable. Your comments will help decide
+            towards the most recent deliverable. Your comments will help justify
             individual marks and will be shared with your team anonymously.
           </p>
           <Row>
@@ -281,6 +282,7 @@ function CheckIn() {
           variant="primary"
           className="d-flex align-items-center mt-3"
           onClick={submitCheckIn}
+          disabled={isPending}
         >
           Submit check-in
           <ChevronRight className="ms-2" />
