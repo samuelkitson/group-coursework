@@ -276,7 +276,7 @@ function TeamPeerReviews() {
       </Row>
       }
 
-      <AllTimeWorkloadChart showModal={activeModal === "all-time-workload"} onHide={hideModal} />
+      <AllTimeWorkloadChart activeModal={activeModal === "all-time-workload"} onHide={hideModal} />
     </>
   );
 }

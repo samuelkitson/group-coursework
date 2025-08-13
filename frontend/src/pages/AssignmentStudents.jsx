@@ -18,10 +18,10 @@ function AssignmentStudents() {
   );
   const [studentsList, setStudentsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [csvFile, setCsvFile] = useState(null);
   const [uploading, setIsUploading] = useState(false);
-  const [showModal, setShowModal] = useState(null);
+  const [activeModal, setActiveModal] = useState(null);
   const [studentToRemove, setStudentToRemove] = useState(null);
   const [whileLiveNewGroup, setWhileLiveNewGroup] = useState(null);
 
@@ -37,8 +37,8 @@ function AssignmentStudents() {
 
   const confirmStudentModal = (student) => {
     setStudentToRemove(student);
-    setShowModal("remove-student");
-    setPending(false);
+    setActiveModal("remove-student");
+    setIsPending(false);
   };
 
   const allStudentIdsNames = studentsList.map(user => ({
@@ -50,8 +50,8 @@ function AssignmentStudents() {
     setPairingExclusionsStudent(student);
     const otherStudents = allStudentIdsNames.filter(s => student.noPair.includes(s.value));
     setPairingExclusionsOthers(otherStudents);
-    setShowModal("pairing-exclusions");
-    setPending(false);
+    setActiveModal("pairing-exclusions");
+    setIsPending(false);
   };
 
   const submitPairingExclusions = () => {
@@ -67,15 +67,15 @@ function AssignmentStudents() {
       .then((data) => {
         setPairingExclusionsOthers([]);
         setPairingExclusionsStudent(null);
-        setShowModal(null);
+        setActiveModal(null);
         refreshData();
       }).finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
   const showRemoveAllModal = () => {
-    setShowModal("remove-all");
+    setActiveModal("remove-all");
   };
 
   const handleRemoveAll = () => {
@@ -89,9 +89,9 @@ function AssignmentStudents() {
       })
       .then((data) => {
         setStudentsList([]);
-        setShowModal(null);
+        setActiveModal(null);
       }).finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
@@ -125,16 +125,16 @@ function AssignmentStudents() {
       })
       .then((data) => {
         setStudentsList(studentsList.filter(s => s._id !== studentToRemove._id));
-        setShowModal(null);
+        setActiveModal(null);
       }).finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
   const handlePreSubmitFile = () => {
     setWhileLiveNewGroup(null);
     if (selectedAssignment.state === "live") {
-      setShowModal("upload-while-live");
+      setActiveModal("upload-while-live");
     } else {
       handleSubmitFile();
     }
@@ -162,7 +162,7 @@ function AssignmentStudents() {
       success: () => {
         refreshData();
         setCsvFile(null);
-        setShowModal(null);
+        setActiveModal(null);
         return "File uploaded successfully!";
       },
     });
@@ -274,7 +274,7 @@ function AssignmentStudents() {
             <Button
               className="d-flex align-items-center"
               variant="secondary"
-              onClick={() => setShowModal("csv-help")}
+              onClick={() => setActiveModal("csv-help")}
             >
               <InfoCircle className="me-2" />Templates
             </Button>
@@ -304,7 +304,7 @@ function AssignmentStudents() {
         </Col>
       </Row>
 
-      <Modal show={showModal === "csv-help"} onHide={() => setShowModal(null)} centered>
+      <Modal show={activeModal === "csv-help"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Uploading student data</Modal.Title>
         </Modal.Header>
@@ -330,29 +330,30 @@ function AssignmentStudents() {
         </Modal.Body>
       </Modal>
 
-      <Modal show={showModal === "remove-student"} onHide={() => setShowModal(null)} centered>
+      <Modal show={activeModal === "remove-student"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Remove student</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to remove "{studentToRemove?.displayName}" from {selectedAssignment.name}?
-          If teams have been allocated, they'll be removed and won't be replaced.
+          If teams have been allocated, they'll be removed and won't be
+          replaced automatically.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={removeStudent} disabled={pending}>
+          <Button variant="danger" onClick={removeStudent} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showModal === "remove-all"} onHide={() => setShowModal(null)} centered>
+      <Modal show={activeModal === "remove-all"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Remove all students</Modal.Title>
         </Modal.Header>
@@ -361,21 +362,21 @@ function AssignmentStudents() {
           You should only do this if you've accidentally uploaded the wrong list
           of students and need to start again.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleRemoveAll} disabled={pending}>
+          <Button variant="danger" onClick={handleRemoveAll} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showModal === "upload-while-live"} onHide={() => setShowModal(null)} centered>
+      <Modal show={activeModal === "upload-while-live"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Teams already allocated</Modal.Title>
         </Modal.Header>
@@ -400,50 +401,53 @@ function AssignmentStudents() {
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleSubmitFile} disabled={pending || whileLiveNewGroup == null}>
+          <Button
+            variant="primary"
+            onClick={handleSubmitFile}
+            disabled={isPending || whileLiveNewGroup == null}
+          >
             Confirm
           </Button>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showModal === "pairing-exclusions"} onHide={() => setShowModal(null)} centered size="lg">
+      <Modal show={activeModal === "pairing-exclusions"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Pairing exclusions</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <p>Use this popup to prevent{" "}
-          <span className="fw-semibold">{pairingExclusionsStudent?.displayName}</span>{" "}
-          being allocated into a group with specific students. Use this option
+          <p>Prevent <span className="fw-semibold">{pairingExclusionsStudent?.displayName}</span>{" "}
+          from being placed in a group with specific students. Use this option
           if a student has reported another for bullying, for example. This
-          applies to all assignments.</p>
+          applies to all assignments and will be visible to other staff.</p>
           
           <p className="text-muted mb-1">Don't put in a group with:</p>
           <Select
             isMulti
-            options={allStudentIdsNames}
+            options={allStudentIdsNames.filter(n => n.label != pairingExclusionsStudent?.displayName)}
             value={pairingExclusionsOthers}
             onChange={(selectedOptions) => setPairingExclusionsOthers(selectedOptions)}
             placeholder="No exclusions set"
             menuPlacement="top"
           />
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={submitPairingExclusions} disabled={pending}>
+          <Button variant="primary" onClick={submitPairingExclusions} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>

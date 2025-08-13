@@ -5,7 +5,7 @@ import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
 
 const StaffCheckInStatusCard = ({ data }) => {
-  const [showModal, setShowModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [reminderSent, setReminderSent] = useState(data.reminderSent);
 
   const assignment = useBoundStore.getState().getSelectedAssignment();
@@ -13,7 +13,7 @@ const StaffCheckInStatusCard = ({ data }) => {
   if (!assignment) return null;
 
   const sendReminders = () => {
-    setShowModal(false);
+    setActiveModal(null);
     api
       .post(
         "/api/peer-review/reminders",
@@ -50,7 +50,7 @@ const StaffCheckInStatusCard = ({ data }) => {
             <Button
               variant="outline-primary"
               size="sm"
-              onClick={() => setShowModal(true)}
+              onClick={() => setActiveModal("confirm-checkin-reminders")}
               disabled={data.unsubmittedCount === 0}
             >
               {reminderSent ? "Resend reminders" : "Send reminders"}
@@ -59,7 +59,7 @@ const StaffCheckInStatusCard = ({ data }) => {
         </Stack>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-checkin-reminders"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Send reminders</Modal.Title>
         </Modal.Header>
@@ -76,7 +76,7 @@ const StaffCheckInStatusCard = ({ data }) => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+          <Button variant="secondary" onClick={() => setActiveModal(null)}>
             Cancel
           </Button>
           <Button variant="primary" onClick={sendReminders}>

@@ -75,7 +75,7 @@ function AllocationControls() {
   const [requiredColumns, setRequiredColumns] = useState(null);
   const [datasetColumns, setDatasetColumns] = useState(null);
 
-  const [activeModal, setActiveModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
 
   const [generatedAllocation, setGeneratedAllocation] = useState(null);
 
@@ -508,7 +508,7 @@ function AllocationControls() {
       </Row>
 
       <PotentialGroupsModal
-        showModal={activeModal === "allocation" && generatedAllocation}
+        activeModal={activeModal === "allocation" && generatedAllocation}
         handleCancel={handleRejectAllocation}
         handleConfirm={handleAcceptAllocation}
         allocation={generatedAllocation}
@@ -630,7 +630,7 @@ function AllocationControls() {
       </Modal>
       
       <DatasetUpload
-       showModal={activeModal === "dataset-upload"}
+       activeModal={activeModal === "dataset-upload"}
        onHide={() => setActiveModal(null)}
        currentFileName={datasetFile?.name}
        datasetColumns={datasetColumns}

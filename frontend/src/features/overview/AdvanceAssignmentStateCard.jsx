@@ -12,7 +12,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
   const updateSelectedAssignment = useBoundStore(
     (state) => state.updateSelectedAssignment,
   );
-  const [showModal, setShowModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [pending, setPending] = useState(false);
 
   const nextState = nextAssignmentState(selectedAssignment.state);
@@ -49,7 +49,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
       })
       .finally(() => {
         setPending(false);
-        setShowModal(false);
+        setActiveModal(null);
       });
   };
 
@@ -63,14 +63,14 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         {buttonText && <Button
           variant="primary"
           className="d-flex align-items-center"
-          onClick={() => setShowModal(true)}
+          onClick={() => setActiveModal("confirm-state-change")}
           disabled={pending}
         >
           {buttonText} <ChevronRight className="ms-2" />
         </Button>}
       </Card.Body>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-state-change"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Change assignment state</Modal.Title>
         </Modal.Header>
@@ -78,10 +78,10 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
           Are you sure you want to move this assignment to the state "
           {nextState?.name}"? You can't undo this action.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(false)}
+            onClick={() => setActiveModal(null)}
             disabled={pending}
           >
             Cancel

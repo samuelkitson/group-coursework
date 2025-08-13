@@ -27,7 +27,7 @@ import {
   InfoCircle,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, isPending}) => {
+const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, isPending}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
 
   const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
@@ -118,7 +118,7 @@ const PotentialGroupsModal = ({showModal, allocation, handleCancel, handleConfir
 
   return (
     <Modal
-      show={showModal}
+      show={activeModal}
       backdrop="static"
       fullscreen={true}
     >

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { } from 'react-bootstrap-icons';
 
-const DisputeMeetingModal = ({ showModal, onHide, meeting, hasSupervisor, onSubmit }) => {
+const DisputeMeetingModal = ({ activeModal, onHide, meeting, hasSupervisor, onSubmit }) => {
   const [disputeNotes, setDisputeNotes] = useState("");
   const staffString = hasSupervisor ? "supervisor/lecturer" : "lecturer";
 
@@ -12,13 +12,13 @@ const DisputeMeetingModal = ({ showModal, onHide, meeting, hasSupervisor, onSubm
   };
 
   useEffect(() => {
-    if (showModal) {
+    if (activeModal) {
       setDisputeNotes("");
     }
-  }, [showModal]);
+  }, [activeModal]);
 
   return (
-    <Modal show={showModal} onHide={onHide} backdrop="static" keyboard={false} centered size="lg">
+    <Modal show={activeModal} onHide={onHide} backdrop="static" keyboard={false} centered size="lg">
       <Modal.Header closeButton>
         <Modal.Title>Dispute meeting</Modal.Title>
       </Modal.Header>

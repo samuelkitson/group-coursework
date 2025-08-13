@@ -27,7 +27,7 @@ function AssignmentTeams() {
   const [checkinStudents, setCheckinStudents] = useState([]);
   const [moveMode, setMoveMode] = useState(null);
   const [studentToMove, setStudentToMove] = useState(null);
-  const [showModal, setShowModal] = useState(null);
+  const [activeModal, setActiveModal] = useState(null);
 
   const teamEmailLink = (groupidx) => {
     const emailAddresses = filteredTeams[groupidx].members.map(s => s.email).filter(e => e && e != user.email).join(";");

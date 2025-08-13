@@ -225,7 +225,7 @@ function TeamMeetings() {
       </Row>
 
       <NewMeetingModal
-        showModal={activeModal==="new-meeting"}
+        activeModal={activeModal==="new-meeting"}
         onHide={() => {setActiveModal(null); setEditMeeting(null); }} 
         teamMembers={selectedTeam.members}
         supervisors={selectedTeam.supervisors}
@@ -235,7 +235,7 @@ function TeamMeetings() {
       />
 
       <DisputeMeetingModal
-        showModal={activeModal==="dispute-meeting"}
+        activeModal={activeModal==="dispute-meeting"}
         onHide={() => setActiveModal(null)}
         onSubmit={handleSubmitDispute}
         hasSupervisor={selectedTeam?.supervisors?.length > 0}

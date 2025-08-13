@@ -17,7 +17,7 @@ function Dashboard() {
   const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
   const assignments = useBoundStore((state) => state.assignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
-  const [showModal, setShowModal] = useState(null);
+  const [activeModal, setActiveModal] = useState(null);
   const [pending, setPending] = useState(false);
   const [newAssignmentName, setNewAssignmentName] = useState("");
   const [newAssignmentDesc, setNewAssignmentDesc] = useState("");
@@ -48,7 +48,7 @@ function Dashboard() {
       .then((data) => {
         setNewAssignmentName("");
         setNewAssignmentDesc("");
-        setShowModal(null);
+        setActiveModal(null);
         // Update assignments list
         fetchAssignments(true);
       }).finally(() => {
@@ -94,7 +94,7 @@ function Dashboard() {
             <Button
               variant="primary"
               className="d-flex align-items-center"
-              onClick={() => setShowModal("new-assignment")}
+              onClick={() => setActiveModal("new-assignment")}
             >
               <PlusCircleFill className="me-2" />New assignment
             </Button>
@@ -160,11 +160,11 @@ function Dashboard() {
 
       {/* Modal to add new criteria */}
       <Modal
-        show={showModal === "new-assignment"}
+        show={activeModal === "new-assignment"}
         size="lg"
         scrollable
         centered
-        onHide={() => setShowModal(null)}
+        onHide={() => setActiveModal(null)}
       >
         <Modal.Header closeButton>
           <Modal.Title>Create assignment</Modal.Title>
@@ -201,7 +201,7 @@ function Dashboard() {
         <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
+            onClick={() => setActiveModal(null)}
             disabled={pending}
           >
             Cancel

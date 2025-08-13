@@ -12,7 +12,7 @@ const DeleteAssignmentCard = () => {
     (state) => state.updateSelectedAssignment,
   );
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [pending, setPending] = useState(false);
 
   const confirmDelete = async () => {
@@ -28,7 +28,7 @@ const DeleteAssignmentCard = () => {
       })
       .finally(() => {
         setPending(false);
-        setShowModal(false);
+        setActiveModal(null);
       });
   };
 
@@ -43,14 +43,14 @@ const DeleteAssignmentCard = () => {
         <Button
           variant="danger"
           className="d-flex align-items-center"
-          onClick={() => setShowModal(true)}
+          onClick={() => setActiveModal("confirm-delete")}
           disabled={pending}
         >
           Delete
         </Button>
       </Card.Body>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-delete"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Delete assignment</Modal.Title>
         </Modal.Header>
@@ -61,7 +61,7 @@ const DeleteAssignmentCard = () => {
         <Modal.Footer>
           <Button
             variant="secondary"
-            onClick={() => setShowModal(false)}
+            onClick={() => setActiveModal(null)}
             disabled={pending}
           >
             Cancel
