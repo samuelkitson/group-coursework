@@ -11,6 +11,6 @@ const emailSchema = new Schema(
   { timestamps: true },
 );
 
-emailSchema.index({ templateId: 1, assignment: 1, team: 1, }, { unique: true });
+emailSchema.index({ templateId: 1, assignment: 1, team: 1, });
 
 module.exports = model("email", emailSchema);
