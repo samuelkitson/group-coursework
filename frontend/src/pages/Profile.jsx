@@ -105,21 +105,23 @@ function Profile() {
           <p className="text-muted">
             {user.role === "student"
               ? "Use this page to edit your personal details that are visible to other students and staff. Some are synced with your University account and can't be edited here."
-              : "Here you can see your personal details that are visible to students and other staff. As a staff member, you can't edit any of the details here yourself."}
+              : "Here you can see your personal details that are visible to students and other staff. These details come from your University account."}
           </p>
         </Col>
-        <Col
-          xs={12}
-          md={3}
-          className="d-flex flex-column align-items-end mt-md-2"
-        >
-          <SaveButton
-            isPending={isPending}
-            unsaved={isDirty}
-            saveChanges={submitProfileUpdates}
-            doNotHide={true}
-          />
-        </Col>
+        { user.role === "student" && 
+          <Col
+            xs={12}
+            md={3}
+            className="d-flex flex-column align-items-end mt-md-2"
+          >
+            <SaveButton
+              isPending={isPending}
+              unsaved={isDirty}
+              saveChanges={submitProfileUpdates}
+              doNotHide={true}
+            />
+          </Col>
+        }
       </Row>
 
       <Row className="mb-2 mb-md-3">
