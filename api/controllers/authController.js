@@ -156,6 +156,12 @@ exports.azureLoginCallback = async (req, res) => {
       dbRecord.displayName = displayName;
       await dbRecord.save();
     }
+    // If the user was a student and is now staff, update their record
+    else if (dbRecord.role === "student" && isStaff) {
+      dbRecord.role = "staff";
+      dbRecord.displayName = displayName;
+      await dbRecord.save();
+    }
     // Update display name in case this has changed since last login
     else if (dbRecord.displayName !== displayName) {
       dbRecord.displayName = displayName;
