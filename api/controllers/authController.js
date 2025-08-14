@@ -30,6 +30,7 @@ exports.login = async (req, res) => {
     req.session.userId = dbRecord._id;
     req.session.email = dbRecord.email;
     req.session.role = dbRecord.role;
+    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? dbRecord.role === "admin" : ["staff", "admin"].includes(dbRecord.role); 
     res.json({
       message: "Logged in successfully. Welcome back!",
       data: {
@@ -37,6 +38,7 @@ exports.login = async (req, res) => {
         email: dbRecord.email,
         displayName: dbRecord.displayName,
         role: dbRecord.role,
+        canCreateAssignments,
       },
     });
   } else {
@@ -154,6 +156,12 @@ exports.azureLoginCallback = async (req, res) => {
       dbRecord.displayName = displayName;
       await dbRecord.save();
     }
+    // If the user was a student and is now staff, update their record
+    else if (dbRecord.role === "student" && isStaff) {
+      dbRecord.role = "staff";
+      dbRecord.displayName = displayName;
+      await dbRecord.save();
+    }
     // Update display name in case this has changed since last login
     else if (dbRecord.displayName !== displayName) {
       dbRecord.displayName = displayName;
@@ -163,6 +171,7 @@ exports.azureLoginCallback = async (req, res) => {
     req.session.userId = dbRecord._id;
     req.session.email = dbRecord.email;
     req.session.role = dbRecord.role;
+    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? dbRecord.role === "admin" : ["staff", "admin"].includes(dbRecord.role);
     res.json({
       message: "Logged in successfully. Welcome back!",
       data: {
@@ -170,6 +179,7 @@ exports.azureLoginCallback = async (req, res) => {
         email: dbRecord.email,
         displayName: dbRecord.displayName,
         role: dbRecord.role,
+        canCreateAssignments,
       },
     });
   } else {
@@ -184,6 +194,7 @@ exports.azureLoginCallback = async (req, res) => {
     req.session.userId = createdAccount._id;
     req.session.email = createdAccount.email;
     req.session.role = createdAccount.role;
+    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? dbRecord.role === "admin" : ["staff", "admin"].includes(dbRecord.role); 
     res.json({
       message: "Account created successfully. Welcome!",
       data: {
@@ -191,6 +202,7 @@ exports.azureLoginCallback = async (req, res) => {
         email: createdAccount.email,
         displayName: createdAccount.displayName,
         role: createdAccount.role,
+        canCreateAssignments,
       },
     });
   }

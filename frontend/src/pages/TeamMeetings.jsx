@@ -7,7 +7,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { hoursSince, timestampToHumanFriendly } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
-import { Badge, Button, Card, Col, ListGroup, Modal, Row } from "react-bootstrap";
+import { Badge, Button, Card, Col, ListGroup, Modal, Placeholder, Row } from "react-bootstrap";
 import { ArrowLeftShort, ArrowRightCircleFill, CalendarEvent, CheckCircleFill, ChevronLeft, PenFill, PinMapFill, PlusCircleFill, SlashCircleFill, XCircleFill } from "react-bootstrap-icons";
 
 function TeamMeetings() {
@@ -17,6 +17,8 @@ function TeamMeetings() {
   const { getSelectedAssignment } = useBoundStore();
   const { user } = useAuthStore();
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, setIsPending] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [meetingHistory, setMeetingHistory] = useState([]);
   const [attendanceHistory, setAttendanceHistory] = useState({});
@@ -24,6 +26,7 @@ function TeamMeetings() {
   const [deleteMeeting, setDeleteMeeting] = useState(null);
   const [editMeeting, setEditMeeting] = useState(null);
   const [currentEditLog, setCurrentEditLog] = useState(null);
+  const assignmentClosed = getSelectedAssignment()?.state === "closed";
   
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -42,6 +45,7 @@ function TeamMeetings() {
 
   const submitMeetingRecord = (recordObj) => {
     // Check if we're editing or uploading new minutes.
+    setIsPending(true);
     if (editMeeting) {
       // Editing existing meeting
       api
@@ -53,6 +57,9 @@ function TeamMeetings() {
           setActiveModal(null);
           setEditMeeting(null);
           refreshData();
+        })
+        .finally(() => {
+          setIsPending(false);
         });
     } else {
       // New meeting
@@ -64,6 +71,9 @@ function TeamMeetings() {
         .then((data) => {
           setActiveModal(null);
           refreshData();
+        })
+        .finally(() => {
+          setIsPending(false);
         });
     }
   };
@@ -80,6 +90,7 @@ function TeamMeetings() {
   };
 
   const handleSubmitDispute = (disputeNotes) => {
+    setIsPending(true);
     api
       .post(`/api/meeting/${disputeMeeting._id}/dispute`,
         {notes: disputeNotes},
@@ -91,6 +102,9 @@ function TeamMeetings() {
       .then((data) => {
         setActiveModal(null);
         setDisputeMeeting(null);
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -100,6 +114,7 @@ function TeamMeetings() {
   };
 
   const handleDeleteMeeting = () => {
+    setIsPending(true);
     api
       .delete(`/api/meeting/${deleteMeeting._id}`, {
         successToasts: true,
@@ -110,6 +125,7 @@ function TeamMeetings() {
       })
       .finally(() => {
         setActiveModal(null);
+        setIsPending(false);
       });
   };
 
@@ -124,6 +140,7 @@ function TeamMeetings() {
   };
 
   const refreshData = () => {
+    setIsLoading(true);
     // Get the meeting history for the team
     api
       .get(`/api/meeting?team=${selectedTeam._id}`)
@@ -133,6 +150,9 @@ function TeamMeetings() {
       .then((data) => {
         setMeetingHistory(data.meetings);
         setAttendanceHistory(data.attendanceStats);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -171,6 +191,7 @@ function TeamMeetings() {
               variant="primary"
               className="d-flex align-items-center"
               onClick={(e) => (setActiveModal("new-meeting"))}
+              disabled={assignmentClosed || isPending || isLoading}
             >
               <PlusCircleFill className="me-2" />New meeting
             </Button>
@@ -179,7 +200,18 @@ function TeamMeetings() {
       </Row>
       <Row className="mb-4 gy-4 gx-4">
         <Col lg={9} md={12}>
-          { meetingHistory.length > 0 ? meetingHistory.map((meeting, meetingidx) => (
+          { isLoading ? 
+            <Card className="placeholder-glow my-3">
+              <Card.Body>
+                <Placeholder as={Card.Text} animation="glow">
+                  <Placeholder xs={6} /><br />
+                  <Placeholder xs={3} /><br />
+                  <Placeholder xs={5} /><br />
+                  <Placeholder xs={4} />
+                </Placeholder>
+              </Card.Body>
+            </Card>
+          : (meetingHistory.length > 0 ? meetingHistory.map((meeting, meetingidx) => (
             <MeetingRecordCard
               meeting={meeting}
               key={meetingidx}
@@ -190,6 +222,8 @@ function TeamMeetings() {
               onDelete={(m) => showDeleteConfirm(m)}
               onDispute={(m) => showMeetingDispute(m)}
               viewEdits={((editLog) => showEditLog(editLog))}
+              assignmentClosed={assignmentClosed}
+              isPending={isPending}
             />
           )) : 
             <Card className="shadow-sm">
@@ -206,7 +240,7 @@ function TeamMeetings() {
                 }
               </Card.Body>
             </Card>
-          }
+          )}
         </Col>
         <Col lg={3} md={12}>
           <h6>Attendance stats</h6>
@@ -225,21 +259,23 @@ function TeamMeetings() {
       </Row>
 
       <NewMeetingModal
-        showModal={activeModal==="new-meeting"}
+        activeModal={activeModal==="new-meeting"}
         onHide={() => {setActiveModal(null); setEditMeeting(null); }} 
         teamMembers={selectedTeam.members}
         supervisors={selectedTeam.supervisors}
         previousActions={getLatestActions()}
         onSubmit={submitMeetingRecord}
         existingMeeting={editMeeting}
+        isPending={isPending}
       />
 
       <DisputeMeetingModal
-        showModal={activeModal==="dispute-meeting"}
+        activeModal={activeModal==="dispute-meeting"}
         onHide={() => setActiveModal(null)}
         onSubmit={handleSubmitDispute}
         hasSupervisor={selectedTeam?.supervisors?.length > 0}
         meeting={disputeMeeting}
+        isPending={isPending}
       />
 
       <Modal show={activeModal === "confirm-delete"} centered onHide={() => setActiveModal(null)}>
@@ -252,22 +288,24 @@ function TeamMeetings() {
             {timestampToHumanFriendly(deleteMeeting?.dateTime ?? deleteMeeting?.createdAt)}?{" "}
             This cannot be undone.
           </p>
-          {["lecturer", "supervisor"].includes(getSelectedAssignment().role) && 
+          {(["lecturer", "supervisor"].includes(getSelectedAssignment().role) && deleteMeeting?.disputes?.length > 0) && 
           <p>
-            If there are disputes about this meeting, please add a private note
-            describing these and your actions before proceeding. Disputes are
-            lost when the linked meeting is deleted.
+            <span className="fw-semibold">This meeting has been disputed. </span>
+            When a meeting is deleted, any linked disputes are lost. You should
+            make a note of why you're deleting this meeting on the obvservations
+            page.
           </p>
           }
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleDeleteMeeting}>
+          <Button variant="danger" onClick={handleDeleteMeeting} disabled={isPending}>
             Delete
           </Button>
         </Modal.Footer>

@@ -5,7 +5,7 @@ import { Modal } from "react-bootstrap";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
 import { chartColours } from "@/utility/helpers";
 
-const AllTimeWorkloadChart = ({showModal, onHide}) => {
+const AllTimeWorkloadChart = ({activeModal, onHide}) => {
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
   const [checkinHistory, setCheckinHistory] = useState([]);
   const [checkinStudents, setCheckinStudents] = useState([]);
@@ -35,11 +35,11 @@ const AllTimeWorkloadChart = ({showModal, onHide}) => {
   };
 
   useEffect(() => {
-    if (showModal) loadData();
-  }, [showModal]);
+    if (activeModal) loadData();
+  }, [activeModal]);
   
   return (
-    <Modal show={showModal} size="xl" onHide={onHide}>
+    <Modal show={activeModal} size="xl" onHide={onHide}>
       <Modal.Header closeButton>
         <Modal.Title>Workload balance</Modal.Title>
       </Modal.Header>

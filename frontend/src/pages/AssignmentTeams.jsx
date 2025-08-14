@@ -1,13 +1,10 @@
-import MeetingRecordCard from "@/features/meetings/MeetingRecordCard";
 import api from "@/services/apiMiddleware";
 import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { daysSince } from "@/utility/datetimes";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Button, Card, Col, Dropdown, ListGroup, Modal, OverlayTrigger, ProgressBar, Row, ToggleButton, ToggleButtonGroup, Tooltip } from "react-bootstrap";
-import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CardChecklist, CloudDownload, Dot, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, QuestionCircleFill, ExclamationTriangle, ExclamationTriangleFill, Eyeglasses, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, InfoCircle, JournalText, GraphUp, ClipboardData, Download } from "react-bootstrap-icons";
-import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip as ChartTooltip, Label, ReferenceArea } from "recharts";
+import { Button, Card, Col, Dropdown, OverlayTrigger, Placeholder, Row, Spinner, Tooltip } from "react-bootstrap";
+import { ThreeDotsVertical, ArrowLeftRight, PersonVideo3, CloudDownload, Envelope, QuestionCircleFill, ExclamationTriangleFill, Eyeglasses, HandThumbsUpFill, InfoCircle, JournalText, GraphUp, Download } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
 
 function AssignmentTeams() {
@@ -15,19 +12,15 @@ function AssignmentTeams() {
     state.getSelectedAssignment(),
   );
   const { setSelectedTeam } = useBoundStore();
-  const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
   const { user } = useAuthStore();
   const navigate = useNavigate();
 
+  const [isLoading, setIsLoading] = useState(true);
   const [teams, setTeams] = useState([]);
   const [currentFilter, setCurrentFilter] = useState("none");
   const [filteredTeams, setFilteredTeams] = useState([]);
-  const [meetingHistory, setMeetingHistory] = useState(null);
-  const [checkinHistory, setCheckinHistory] = useState(null);
-  const [checkinStudents, setCheckinStudents] = useState([]);
   const [moveMode, setMoveMode] = useState(null);
   const [studentToMove, setStudentToMove] = useState(null);
-  const [showModal, setShowModal] = useState(null);
 
   const teamEmailLink = (groupidx) => {
     const emailAddresses = filteredTeams[groupidx].members.map(s => s.email).filter(e => e && e != user.email).join(";");
@@ -110,24 +103,24 @@ function AssignmentTeams() {
   const generateInsights = (insights) => {
     return (
       <ul className="list-unstyled">
-      { insights.map(insight => {
+      { insights.map((insight, i) => {
         if (insight.type === "positive") {
           return (
-            <li className="d-flex align-items-center">
+            <li className="d-flex align-items-center" key={i}>
               <HandThumbsUpFill className="me-2 text-success"/>
               { insight.text }
             </li>
           )
         } else if (insight.type === "warning") {
           return (
-            <li className="d-flex align-items-center">
+            <li className="d-flex align-items-center"> key={i}
               <ExclamationTriangleFill className="me-2 text-warning"/>
               { insight.text }
             </li>
           )
         } else if (insight.type === "severe") {
           return (
-            <li className="d-flex align-items-center text-danger fw-semibold">
+            <li className="d-flex align-items-center text-danger fw-semibold" key={i}>
               <ExclamationTriangleFill className="me-2 text-danger"/>
               { insight.text }
             </li>
@@ -198,6 +191,7 @@ function AssignmentTeams() {
 
   const refreshData = () => {
     // Get the teams on this assignment
+    setIsLoading(true);
     api
       .get(`/api/team/all?assignment=${selectedAssignment._id}`)
       .then((resp) => {
@@ -207,6 +201,9 @@ function AssignmentTeams() {
         setTeams(data.teams);
         setCurrentFilter("none");
         setFilteredTeams(data.teams);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
@@ -263,6 +260,7 @@ function AssignmentTeams() {
                 variant={moveMode ? "danger" : "primary"}
                 className="d-flex align-items-center"
                 onClick={togglemoveMode}
+                disabled={isLoading}
               >
                 <ArrowLeftRight className="me-2" />Move students
               </Button>
@@ -273,8 +271,8 @@ function AssignmentTeams() {
 
       <Row>
         <Col md={4}>
-          <Dropdown>
-            <Dropdown.Toggle variant="light" size="sm" className="border">
+          <Dropdown >
+            <Dropdown.Toggle variant="light" size="sm" className="border" disabled={isLoading}>
               {getFilterText(currentFilter)}
             </Dropdown.Toggle>
             <Dropdown.Menu size="sm">
@@ -297,7 +295,21 @@ function AssignmentTeams() {
 
       <Row>
         <Col>
-          {(teams.length === 0 && currentFilter == "none") && 
+          { isLoading && 
+            <Card className="my-3">
+              <Card.Body>
+                <div className="d-flex">
+                  <Spinner
+                    animation="border"
+                    variant="secondary"
+                    className="me-3"
+                  />
+                  <Card.Text className="text-muted">Loading...</Card.Text>
+                </div>
+              </Card.Body>
+            </Card>
+          }
+          {(!isLoading && teams.length === 0 && currentFilter == "none") && 
             <Card className="my-3">
               <Card.Body>
                 <Card.Title className="d-flex align-items-center">
@@ -312,7 +324,7 @@ function AssignmentTeams() {
               </Card.Body>
             </Card>
           }
-          {(filteredTeams.length === 0 && teams.length > 0) && 
+          {(!isLoading && filteredTeams.length === 0 && teams.length > 0) && 
             <Card className="my-3">
               <Card.Body>
                 <Card.Title className="d-flex align-items-center">
@@ -334,7 +346,7 @@ function AssignmentTeams() {
             >Add to a new empty team</a>
           </div>
           }
-          {filteredTeams.map((group, index) => (
+          {!isLoading && filteredTeams.map((group, index) => (
             <Card key={index} className="my-3" id={`team-card-${group._id}`}>
               <Card.Body>
                 <Card.Title className="mb-2 d-flex justify-content-between align-items-center">
@@ -387,7 +399,8 @@ function AssignmentTeams() {
                 <Row>
                   <Col md={5}>
                     <ul className="list-unstyled">
-                      {group.members.map((student, i) => ( <div className="d-flex align-items-center">
+                      {group.members.map((student, i) => (
+                        <div className="d-flex align-items-center" key={`move1-${student._id}`}>
                         { moveMode === 1 ? 
                         <>
                           <a
@@ -407,7 +420,7 @@ function AssignmentTeams() {
                       </div>))}
                     </ul>
                     <ul className="list-unstyled mb-0">
-                      {(group?.supervisors ?? []).map((supervisor, i) => ( <div className="d-flex align-items-center text-muted">
+                      {(group?.supervisors ?? []).map((supervisor, i) => ( <div className="d-flex align-items-center text-muted" key={`supervisor-${supervisor._id}`}>
                         <li key={supervisor._id}><Eyeglasses /> {supervisor.displayName}</li>
                       </div>))}
                     </ul>

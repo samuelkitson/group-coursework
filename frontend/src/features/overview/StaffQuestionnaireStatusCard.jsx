@@ -5,7 +5,7 @@ import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
 
 const StaffQuestionnaireStatusCard = ({ data }) => {
-  const [showModal, setShowModal] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
   const [reminderSent, setReminderSent] = useState(data?.reminderSent ?? false);
 
   const assignment = useBoundStore.getState().getSelectedAssignment();
@@ -13,7 +13,7 @@ const StaffQuestionnaireStatusCard = ({ data }) => {
   if (!assignment) return null;
 
   const sendReminders = () => {
-    setShowModal(false);
+    setActiveModal(null);
     api
       .post(
         "/api/questionnaire/reminders",
@@ -50,7 +50,7 @@ const StaffQuestionnaireStatusCard = ({ data }) => {
             <Button
               variant="outline-primary"
               size="sm"
-              onClick={() => setShowModal(true)}
+              onClick={() => setActiveModal("confirm-questionnaire-reminders")}
               disabled={data.incomplete === 0}
             >
               {reminderSent ? "Resend reminders" : "Send reminders"}
@@ -59,7 +59,7 @@ const StaffQuestionnaireStatusCard = ({ data }) => {
         </Stack>
       </Card>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-questionnaire-reminders"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Send reminders</Modal.Title>
         </Modal.Header>
@@ -76,8 +76,8 @@ const StaffQuestionnaireStatusCard = ({ data }) => {
             </p>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button variant="secondary" onClick={() => setActiveModal(null)}>
             Cancel
           </Button>
           <Button variant="primary" onClick={sendReminders}>

@@ -1,22 +1,20 @@
 import SaveButton from "@/components/SaveButton";
 import api from "@/services/apiMiddleware";
 import { useBoundStore } from "@/store/dataBoundStore";
-import React, { useState, useEffect } from "react";
-import { Button, Col, Form, InputGroup, ListGroup, Modal, Row, ToggleButton, ToggleButtonGroup, } from "react-bootstrap";
+import React, { useState, useEffect, useContext } from "react";
+import { AccordionContext, Button, Col, Form, InputGroup, ListGroup, Modal, Placeholder, Row, ToggleButton, ToggleButtonGroup, } from "react-bootstrap";
 import { startOfWeek, endOfWeek, isBefore, isAfter, isEqual, addWeeks, format, parseISO, addDays } from "date-fns";
 import toast from "react-hot-toast";
 import { CheckCircleFill, ExclamationTriangle, ExclamationTriangleFill, PencilSquare, PlusCircleFill, Trash3Fill, XCircle, XLg } from "react-bootstrap-icons";
 import { shimToUTC } from "@/utility/datetimes";
 import { get, useForm } from "react-hook-form";
 
-function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
+function PeerReviewSettings({ eventKey, unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
-  const updateSelectedAssignment = useBoundStore(
-    (state) => state.updateSelectedAssignment,
-  );
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const [peerReviewEnabled, setPeerReviewEnabled] = useState(false);
   const [peerReviews, setPeerReviews] = useState([]);
@@ -26,7 +24,10 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   const [questionsModalList, setQuestionsModalList] = useState([]);
   const [reviewToRename, setReviewToRename] = useState(null);
   const defaultValues = { newReviewName: "" };
-  const { control, register, reset, getValues, } = useForm({ defaultValues, mode: "onTouched", });
+  const { register, reset, getValues, } = useForm({ defaultValues, mode: "onTouched", });
+
+  const { activeEventKey } = useContext(AccordionContext);
+  const isExpanded = activeEventKey === eventKey;
 
   const updatePeerReview = (index, updatedFields) => {
     setPeerReviews(prev =>
@@ -79,7 +80,7 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   };
 
   const saveChanges = async () => {
-    setPending(true);
+    setIsPending(true);
     let updateObj = { assignment: selectedAssignment._id, };
     if (peerReviewEnabled) {
       updateObj.peerReviews = peerReviews;
@@ -92,12 +93,13 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
         markSaved();
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
 
   const refreshData = () => {
-    setPending(true);
+    if (!isExpanded || isLoaded) return;
+    setIsPending(true);
     // Get the current setup
     api
       .get(`/api/peer-review?assignment=${selectedAssignment._id}`)
@@ -129,7 +131,8 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
           setOverallPeriodEnd(format(latest, "yyyy-MM-dd"));
         }
         markSaved();
-        setPending(false);
+        setIsPending(false);
+        setIsLoaded(true);
       });
   };
 
@@ -172,13 +175,13 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
   }, [overallPeriodStart, overallPeriodEnd]);
 
   // Refresh data on page load
-  useEffect(refreshData, [selectedAssignment]);
+  useEffect(refreshData, [isExpanded]);
 
   return (
     <>
       <div className="d-flex justify-content-between align-items-center">
         <h3>Peer reviews</h3>
-        <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
+        <SaveButton {...{ isPending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted mb-1">
         These settings allow you to configure the weekly peer review feature.
@@ -197,197 +200,206 @@ function PeerReviewSettings({ unsaved, markUnsaved, markSaved }) {
         </li>
       </ul>
 
-      <Form className="mb-3">
-        <Form.Check 
-          type="switch"
-          label="Enable peer reviews"
-          checked={peerReviewEnabled}
-          onChange={e => setEnabled(e.target.checked)}
-        />
-      </Form>
+      { isLoaded ? <>
 
-      { peerReviewEnabled &&
-      <>
-        { isBefore(parseISO(overallPeriodStart), new Date()) && 
-        <p className="text-danger d-flex align-items-center">
-          <ExclamationTriangleFill className="me-2" />
-          Don't edit historic peer reviews or disable them if students have
-          started completing them. 
-        </p>
-        }
-        <Row className="mb-3 gy-3">
-          <Col md={6}>
-            <Form.Group className="form-floating">
-              <Form.Control
-                type="date"
-                id="overallPeriodStart"
-                value={overallPeriodStart}
-                onChange={e => {setOverallPeriodStart(e.target.value); markUnsaved();}}
-              />
-              <Form.Label htmlFor="overallPeriodStart">First peer review</Form.Label>
-            </Form.Group>
-          </Col>
-          <Col md={6}>
-            <Form.Group className="form-floating">
-              <Form.Control
-                type="date"
-                id="overallPeriodEnd"
-                value={overallPeriodEnd}
-                onChange={e => {setOverallPeriodEnd(e.target.value); markUnsaved();}}
-              />
-              <Form.Label htmlFor="overallPeriodEnd">Last peer review</Form.Label>
-            </Form.Group>
-          </Col>
-        </Row>
-        <ListGroup>
-        {peerReviews.map((peerReview, idx) => (
-          <ListGroup.Item key={idx}>
-            <Row className="gy-2 align-items-center">
-              <Col md={4}>
-                <p className="mb-0 d-flex align-items-center">
-                  { peerReview.name ?
-                  peerReview.name
-                  :
-                  `Week ${idx + 1}`
-                  }
-                  <Button variant="link" className="ms-2 p-0" onClick={() => startNameEdit(idx)}>
-                    <PencilSquare className="me-1" />
-                  </Button>
-                </p>
-                <p className="mb-0 text-muted">
-                  {format(parseISO(peerReview.periodStart), "d MMM")} - {format(parseISO(peerReview.periodEnd), "d MMM")}
-                </p>
-              </Col>
-              <Col md={4}>
-                <ToggleButtonGroup
-                  type="radio"
-                  name={`peer-review-type-${idx}`}
-                  value={peerReview.type ?? "none"}
-                  onChange={(t) => updatePeerReview(idx, { type: t })}
-                >
-                  <ToggleButton id={`none-${idx}`} value="none" variant="outline-secondary">
-                    None
-                  </ToggleButton>
-                  <ToggleButton id={`simple-${idx}`} value="simple" variant="outline-primary">
-                    Simple
-                  </ToggleButton>
-                  <ToggleButton id={`full-${idx}`} value="full" variant="outline-success">
-                    Full
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Col>
-              { peerReview.type === "full" &&
-              <Col md={4}>
-                <Button variant="link" className="p-0 mb-0" onClick={() => editReviewQuestions(idx)}>
-                  <PencilSquare className="me-1" />
-                  Edit questions
-                </Button>
-                {(peerReview?.questions ?? [])?.length === 0 ?
-                  <p className="text-muted mb-0 td-italic">
-                    None added yet
-                  </p>
-                :
-                  <p className="text-muted mb-0">
-                    {peerReview?.questions?.join(", ")}
-                  </p>
-                }
-              </Col>
-              }
-            </Row>
-          </ListGroup.Item>
-        ))}
-        </ListGroup>
+        <Form className="mb-3">
+          <Form.Check 
+            type="switch"
+            label="Enable peer reviews"
+            checked={peerReviewEnabled}
+            onChange={e => setEnabled(e.target.checked)}
+          />
+        </Form>
 
-        <Modal show={reviewToRename!==null} onHide={() => setReviewToRename(null)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Name peer review</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>
-              Use the box below to give the peer review for the week beginning on {" "}
-              {format(parseISO(peerReviews[reviewToRename]?.periodStart ?? "2000-01-01"), "dd/MM/yyyy")}{" "}
-              a short recognisable name, e.g. "Deliverable 1". Leave blank to 
-              reset to the default name.
-            </p>
-            <Form.Control
-              name="newReviewName"
-              {...register("newReviewName")}
-              placeholder="Review point name"
-            />
-          </Modal.Body>
-          <Modal.Footer className="d-flex justify-content-between">
-            <Button
-              variant="secondary"
-              className="d-flex align-items-center"
-              onClick={() => setReviewToRename(null)}
-            >
-              <Trash3Fill className="me-2" /> Cancel
-            </Button>
-            <Button
-              variant="success"
-              className="d-flex align-items-center"
-              onClick={handleRenameModalConfirm}
-            >
-              <CheckCircleFill className="me-2" /> Confirm
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        <Modal show={questionsModalIndex!==null} onHide={() => setQuestionsModalIndex(null)}>
-          <Modal.Header closeButton>
-            <Modal.Title>Peer review questions</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <p>
-              You're editing the questions for the peer review in the week
-              beginning {format(parseISO(peerReviews[questionsModalIndex]?.periodStart ?? "2000-01-01"), "d MMM")}.
-            </p>
-            <p>
-              Students will be asked to rate each of their team members against
-              each of the following skill areas, using a scale of 1 to 5 stars.
-              They will also be asked to provide a short explanation comment.
-            </p>
-            {questionsModalList.map((question, index) => (
-              <Form.Group className="mb-2" key={index}>
-                <InputGroup>
-                  <Form.Control
-                    type="text"
-                    placeholder={`Enter a skill, e.g. "Programming"`}
-                    value={question}
-                    onChange={(e) => updateQuestionInModal(index, e.target.value)}
-                  />
-                  <Button variant="outline-danger" className="d-flex align-items-center" onClick={() => removeQuestionFromModal(index)}>
-                    <XLg />
-                  </Button>
-                </InputGroup>
+        { peerReviewEnabled &&
+        <>
+          { isBefore(parseISO(overallPeriodStart), new Date()) && 
+          <p className="text-danger d-flex align-items-center">
+            <ExclamationTriangleFill className="me-2" />
+            Don't edit historic peer reviews or disable them if students have
+            started completing them. 
+          </p>
+          }
+          <Row className="mb-3 gy-3">
+            <Col md={6}>
+              <Form.Group className="form-floating">
+                <Form.Control
+                  type="date"
+                  id="overallPeriodStart"
+                  value={overallPeriodStart}
+                  onChange={e => {setOverallPeriodStart(e.target.value); markUnsaved();}}
+                />
+                <Form.Label htmlFor="overallPeriodStart">First peer review</Form.Label>
               </Form.Group>
-            ))}
-            <Button
-              variant="outline-primary"
-              className="d-flex align-items-center"
-              onClick={addQuestionToModal}
-            >
-              <PlusCircleFill className="me-2" />Add skill
-            </Button>
-          </Modal.Body>
-          <Modal.Footer className="d-flex justify-content-between">
-            <Button
-              variant="secondary"
-              className="d-flex align-items-center"
-              onClick={() => setQuestionsModalIndex(null)}
-            >
-              <Trash3Fill className="me-2" /> Cancel
-            </Button>
-            <Button
-              variant="success"
-              className="d-flex align-items-center"
-              onClick={handleQuestionModalConfirm}
-            >
-              <CheckCircleFill className="me-2" /> Confirm
-            </Button>
-          </Modal.Footer>
-        </Modal>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="form-floating">
+                <Form.Control
+                  type="date"
+                  id="overallPeriodEnd"
+                  value={overallPeriodEnd}
+                  onChange={e => {setOverallPeriodEnd(e.target.value); markUnsaved();}}
+                />
+                <Form.Label htmlFor="overallPeriodEnd">Last peer review</Form.Label>
+              </Form.Group>
+            </Col>
+          </Row>
+          <ListGroup>
+          {peerReviews.map((peerReview, idx) => (
+            <ListGroup.Item key={idx}>
+              <Row className="gy-2 align-items-center">
+                <Col md={4}>
+                  <p className="mb-0 d-flex align-items-center">
+                    { peerReview.name ?
+                    peerReview.name
+                    :
+                    `Week ${idx + 1}`
+                    }
+                    <Button variant="link" className="ms-2 p-0" onClick={() => startNameEdit(idx)}>
+                      <PencilSquare className="me-1" />
+                    </Button>
+                  </p>
+                  <p className="mb-0 text-muted">
+                    {format(parseISO(peerReview.periodStart), "d MMM")} - {format(parseISO(peerReview.periodEnd), "d MMM")}
+                  </p>
+                </Col>
+                <Col md={4}>
+                  <ToggleButtonGroup
+                    type="radio"
+                    name={`peer-review-type-${idx}`}
+                    value={peerReview.type ?? "none"}
+                    onChange={(t) => updatePeerReview(idx, { type: t })}
+                  >
+                    <ToggleButton id={`none-${idx}`} value="none" variant="outline-secondary">
+                      None
+                    </ToggleButton>
+                    <ToggleButton id={`simple-${idx}`} value="simple" variant="outline-primary">
+                      Simple
+                    </ToggleButton>
+                    <ToggleButton id={`full-${idx}`} value="full" variant="outline-success">
+                      Full
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Col>
+                { peerReview.type === "full" &&
+                <Col md={4}>
+                  <Button variant="link" className="p-0 mb-0" onClick={() => editReviewQuestions(idx)}>
+                    <PencilSquare className="me-1" />
+                    Edit questions
+                  </Button>
+                  {(peerReview?.questions ?? [])?.length === 0 ?
+                    <p className="text-muted mb-0 td-italic">
+                      None added yet
+                    </p>
+                  :
+                    <p className="text-muted mb-0">
+                      {peerReview?.questions?.join(", ")}
+                    </p>
+                  }
+                </Col>
+                }
+              </Row>
+            </ListGroup.Item>
+          ))}
+          </ListGroup>
+
+          <Modal show={reviewToRename!==null} onHide={() => setReviewToRename(null)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Name peer review</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>
+                Use the box below to give the peer review for the week beginning on {" "}
+                {format(parseISO(peerReviews[reviewToRename]?.periodStart ?? "2000-01-01"), "dd/MM/yyyy")}{" "}
+                a short recognisable name, e.g. "Deliverable 1". Leave blank to 
+                reset to the default name.
+              </p>
+              <Form.Control
+                name="newReviewName"
+                {...register("newReviewName")}
+                placeholder="Review point name"
+              />
+            </Modal.Body>
+            <Modal.Footer className="d-flex justify-content-between">
+              <Button
+                variant="secondary"
+                className="d-flex align-items-center"
+                onClick={() => setReviewToRename(null)}
+              >
+                <Trash3Fill className="me-2" /> Cancel
+              </Button>
+              <Button
+                variant="success"
+                className="d-flex align-items-center"
+                onClick={handleRenameModalConfirm}
+              >
+                <CheckCircleFill className="me-2" /> Confirm
+              </Button>
+            </Modal.Footer>
+          </Modal>
+
+          <Modal show={questionsModalIndex!==null} onHide={() => setQuestionsModalIndex(null)}>
+            <Modal.Header closeButton>
+              <Modal.Title>Peer review questions</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <p>
+                You're editing the questions for the peer review in the week
+                beginning {format(parseISO(peerReviews[questionsModalIndex]?.periodStart ?? "2000-01-01"), "d MMM")}.
+              </p>
+              <p>
+                Students will be asked to rate each of their team members against
+                each of the following skill areas, using a scale of 1 to 5 stars.
+                They will also be asked to provide a short explanation comment.
+              </p>
+              {questionsModalList.map((question, index) => (
+                <Form.Group className="mb-2" key={index}>
+                  <InputGroup>
+                    <Form.Control
+                      type="text"
+                      placeholder={`Enter a skill, e.g. "Programming"`}
+                      value={question}
+                      onChange={(e) => updateQuestionInModal(index, e.target.value)}
+                    />
+                    <Button variant="outline-danger" className="d-flex align-items-center" onClick={() => removeQuestionFromModal(index)}>
+                      <XLg />
+                    </Button>
+                  </InputGroup>
+                </Form.Group>
+              ))}
+              <Button
+                variant="outline-primary"
+                className="d-flex align-items-center"
+                onClick={addQuestionToModal}
+              >
+                <PlusCircleFill className="me-2" />Add skill
+              </Button>
+            </Modal.Body>
+            <Modal.Footer className="d-flex justify-content-between">
+              <Button
+                variant="secondary"
+                className="d-flex align-items-center"
+                onClick={() => setQuestionsModalIndex(null)}
+              >
+                <Trash3Fill className="me-2" /> Cancel
+              </Button>
+              <Button
+                variant="success"
+                className="d-flex align-items-center"
+                onClick={handleQuestionModalConfirm}
+              >
+                <CheckCircleFill className="me-2" /> Confirm
+              </Button>
+            </Modal.Footer>
+          </Modal>
+        </>
+        }
       </>
+      :
+      <Placeholder animation="glow">
+        <Placeholder xs={6} /><br />
+        <Placeholder xs={4} /><br /><br />
+      </Placeholder>
       }
     </>
   );

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
 import { Container, Row, Col, Card, ListGroup, Button, Placeholder } from "react-bootstrap";
-import { ChevronRight } from "react-bootstrap-icons";
+import { ChevronRight, PersonBadgeFill } from "react-bootstrap-icons";
 
 import "./style/AssignmentOverview.css";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
@@ -20,6 +20,8 @@ import StudentCheckInStatusCard from "@/features/overview/StudentCheckInStatusCa
 import StaffQuestionnaireStatusCard from "@/features/overview/StaffQuestionnaireStatusCard";
 import { components } from "react-select";
 import PromptQuestionnaireCard from "@/features/overview/PromptQuestionnaireCard";
+import PromptRecordMeetingCard from "@/features/overview/MeetingPreferencesCard";
+import PeopleOverviewCard from "@/features/overview/PeopleOverviewCard";
 
 // Stepped progress bar inspired by https://www.geeksforgeeks.org/how-to-create-multi-step-progress-bar-using-bootstrap/
 
@@ -152,6 +154,12 @@ function AssignmentOverview() {
       attemptLoad: () => (selectedAssignment.role === "lecturer" && selectedAssignment.state === "pre-allocation"),
     },
     {
+      id: "people-stats-card",
+      component: PeopleOverviewCard,
+      size: "small",
+      attemptLoad: () => (selectedAssignment.role === "lecturer"),
+    },
+    {
       id: "staff-skills-chart",
       component: ClassSkillsChart,
       size: "large",
@@ -167,6 +175,12 @@ function AssignmentOverview() {
     {
       id: "student-checkin-status",
       component: StudentCheckInStatusCard,
+      size: "small",
+      attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
+    },
+    {
+      id: "student-meeting-reminder",
+      component: PromptRecordMeetingCard,
       size: "small",
       attemptLoad: () => (selectedAssignment.role === "student" && selectedAssignment.state === "live"),
     },
@@ -248,23 +262,14 @@ function AssignmentOverview() {
           </div>
           <p>{stateHelpText()}</p>
         </Col>
-        <Col lg={4} sm={12}>
-          <Card>
-            <Card.Header>Module Team</Card.Header>
-            <ListGroup variant="flush">
-              {selectedAssignment.lecturers.map((lecturer, index) => (
-                <ListGroup.Item
-                  key={index}
-                  href={`mailto:${lecturer.email}`}
-                  action
-                >
-                  <span className="fw-bold">{lecturer.displayName}</span>
-                  <br />
-                  {lecturer.email}
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </Card>
+        <Col xs={0} lg={1}></Col>
+        <Col lg={3} sm={12}>
+          <h4 className="d-flex align-items-center"><PersonBadgeFill size={18} className="me-2" />Module team</h4>
+          {selectedAssignment.lecturers.map((lecturer, index) => (<>
+            <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
+              {lecturer.displayName}
+            </a><br />
+          </>))}
         </Col>
       </Row>
 

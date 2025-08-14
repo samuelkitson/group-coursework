@@ -18,6 +18,7 @@ function TeamObservations() {
   const selectedTeam = useBoundStore((state) => state.getSelectedTeam());
   const [observations, setObservations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPending, setIsPending] = useState(false);
   const [activeModal, setActiveModal] = useState(null);
   const [obsToDelete, setObsToDelete] = useState(null);
   
@@ -45,6 +46,7 @@ function TeamObservations() {
   };
   
   const handleSubmitDelete = () => {
+    setIsPending(true);
     api
       .delete(`/api/observation/${obsToDelete._id}`, { successToasts: true, })
       .then((resp) => {
@@ -54,6 +56,9 @@ function TeamObservations() {
         const updatedObsList = observations.filter(o => o._id != obsToDelete._id);
         setObservations(updatedObsList);
         hideModal();
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -61,11 +66,15 @@ function TeamObservations() {
     const { comment, students } = getValues();
     if (!comment) return toast.error("Please provide an observation comment.");
     const postObj = { team: selectedTeam._id, comment, students: students.map(s => s.value) };
+    setIsPending(true);
     api
       .post("/api/observation", postObj, { successToasts: true })
       .then((resp) => {
         refreshData();
         hideModal();
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -113,6 +122,7 @@ function TeamObservations() {
               variant="primary"
               className="d-flex align-items-center"
               onClick={showRecordModal}
+              disabled={isPending || isLoading}
             >
               <PlusCircle className="me-2" />Record observation
             </Button>
@@ -142,8 +152,8 @@ function TeamObservations() {
 
       <Row>
         <Col md={9}>
-          { observations.map((observation, idx) => (
-            <Card className="mt-2 mb-3 shadow" key={observation._id}>
+          { !isLoading && observations.map((observation, idx) => (
+            <Card className="mt-2 mb-3 shadow-sm" key={observation._id}>
               <Card.Body className="py-2">
                 <Row>
                   <Col xs={10}>
@@ -168,6 +178,7 @@ function TeamObservations() {
                       variant="outline-danger"
                       className=""
                       onClick={() => showDeleteModal(idx)}
+                      disabled={isPending}
                     >
                       <Trash3 />
                     </Button>
@@ -187,14 +198,15 @@ function TeamObservations() {
           Are you sure you want to delete this observation? You can't undo this
           action.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={hideModal}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={handleSubmitDelete}>
+          <Button variant="danger" onClick={handleSubmitDelete} disabled={isPending}>
             Delete
           </Button>
         </Modal.Footer>
@@ -239,14 +251,15 @@ function TeamObservations() {
               />
           </div>
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={hideModal}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmitObservation}>
+          <Button variant="primary" onClick={handleSubmitObservation} disabled={isPending}>
             Submit
           </Button>
         </Modal.Footer>

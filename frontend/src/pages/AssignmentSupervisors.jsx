@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, HourglassSplit, InfoCircle, People, Shuffle, XCircle } from "react-bootstrap-icons";
+import { Envelope, HourglassSplit, People, Shuffle, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -21,8 +21,8 @@ function AssignmentSupervisors() {
     (state) => state.updateSelectedAssignment,
   );
   const [supervisorsList, setSupervisorsList] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [pending, setIsPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPending, setIsPending] = useState(false);
   const [teamsList, setTeamsList] = useState([]);
   const [supervisorToEdit, setSupervisorToEdit] = useState(null);
   const [supervisorToDelete, setSupervisorToDelete] = useState(null);
@@ -34,7 +34,7 @@ function AssignmentSupervisors() {
   const { control, register, reset, getValues, } = useForm({
     defaultValues, mode: "onTouched"
   });
-  const { isValid, errors, } = useFormState({ control });
+  const { errors } = useFormState({ control });
 
   const teamsHelpText = (teamsList) => {
     if (!teamsList || teamsList.length === 0)
@@ -55,7 +55,7 @@ function AssignmentSupervisors() {
       assignment: selectedAssignment._id,
       teams: supervisorEditTeams, 
     };
-    setIsLoading(true);
+    setIsPending(true);
     api
       .patch(`/api/supervisor/${supervisorToEdit._id}`, updateObj, { successToasts: true })
       .then((resp) => {
@@ -64,7 +64,7 @@ function AssignmentSupervisors() {
         refreshData();
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsPending(false);
       });
   };
 
@@ -75,7 +75,7 @@ function AssignmentSupervisors() {
 
   const removeSupervisor = async () => {
     const newSupervisorsList = supervisorsList.filter(s => s._id !== supervisorToDelete._id);
-    setIsLoading(true);
+    setIsPending(true);
     api
       .delete(`/api/supervisor/${supervisorToDelete._id}?assignment=${selectedAssignment._id}`, { successToasts: true })
       .then((resp) => {
@@ -85,7 +85,7 @@ function AssignmentSupervisors() {
         updateSelectedAssignment({supervisors: newSupervisorsList});
       })
       .finally(() => {
-        setIsLoading(false);
+        setIsPending(false);
       });
   };
 
@@ -109,6 +109,7 @@ function AssignmentSupervisors() {
 
   const handleFileUpload = (e) => {
     const selectedFile = e.target.files[0];
+    setIsPending(true);
     if (!selectedFile) {
       setUploadedFileContent(null);
     }
@@ -120,10 +121,12 @@ function AssignmentSupervisors() {
     reader.onload = (e) => {
       const content  = e.target.result;
       setUploadedFileContent(content.split(/\r?\n/).filter(line => line.trim() !== ""));
+      setIsPending(false);
     }
     reader.onerror = () => {
       toast.error("The uploaded file was invalid. Please try again.");
       setUploadedFileContent(null);
+      setIsPending(false);
     };
     reader.readAsText(selectedFile);
   };
@@ -147,10 +150,14 @@ function AssignmentSupervisors() {
   };
 
   const autoAllocate = async () => {
+    setIsPending(true);
     api
       .post("/api/supervisor/allocate", { assignment: selectedAssignment._id }, { successToasts: true })
       .then((resp) => {
         refreshData();
+      })
+      .finally(() => {
+        setIsPending(false);
       });
   };
 
@@ -158,25 +165,20 @@ function AssignmentSupervisors() {
     setSupervisorsList([]);
     setIsLoading(true);
     reset(defaultValues);
-    api
-      .get(`/api/supervisor?assignment=${selectedAssignment._id}`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        setSupervisorsList(data.supervisors);
+    Promise.all([
+      api.get(`/api/supervisor?assignment=${selectedAssignment._id}`),
+      api.get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`),
+    ])
+      .then(([supervisorResp, teamResp]) => {
+        const supervisorData = supervisorResp.data;
+        const teamData = teamResp.data;
+
+        const teamsOptions = teamData.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
+        setSupervisorsList(supervisorData?.supervisors ?? []);
+        setTeamsList(teamsOptions);
       })
       .finally(() => {
         setIsLoading(false);
-      });
-    api
-      .get(`/api/team/all?assignment=${selectedAssignment._id}&mode=simple`)
-      .then((resp) => {
-        return resp.data;
-      })
-      .then((data) => {
-        const teamsOptions = data.teams.map(t => ({ value: t._id, label: `Team ${t.teamNumber}`}));
-        setTeamsList(teamsOptions);
       });
   };
 
@@ -277,7 +279,7 @@ function AssignmentSupervisors() {
             <Form.Control
               placeholder="Email address"
               className={errors?.newSupervisor && "border-danger"}
-              disabled={pending}
+              disabled={isPending}
               {...register("newSupervisor", {
                 pattern: {
                   value: /\S+@\S+\.\S+/,
@@ -288,7 +290,7 @@ function AssignmentSupervisors() {
             <Button
               onClick={addOneSupervisor}
               variant="primary"
-              disabled={pending || errors?.newSupervisor}
+              disabled={isPending || errors?.newSupervisor}
             >
               Add
             </Button>
@@ -304,7 +306,7 @@ function AssignmentSupervisors() {
             <Button
               onClick={sendUploadedFile}
               variant="primary"
-              disabled={pending || !uploadedFileContent}
+              disabled={isPending || !uploadedFileContent}
             >
               Add
             </Button>
@@ -317,7 +319,7 @@ function AssignmentSupervisors() {
               automatically assign them to teams.
             </p>
             <Button
-              disabled={pending}
+              disabled={isPending}
               variant="success"
               className="d-flex align-items-center"
               onClick={autoAllocate}
@@ -348,15 +350,15 @@ function AssignmentSupervisors() {
             make sure to allocate a new supervisor to those teams if necessary.
           </Modal.Body>
         }
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={removeSupervisor} disabled={pending}>
+          <Button variant="danger" onClick={removeSupervisor} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>
@@ -387,15 +389,15 @@ function AssignmentSupervisors() {
             )}
           />
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
             onClick={() => setActiveModal(null)}
-            disabled={pending}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={saveSupervisorTeams} disabled={pending}>
+          <Button variant="primary" onClick={saveSupervisorTeams} disabled={isPending}>
             Save
           </Button>
         </Modal.Footer>

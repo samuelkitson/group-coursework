@@ -3,6 +3,7 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, Button, Modal } from "react-bootstrap";
+import { Trash3Fill } from "react-bootstrap-icons";
 
 const DeleteAssignmentCard = () => {
   const selectedAssignment = useBoundStore((state) =>
@@ -12,23 +13,23 @@ const DeleteAssignmentCard = () => {
     (state) => state.updateSelectedAssignment,
   );
   const navigate = useNavigate();
-  const [showModal, setShowModal] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
+  const [isPending, setIsPending] = useState(false);
 
   const confirmDelete = async () => {
-    setPending(true);
+    setIsPending(true);
     api
       .delete(`/api/assignment/${selectedAssignment._id}`, {
         successToasts: true,
       })
       .then(() => {
-        setPending(false);
+        setIsPending(false);
         navigate("/dashboard");
         updateSelectedAssignment(null);
       })
       .finally(() => {
-        setPending(false);
-        setShowModal(false);
+        setIsPending(false);
+        setActiveModal(null);
       });
   };
 
@@ -43,14 +44,14 @@ const DeleteAssignmentCard = () => {
         <Button
           variant="danger"
           className="d-flex align-items-center"
-          onClick={() => setShowModal(true)}
-          disabled={pending}
+          onClick={() => setActiveModal("confirm-delete")}
+          disabled={isPending}
         >
-          Delete
+          <Trash3Fill className="me-2" /> Delete
         </Button>
       </Card.Body>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-delete"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Delete assignment</Modal.Title>
         </Modal.Header>
@@ -58,15 +59,15 @@ const DeleteAssignmentCard = () => {
           Are you sure you want to delete the assignment "{selectedAssignment.name}"?
           This cannot be undone.
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(false)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete} disabled={pending}>
+          <Button variant="danger" onClick={confirmDelete} disabled={isPending}>
             Delete
           </Button>
         </Modal.Footer>

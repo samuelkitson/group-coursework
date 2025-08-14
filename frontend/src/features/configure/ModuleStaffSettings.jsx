@@ -19,7 +19,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
-  const [pending, setPending] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [moduleStaff, setModuleStaff] = useState([]);
   const [searchString, setSearchString] = useState("");
 
@@ -57,7 +57,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
   };
 
   const saveChanges = () => {
-    setPending(true);
+    setIsPending(true);
     const updateObj = {
       staff: moduleStaff.map(m => m._id),
     };
@@ -67,7 +67,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
         markSaved();
       })
       .finally(() => {
-        setPending(false);
+        setIsPending(false);
       });
   };
   
@@ -79,7 +79,7 @@ function ModuleStaffSettings({ unsaved, markUnsaved, markSaved }) {
     <>
       <div className="d-flex justify-content-between align-items-center">
         <h3>Module staff</h3>
-        <SaveButton {...{ pending, unsaved, saveChanges, size: "sm" }} />
+        <SaveButton {...{ isPending, unsaved, saveChanges, size: "sm" }} />
       </div>
       <p className="text-muted">
         Adjust the list of teaching staff with access to {selectedAssignment.name}.

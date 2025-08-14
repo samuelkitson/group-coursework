@@ -13,7 +13,7 @@ const columnDefinitions = {
   "gender": "Represents a student's gender. Should be \"male\", \"female\" or \"other\". It's recommended to relabel any different values as \"other\".",
 };
 
-const DatasetUpload = ({ showModal, onHide, currentFileName, datasetColumns, requiredColumns, handleDatasetUpload }) => {
+const DatasetUpload = ({ activeModal, onHide, currentFileName, datasetColumns, requiredColumns, handleDatasetUpload }) => {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
@@ -81,7 +81,7 @@ const DatasetUpload = ({ showModal, onHide, currentFileName, datasetColumns, req
   const missingColumns = getMissingColumns();
 
   return (
-    <Modal show={showModal} onHide={onHide} centered size="lg">
+    <Modal show={activeModal} onHide={onHide} centered size="lg">
       <Modal.Header closeButton>
         <Modal.Title>Additional student data</Modal.Title>
       </Modal.Header>

@@ -12,8 +12,8 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
   const updateSelectedAssignment = useBoundStore(
     (state) => state.updateSelectedAssignment,
   );
-  const [showModal, setShowModal] = useState(false);
-  const [pending, setPending] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
+  const [isPending, setIsPending] = useState(false);
 
   const nextState = nextAssignmentState(selectedAssignment.state);
   
@@ -35,7 +35,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
 
   const saveChanges = async () => {
     if (!nextState) return;
-    setPending(true);
+    setIsPending(true);
     const updateObj = {
       newState: nextState.id,
     };
@@ -44,12 +44,12 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         successToasts: true,
       })
       .then(() => {
-        setPending(false);
+        setIsPending(false);
         updateSelectedAssignment({ state: nextState.id });
       })
       .finally(() => {
-        setPending(false);
-        setShowModal(false);
+        setIsPending(false);
+        setActiveModal(null);
       });
   };
 
@@ -63,30 +63,30 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         {buttonText && <Button
           variant="primary"
           className="d-flex align-items-center"
-          onClick={() => setShowModal(true)}
-          disabled={pending}
+          onClick={() => setActiveModal("confirm-state-change")}
+          disabled={isPending}
         >
           {buttonText} <ChevronRight className="ms-2" />
         </Button>}
       </Card.Body>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+      <Modal show={activeModal === "confirm-state-change"} onHide={() => setActiveModal(null)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Change assignment state</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to move this assignment to the state "
-          {nextState?.name}"? You can't undo this action.
+          {nextState?.name}"?
         </Modal.Body>
-        <Modal.Footer>
+        <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(false)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={saveChanges} disabled={pending}>
+          <Button variant="primary" onClick={saveChanges} disabled={isPending}>
             Confirm
           </Button>
         </Modal.Footer>

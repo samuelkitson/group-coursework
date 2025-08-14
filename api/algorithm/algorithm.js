@@ -197,9 +197,9 @@ class AllocationAlgorithm {
       let values = [];
       if (attribute.startsWith("skill:")) {
         const skillName = attribute.substring("skill:".length);
-        values = this.students.map((s) => s.skills[skillName]).filter(v => Number.isInteger(v));
+        values = this.students.map((s) => s.skills?.[skillName]).filter(v => Number.isInteger(v));
       } else {
-        values = this.students.map((s) => s[attribute]);
+        values = this.students.map((s) => s?.[attribute]);
       }
       let value = 0;
       if (measure == "stddev") {

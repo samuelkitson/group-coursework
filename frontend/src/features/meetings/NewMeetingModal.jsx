@@ -16,7 +16,7 @@ const attendanceIcon = (status) => {
   }
 }
 
-const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting }) => {
+const NewMeetingModal = ({ activeModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting, isPending }) => {
   const [editMode, setEditMode] = useState(false);
 
   const defaultValues = {
@@ -60,7 +60,7 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
 
   useEffect(() => {
     setEditMode(existingMeeting ? true : false);
-    if (showModal) {
+    if (activeModal) {
       if (existingMeeting) {
         // Helper function to get the attendance records
         const getAttendanceById = (userId) => {
@@ -89,10 +89,10 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
         reset( {...defaultValues, attendance: [...memberAttendance, ...supervisorAttendance], prevActions: copiedPrevActions, newActions: [{ action: '', assignees: [] }], });
       }
     }
-  }, [showModal]);
+  }, [activeModal]);
 
   return (
-    <Modal show={showModal} onHide={onHide} backdrop="static" keyboard={false} size="xl">
+    <Modal show={activeModal} onHide={onHide} backdrop="static" keyboard={false} size="xl">
       <Modal.Header closeButton>
         { editMode ? 
           <Modal.Title>Edit meeting minutes</Modal.Title>
@@ -254,9 +254,9 @@ const NewMeetingModal = ({ showModal, onHide, teamMembers, supervisors, previous
         </Form>
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between">
-        <Button variant="secondary" onClick={onHide}>Cancel</Button>
+        <Button variant="secondary" onClick={onHide} disabled={isPending}>Cancel</Button>
         <p className="text-muted">Editable for an hour after submitting</p>
-        <Button variant="primary" onClick={handleSubmit}>Submit</Button>
+        <Button variant="primary" onClick={handleSubmit} disabled={isPending}>Submit</Button>
       </Modal.Footer>
     </Modal>
   );

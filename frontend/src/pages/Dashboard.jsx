@@ -17,8 +17,8 @@ function Dashboard() {
   const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
   const assignments = useBoundStore((state) => state.assignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
-  const [showModal, setShowModal] = useState(null);
-  const [pending, setPending] = useState(false);
+  const [activeModal, setActiveModal] = useState(null);
+  const [isPending, setIsPending] = useState(false);
   const [newAssignmentName, setNewAssignmentName] = useState("");
   const [newAssignmentDesc, setNewAssignmentDesc] = useState("");
 
@@ -39,7 +39,7 @@ function Dashboard() {
       name: newAssignmentName,
       description: newAssignmentDesc,
     }
-    setPending(true);
+    setIsPending(true);
     api
       .post(`/api/assignment/`, submitObj, { successToasts: true, })
       .then((resp) => {
@@ -48,11 +48,11 @@ function Dashboard() {
       .then((data) => {
         setNewAssignmentName("");
         setNewAssignmentDesc("");
-        setShowModal(null);
+        setActiveModal(null);
         // Update assignments list
         fetchAssignments(true);
       }).finally(() => {
-        setPending(false);
+        setIsPending(false);
       })
   };
 
@@ -77,7 +77,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    // Force update assignment states
+    // Force update assignment states.
     fetchAssignments(true);
     fetchTeams(true);
   }, []);
@@ -89,12 +89,12 @@ function Dashboard() {
           <h1>Good {timeOfDayName()}, {extractNameParts(user.displayName)}</h1>
           <p className="text-muted">Here's an overview of your current group coursework assignments.</p>
         </Col>
-        {(user.role === "staff" || user.role === "admin") &&
+        {(user?.canCreateAssignments) &&
           <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
             <Button
               variant="primary"
               className="d-flex align-items-center"
-              onClick={() => setShowModal("new-assignment")}
+              onClick={() => setActiveModal("new-assignment")}
             >
               <PlusCircleFill className="me-2" />New assignment
             </Button>
@@ -158,13 +158,12 @@ function Dashboard() {
         </Col>
       </Row>
 
-      {/* Modal to add new criteria */}
       <Modal
-        show={showModal === "new-assignment"}
+        show={activeModal === "new-assignment"}
         size="lg"
         scrollable
         centered
-        onHide={() => setShowModal(null)}
+        onHide={() => setActiveModal(null)}
       >
         <Modal.Header closeButton>
           <Modal.Title>Create assignment</Modal.Title>
@@ -201,12 +200,12 @@ function Dashboard() {
         <Modal.Footer className="d-flex justify-content-between">
           <Button
             variant="secondary"
-            onClick={() => setShowModal(null)}
-            disabled={pending}
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
           >
             Cancel
           </Button>
-          <Button variant="primary" onClick={submitCreateAssignment} disabled={pending || !(newAssignmentName && newAssignmentDesc)}>
+          <Button variant="primary" onClick={submitCreateAssignment} disabled={isPending || !(newAssignmentName && newAssignmentDesc)}>
             Confirm
           </Button>
         </Modal.Footer>

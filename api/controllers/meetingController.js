@@ -1,10 +1,12 @@
-const assignmentModel = require("../models/assignment");
+const observationModel = require("../models/observation");
 const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
 const { checkTeamRole } = require("../utility/auth");
-const { GenericNotFoundError, InvalidParametersError, GenericNotAllowedError } = require("../errors/errors");
+const { GenericNotFoundError, InvalidParametersError, GenericNotAllowedError, AssignmentInvalidStateError } = require("../errors/errors");
 const { hoursSince } = require("../utility/maths");
+const { format } = require("date-fns/format");
+const assignment = require("../models/assignment");
 
 // Provide the team ID in query params
 exports.getMeetingsForTeam = async (req, res) => {
@@ -20,7 +22,9 @@ exports.getMeetingsForTeam = async (req, res) => {
 exports.recordNewMeeting = async (req, res) => {
   await checkTeamRole(req.body.team, req.session.userId, "member");
   // Get the team details
-  const teamInfo = await teamModel.findById(req.body.team).select("members").lean();
+  const teamInfo = await teamModel.findById(req.body.team).select("members").populate("assignment", "state").lean();
+  if (teamInfo?.assignment?.state === "closed")
+    throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
   // Validate incoming data
   const location = req.body.location;
@@ -33,6 +37,12 @@ exports.recordNewMeeting = async (req, res) => {
   const discussion = req.body.discussion;
   if (!discussion)
     return res.status(400).json({ message: "You must provide a summary of the meeting discussion." });
+  // Check that this new meeting's date is after the previous meeting
+  const lastMeeting = await meetingModel.findOne({ team: req.body.team }).select("dateTime").sort({date: -1});
+  if (lastMeeting) {
+    if (dateTime <= lastMeeting?.dateTime)
+      throw new InvalidParametersError("Meeting date must be after the previous meeting.");
+  }
   // Make sure that all team members are accounted for in the attendance logs 
   const membersInAttendance = (req.body.attendance?.["attended"] ?? []).flat().map(id => id.toString());
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
@@ -78,7 +88,9 @@ exports.updateMeeting = async (req, res) => {
   }
   // Safe to edit the meeting
   // Get the team details
-  const teamInfo = await teamModel.findById(meeting.team).select("members").lean();
+  const teamInfo = await teamModel.findById(meeting.team).select("members").populate("assignment", "state").lean();
+  if (teamInfo?.assignment?.state === "closed")
+    throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
   // Validate incoming data
   const location = req.body.location;
@@ -119,7 +131,7 @@ exports.deleteMeeting = async (req, res) => {
   if (!Types.ObjectId.isValid(req.params.meeting))
     throw new InvalidObjectIdError("The provided meeting ID is invalid.");
   // Try to fetch the meeting so we can check the team
-  const meeting = await meetingModel.findById(req.params.meeting);
+  const meeting = await meetingModel.findById(req.params.meeting).populate("disputes.complainant", "displayName");
   if (!meeting)
     throw new GenericNotFoundError("The meeting could not be found.");
   const userRole = await checkTeamRole(meeting.team, req.session.userId, "member/supervisor/lecturer");
@@ -133,6 +145,19 @@ exports.deleteMeeting = async (req, res) => {
   }
   // Safe to delete the meeting
   await meeting.deleteOne();
+  // If there were disputes, record an automatic observation. Only do this if
+  // "deleter" isn't the minute-taker, i.e. is the supervisor/lecturer.
+  if (meeting?.disputes?.length > 0 && meeting.minuteTaker.toString() != req.session.userId) {
+    const complainants = [... new Set(meeting.disputes.flatMap(d => d?.complainant?.displayName).filter(Boolean))].join(", ");
+    const observation = {
+      team: meeting.team,
+      observer: req.session.userId,
+      comment: `[Automated] This user deleted a meeting record for ${format(meeting?.dateTime, "dd/MM/yyyy")} that had outstanding disputes from: ${complainants}.`,
+    };
+    await observationModel.create(observation);
+  } else {
+    console.log("test case 1");
+  }
   return res.json({ message: "The meeting has been deleted successfully." });
 };
 
