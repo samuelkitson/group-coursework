@@ -113,7 +113,7 @@ function AssignmentTeams() {
           )
         } else if (insight.type === "warning") {
           return (
-            <li className="d-flex align-items-center"> key={i}
+            <li className="d-flex align-items-center" key={i}>
               <ExclamationTriangleFill className="me-2 text-warning"/>
               { insight.text }
             </li>
