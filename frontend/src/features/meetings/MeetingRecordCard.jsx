@@ -7,7 +7,7 @@ import "../style/MeetingRecordCard.css";
 import { toTitleCase } from "@/utility/helpers";
 import api from "@/services/apiMiddleware";
 
-const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute, viewEdits }) => {
+const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, onEdit, onDelete, onDispute, viewEdits, assignmentClosed }) => {
   const [disputeStates, setDisputeStates] = useState({});
   const [disputed, setDisputed] = useState(false);
 
@@ -72,7 +72,7 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
 
           { (editAllowed || disputeAllowed) &&
             <Dropdown>
-              <Dropdown.Toggle variant="light" size="sm" className="no-caret">
+              <Dropdown.Toggle variant="light" size="sm" className="no-caret" disabled={assignmentClosed}>
                 <ThreeDotsVertical />
               </Dropdown.Toggle>
 

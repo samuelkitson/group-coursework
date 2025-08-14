@@ -3,9 +3,10 @@ const teamModel = require("../models/team");
 const meetingModel = require("../models/meeting");
 const { Types } = require("mongoose");
 const { checkTeamRole } = require("../utility/auth");
-const { GenericNotFoundError, InvalidParametersError, GenericNotAllowedError } = require("../errors/errors");
+const { GenericNotFoundError, InvalidParametersError, GenericNotAllowedError, AssignmentInvalidStateError } = require("../errors/errors");
 const { hoursSince } = require("../utility/maths");
 const { format } = require("date-fns/format");
+const assignment = require("../models/assignment");
 
 // Provide the team ID in query params
 exports.getMeetingsForTeam = async (req, res) => {
@@ -21,7 +22,9 @@ exports.getMeetingsForTeam = async (req, res) => {
 exports.recordNewMeeting = async (req, res) => {
   await checkTeamRole(req.body.team, req.session.userId, "member");
   // Get the team details
-  const teamInfo = await teamModel.findById(req.body.team).select("members").lean();
+  const teamInfo = await teamModel.findById(req.body.team).select("members").populate("assignment", "state").lean();
+  if (teamInfo?.assignment?.state === "closed")
+    throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
   // Validate incoming data
   const location = req.body.location;
@@ -79,7 +82,9 @@ exports.updateMeeting = async (req, res) => {
   }
   // Safe to edit the meeting
   // Get the team details
-  const teamInfo = await teamModel.findById(meeting.team).select("members").lean();
+  const teamInfo = await teamModel.findById(meeting.team).select("members").populate("assignment", "state").lean();
+  if (teamInfo?.assignment?.state === "closed")
+    throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
   // Validate incoming data
   const location = req.body.location;

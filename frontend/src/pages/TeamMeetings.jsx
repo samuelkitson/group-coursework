@@ -24,6 +24,7 @@ function TeamMeetings() {
   const [deleteMeeting, setDeleteMeeting] = useState(null);
   const [editMeeting, setEditMeeting] = useState(null);
   const [currentEditLog, setCurrentEditLog] = useState(null);
+  const assignmentClosed = getSelectedAssignment()?.state === "closed";
   
   const getLatestActions = () => {
     if (meetingHistory.length == 0) return [];
@@ -171,6 +172,7 @@ function TeamMeetings() {
               variant="primary"
               className="d-flex align-items-center"
               onClick={(e) => (setActiveModal("new-meeting"))}
+              disabled={assignmentClosed}
             >
               <PlusCircleFill className="me-2" />New meeting
             </Button>
@@ -190,6 +192,7 @@ function TeamMeetings() {
               onDelete={(m) => showDeleteConfirm(m)}
               onDispute={(m) => showMeetingDispute(m)}
               viewEdits={((editLog) => showEditLog(editLog))}
+              assignmentClosed={assignmentClosed}
             />
           )) : 
             <Card className="shadow-sm">
