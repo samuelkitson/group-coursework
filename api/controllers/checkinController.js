@@ -242,7 +242,6 @@ exports.moderateResponse = async (req, res) => {
   Object.keys(checkIn.reviews).forEach(r => {
     if (r === req.body.recipient) {
       edited = true;
-      console.log(checkIn.reviews[r].originalComment == moderatedComment);
       if (!checkIn.reviews[r].originalComment) {
         // First time comment has been edited
         checkIn.reviews[r].originalComment = checkIn.reviews[r].comment;
