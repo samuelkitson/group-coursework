@@ -265,11 +265,11 @@ function AssignmentOverview() {
         <Col xs={0} lg={1}></Col>
         <Col lg={3} sm={12}>
           <h4 className="d-flex align-items-center"><PersonBadgeFill size={18} className="me-2" />Module team</h4>
-          {selectedAssignment.lecturers.map((lecturer, index) => (<>
-            <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
+          {selectedAssignment.lecturers.map((lecturer, index) => (<div key={index}>
+            <a href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
               {lecturer.displayName}
             </a><br />
-          </>))}
+          </div>))}
         </Col>
       </Row>
 
