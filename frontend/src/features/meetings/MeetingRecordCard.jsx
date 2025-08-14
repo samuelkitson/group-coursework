@@ -204,7 +204,7 @@ const MeetingRecordCard = ({ meeting, meetingidx, editAllowed, disputeAllowed, o
                 <Dropdown className="ms-2" onSelect={(eventKey)=> handleDisputeStateChange(dispute._id, eventKey)}>
                   <Dropdown.Toggle
                     variant={disputeColour(disputeStates[dispute._id])}
-                    className="badge rounded-pill text-white border-0"
+                    className="badge rounded-pill text-white border-0 no-caret"
                     style={{ cursor: "pointer" }}
                     id="dropdown-badge"
                   >
