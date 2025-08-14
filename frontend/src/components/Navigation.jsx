@@ -11,6 +11,7 @@ import {
   ListGroup,
   Collapse,
   Button,
+  Modal,
 } from "react-bootstrap";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -37,9 +38,10 @@ import { useBoundStore } from "@/store/dataBoundStore";
 import api from "@/services/apiMiddleware";
 import { getAllowedPages } from "@/utility/assignmentPageMapping";
 import { shallow } from "zustand/shallow";
+import HelpModal from "./HelpModal";
 
 // Extracted navigation menu items to a separate component
-function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }) {
+function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false, showHelp }) {
   const navigate = useNavigate();
   const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
@@ -157,7 +159,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
         <div className="border-top my-2" />
       }
 
-      <Nav.Link as={Link} to="/help" onClick={hideOffcanvas} className={collapsed ? "text-center px-0" : ""}>
+      <Nav.Link as={Link} onClick={showHelp} className={collapsed ? "text-center px-0" : ""}>
         <InfoCircle className="me-2" />
         {!collapsed && "Help"}
       </Nav.Link>
@@ -174,6 +176,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
 const Navigation = ({ children }) => {
   const [showOffcanvas, setShowOffcanvas] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const toggleOffcanvas = () => setShowOffcanvas(!showOffcanvas);
   const hideOffcanvas = () => setShowOffcanvas(false);
@@ -230,6 +233,7 @@ const Navigation = ({ children }) => {
               isSidebar={true} 
               hideOffcanvas={hideOffcanvas} 
               collapsed={sidebarCollapsed}
+              showHelp={() => setShowHelp(true)}
             />
           </Col>
 
@@ -248,9 +252,11 @@ const Navigation = ({ children }) => {
       >
         <Offcanvas.Header closeButton />
         <Offcanvas.Body>
-          <NavigationItems hideOffcanvas={hideOffcanvas} />
+          <NavigationItems hideOffcanvas={hideOffcanvas} showHelp={() => setShowHelp(true)} />
         </Offcanvas.Body>
       </Offcanvas>
+
+      <HelpModal show={showHelp} onHide={() => setShowHelp(null)} />
     </>
   );
 };
