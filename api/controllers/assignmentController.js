@@ -93,7 +93,7 @@ exports.setSkills = async (req, res) => {
 exports.setState = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   // Check the current state and whether this move is valid
-  const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email");
+  const assignment = await assignmentModel.findById(req.params.assignment);
   const existingState = assignment.state;
   const newState = req.body.newState;
   const forceMove = req.body.force ?? false; // Must be true to move backwards
@@ -106,49 +106,51 @@ exports.setState = async (req, res) => {
       "closed",
     ].includes(newState)
   ) {
-    return res.status(400).json({
-      message: "The new state is invalid.",
-    });
+    throw new InvalidParametersError("Selected state is invalid.");
   }
+  if (existingState === newState)
+    throw new InvalidParametersError("You can't move to the current state.");
   // Check valid state moves one-by-one.
   var changeAllowed = false;
   var message = null;
-  if (newState === "allocation-questions") {
+  if (newState === "pre-allocation") {
+    if (forceMove) {
+      changeAllowed = true;
+      message = "Reset to the initial state."
+    }
+  } else if (newState === "allocation-questions") {
     if (existingState === "pre-allocation") {
       changeAllowed = true;
-      message = "The allocation questionnaire has been opened to students.";
-      // Send email to students
-      // if ((assignment?.skills ?? []).length > 0) {
-      //   const studentEmails = assignment.students.map(s => s.email);
-      //   questionnaireAvailableEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, });
-      // }
+      message = "Allocation questionnaire opened to students.";
+    } else if (forceMove) {
+      changeAllowed = true;
+      message = "Allocation questionnaire re-opened."
     }
-  }
-  if (newState === "allocation") {
+  } else if (newState === "allocation") {
     if (existingState === "allocation-questions") {
       changeAllowed = true;
-      message =
-        "The allocation questionnaire has been closed. Head to the allocation page to create the teams.";
-    }
-  }
-  if (newState === "live") {
-    if (existingState === "allocation") {
+      message = "Allocation questionnaire closed. Time to allocate teams!";
+    } if (existingState === "pre-allocation" && assignment?.skills?.length == 0) {
       changeAllowed = true;
-      message =
-        "The assignment has been opened and students will be able to see their teams.";
+      message = "Questionnaire skipped. Time to allocate teams!";
+    } else if (forceMove) {
+      changeAllowed = true;
+      message = "Allocation reset. All teams have been deleted.";
     }
-  }
-  if (newState === "closed") {
+  } else if (newState === "live") {
+    if (existingState === "closed" && forceMove) {
+      changeAllowed = true;
+      message = "Assignment re-opened.";
+    }
+  } else if (newState === "closed") {
     if (existingState === "live") {
       changeAllowed = true;
-      message = "The assignment has been closed.";
+      message = "Assignment has been closed.";
     }
   }
-  // Check whether the change was allowed or now
+  // Check whether the change was allowed or now.
   if (!changeAllowed) {
-    return res.status(400).json({
-      message: message ?? "You can't move the assignment to that state.",
-    });
+    throw new InvalidParametersError("You can't move the assignment to that state.");
   }
   assignment.state = newState;
   await assignment.save();
