@@ -76,7 +76,7 @@ const AdvanceAssignmentStateCard = ({ onAdvance }) => {
         </Modal.Header>
         <Modal.Body>
           Are you sure you want to move this assignment to the state "
-          {nextState?.name}"? You can't undo this action.
+          {nextState?.name}"?
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <Button
