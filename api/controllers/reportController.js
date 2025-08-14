@@ -151,7 +151,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     renderObj.selfNetScores = {};
     renderObj.checkinsSubmitted = {};
     renderObj.checkinThresholds = { min: 0, low: 0, high: 0, max: 0, };
-    renderObj.peerReviewCount = 0;
+    renderObj.peerReviewCount = peerReviewCount ?? 0;
   }
   // Add in observation comments
   const observations = await observationModel
