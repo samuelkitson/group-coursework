@@ -37,6 +37,12 @@ exports.recordNewMeeting = async (req, res) => {
   const discussion = req.body.discussion;
   if (!discussion)
     return res.status(400).json({ message: "You must provide a summary of the meeting discussion." });
+  // Check that this new meeting's date is after the previous meeting
+  const lastMeeting = await meetingModel.findOne({ team: req.body.team }).select("dateTime").sort({date: -1});
+  if (lastMeeting) {
+    if (dateTime <= lastMeeting?.dateTime)
+      throw new InvalidParametersError("Meeting date must be after the previous meeting.");
+  }
   // Make sure that all team members are accounted for in the attendance logs 
   const membersInAttendance = (req.body.attendance?.["attended"] ?? []).flat().map(id => id.toString());
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
