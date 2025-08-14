@@ -16,7 +16,7 @@ const attendanceIcon = (status) => {
   }
 }
 
-const NewMeetingModal = ({ activeModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting }) => {
+const NewMeetingModal = ({ activeModal, onHide, teamMembers, supervisors, previousActions, onSubmit, existingMeeting, isPending }) => {
   const [editMode, setEditMode] = useState(false);
 
   const defaultValues = {
@@ -254,9 +254,9 @@ const NewMeetingModal = ({ activeModal, onHide, teamMembers, supervisors, previo
         </Form>
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between">
-        <Button variant="secondary" onClick={onHide}>Cancel</Button>
+        <Button variant="secondary" onClick={onHide} disabled={isPending}>Cancel</Button>
         <p className="text-muted">Editable for an hour after submitting</p>
-        <Button variant="primary" onClick={handleSubmit}>Submit</Button>
+        <Button variant="primary" onClick={handleSubmit} disabled={isPending}>Submit</Button>
       </Modal.Footer>
     </Modal>
   );

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Modal, Button, Form, Table, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { } from 'react-bootstrap-icons';
 
-const DisputeMeetingModal = ({ activeModal, onHide, meeting, hasSupervisor, onSubmit }) => {
+const DisputeMeetingModal = ({ activeModal, onHide, meeting, hasSupervisor, onSubmit, isPending }) => {
   const [disputeNotes, setDisputeNotes] = useState("");
   const staffString = hasSupervisor ? "supervisor/lecturer" : "lecturer";
 
@@ -48,8 +48,8 @@ const DisputeMeetingModal = ({ activeModal, onHide, meeting, hasSupervisor, onSu
         </p>
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-between">
-        <Button variant="secondary" onClick={onHide}>Cancel</Button>
-        <Button variant="danger" disabled={disputeNotes.length < 25} onClick={handleSubmit}>Submit</Button>
+        <Button variant="secondary" onClick={onHide} disabled={isPending}>Cancel</Button>
+        <Button variant="danger" disabled={disputeNotes.length < 25 || isPending} onClick={handleSubmit}>Submit</Button>
       </Modal.Footer>
     </Modal>
   );
