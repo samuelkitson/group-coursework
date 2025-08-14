@@ -184,6 +184,7 @@ function AllocationControls() {
       formData.append("dataset", datasetFile);
     }
     setIsPending(true);
+    setActiveModal("allocation");
     const apiPromise = api.post(`/api/allocation/${selectedAssignment._id}/run`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
@@ -197,7 +198,10 @@ function AllocationControls() {
       .then((resp) => {
         const data = resp.data;
         setGeneratedAllocation(data);
-        if (activeModal !== "allocation") setActiveModal("allocation");
+      })
+      .catch(() => {
+        setGeneratedAllocation(null);
+        // setActiveModal(null);
       })
       .finally(() => {
         setIsPending(false);
@@ -508,7 +512,7 @@ function AllocationControls() {
       </Row>
 
       <PotentialGroupsModal
-        activeModal={activeModal === "allocation" && generatedAllocation}
+        activeModal={activeModal === "allocation"}
         handleCancel={handleRejectAllocation}
         handleConfirm={handleAcceptAllocation}
         allocation={generatedAllocation}

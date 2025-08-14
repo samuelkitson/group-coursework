@@ -68,7 +68,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
   };
 
   const getCriterionName = (criterionIndex) => {
-    const criterion = allocation.criteria[criterionIndex];
+    const criterion = allocation?.criteria[criterionIndex];
     if (!criterion) return "Unknown criterion";
     const name = criterion.name.startsWith("Custom") ? toTitleCase(criterion.attribute) : criterion.name;
     if (criterion?.goal) {
@@ -113,8 +113,6 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
       </span>
     ); 
   };
-
-  if (allocation == null) { return <></> }
 
   return (
     <Modal
@@ -186,14 +184,14 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
             <div className="d-flex justify-content-between">
               <p className="mb-0">
-                { isPending ? "Regenerating groups..." : `${allocation.allocation.length ?? 0} groups generated` }
+                { isPending ? "Generating groups..." : `${allocation?.allocation?.length ?? 0} groups generated` }
               </p>
               <p className="mb-0">
-                { !isPending && `Overall allocation quality: ${(allocation.fitness * 100).toFixed(1)}%`}
+                { !isPending && `Overall allocation quality: ${((allocation?.fitness ?? 0) * 100).toFixed(1)}%`}
               </p>
             </div>
             
-            { isPending ? Array.from({ length: Math.min(allocation.allocation.length, 5) }, (_, index) => (
+            { isPending ? Array.from({ length: Math.min(allocation?.allocation?.length, 5) }, (_, index) => (
               <Card className="placeholder-glow my-3">
                 <Card.Body>
                   <Row>
@@ -217,7 +215,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
                   
                 </Card.Body>
               </Card>
-            )) : allocation.allocation.map((group, index) => (
+            )) : allocation?.allocation?.map((group, index) => (
               <Card
                 key={index}
                 className="my-3"
@@ -282,7 +280,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
         </Button>
         <Button
           variant="success"
-          disabled={isPending}
+          disabled={isPending || !allocation}
           className="d-flex align-items-center"
           onClick={handleConfirm}
         >
