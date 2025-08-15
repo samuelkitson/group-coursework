@@ -57,6 +57,10 @@ const assignmentSchema = new Schema(
   { timestamps: true },
 );
 
+assignmentSchema.index({ students: 1, state: 1, });
+assignmentSchema.index({ lecturers: 1 });
+assignmentSchema.index({ supervisors: 1 });
+
 assignmentSchema.statics.getAssignmentsByUser = async function (userId) {
   const limitedFields = { _id: 1, name: 1, description: 1, state: 1, supervisors: 1, students: 1, lecturers: 1, skills: 1, };
   const userObjectId = new Types.ObjectId(userId);
@@ -64,6 +68,7 @@ assignmentSchema.statics.getAssignmentsByUser = async function (userId) {
   const assignmentsStudents = await this.find(
     {
       students: { $in: [userObjectId] },
+      state: { $ne: "pre-allocation" },
     },
     limitedFields,
   ).populate("lecturers", "displayName email role").lean();
