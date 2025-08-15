@@ -54,9 +54,13 @@ function AssignmentStudents() {
   };
 
   const submitPairingExclusions = () => {
+    // First keep the excluded students who aren't on this module so we don't
+    // overwrite their pairing exclusions by accident.
+    const otherAssignmentExclusions = pairingExclusionsStudent?.noPair?.filter(n => allStudentIdsNames.find(s => s.value === n) == null);
+    const exclusions = otherAssignmentExclusions.concat(pairingExclusionsOthers.map(s => s.value));
     const reqObject = {
       student: pairingExclusionsStudent._id,
-      others: pairingExclusionsOthers.map(s => s.value),
+      others: exclusions,
     };
     setIsPending(true);
     api
@@ -444,6 +448,10 @@ function AssignmentStudents() {
             placeholder="No exclusions set"
             menuPlacement="top"
           />
+
+          <p className="text-muted small mt-2 mb-0 d-flex align-items-center">
+            <InfoCircle className="me-1" />Only students on this assignment are listed.
+          </p>
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <Button
