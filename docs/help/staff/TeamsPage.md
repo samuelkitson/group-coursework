@@ -38,7 +38,7 @@ Clicking this reveals a number of options and shortcuts:
 * **Email team**: opens an email in your default email client with the team
 members' email addresses prefilled.
 * **Meetings**: view and edit the team's meeting minutes. If any team members
-have disputed the record of a meeting, you can view and respond to it here.
+have disputed the record of a meeting, you can view and respond to them here.
 * **Peer reviews**: if peer reviews are enabled, you can analyse and moderate
 the student responses here.
 * **Observations**: used to view and record private notes about teams and team
@@ -72,9 +72,10 @@ new team to alert them. You can do this by opening the team menu (⋮) and then
 choosing "Email team".
 
 They'll still appear in old meeting minutes, attendance logs, supervisor
-observations and meeting disputes for their old team.
+observations and meeting disputes for their old team. They won't appear in
+downloadable reports.
 
 > [!CAUTION]
 > Check-in and peer review data about the student in their old team will be
-> lost. If you need this, you should therefore take a copy (e.g. download a team
-> report) before performing the move.
+> inaccessible. If you need it, you should therefore take a copy (e.g. download
+> a team report) before performing the move.
