@@ -26,9 +26,10 @@ member.
 review about each team-mate.
 
 Check-ins are completed weekly by students, though the module staff can control
-whether a simple or full check-in is required each week (or none at all). The
-data collected is analysed by the app to generate intelligent insights about
-teams and is also exportable as a report.
+whether a simple or full check-in is required each week (or none at all). They
+open on Monday at 00:01 and close the following Sunday at 23:59. The data
+collected is analysed by the app to generate intelligent insights about teams
+and is also exportable as a report.
 
 ### Simple check-ins
 
@@ -88,3 +89,39 @@ tab.
 > Once students have started working, don't edit check-ins for previous or
 current weeks and don't change the start date in the peer review settings. Doing
 so may cause check-in data to be lost.
+
+![A screenshot of the settings page to configure peer reviews.](../../images/peer-review-configure-annotated.png)
+
+## Reminding students to complete them
+
+When a check-in is available for a student to complete, they'll be prompted to
+do so within the app. Once submitted it'll also show how many team-mates still
+need to submit theirs.
+
+Lecturers can see the completion rate on their assignment overview page. You can
+also choose to send a reminder email to any students yet to complete it. Please
+note that these emails will be sent immediately, so please only use this option
+during working hours.
+
+## Analysing the results
+
+Check-in data from the previous week is used to generate some of the insights on
+the Teams page. This can give you an early visual warning of problems.
+
+To investigate in more detail, choose the "Peer reviews" option under a team's
+menu (⋮). On this page you can view and moderate all of the check-in responses
+from the selected team.
+
+Start by choosing a completed peer review from the dropdown at the top. Then
+select a student to focus on from the next dropdown. A collection of data is
+then displayed:
+
+* A list of review comments made about the selected student. These can be
+moderated or deleted.
+* The student's relative workload (based on the team's aggregated effort point
+responses). A score of 0 is ideal, with negative scores indicating low effort
+and high scores suggesting a student may be doing too much.
+* The student's skill ratings from their peers are shown in a chart.
+* A chart showing perceived workload over time can be viewed.
+
+![A screenshot of the peer review dashboard.](../../images/peer-review-dashboard-annotated.png)
