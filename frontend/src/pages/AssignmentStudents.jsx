@@ -16,6 +16,9 @@ function AssignmentStudents() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const updateSelectedAssignment = useBoundStore(
+    (state) => state.updateSelectedAssignment,
+  );
   const [studentsList, setStudentsList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, setIsPending] = useState(false);
@@ -95,6 +98,7 @@ function AssignmentStudents() {
       .then((data) => {
         setStudentsList([]);
         setActiveModal(null);
+        updateSelectedAssignment({ students: [] });
       }).finally(() => {
         setIsPending(false);
       });
@@ -130,8 +134,10 @@ function AssignmentStudents() {
         return resp.data;
       })
       .then((data) => {
-        setStudentsList(studentsList.filter(s => s._id !== studentToRemove._id));
+        const newStudentsList = studentsList.filter(s => s._id !== studentToRemove._id);
+        setStudentsList(newStudentsList);
         setActiveModal(null);
+        updateSelectedAssignment({ students: newStudentsList.map(s => s._id.toString()) });
       }).finally(() => {
         setIsPending(false);
       });
@@ -163,9 +169,11 @@ function AssignmentStudents() {
         genericError: true,
       })
       .then((resp) => {
+        const studentIds = resp?.data?.students ?? [];
         refreshData();
         setCsvFile(null);
         setActiveModal(null);
+        updateSelectedAssignment({ students: studentIds });
       })
       .finally(() => {
         setIsPending(false);
