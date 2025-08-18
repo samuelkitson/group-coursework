@@ -68,7 +68,7 @@ function Questionnaire() {
     api
       .patch(
         `/api/questionnaire/skills`,
-        { skills: updatedSkills },
+        { skills: updatedSkills, assignment: selectedAssignment._id, },
         { successToasts: true },
       )
       .then(() => {
