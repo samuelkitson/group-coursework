@@ -145,7 +145,7 @@ function AssignmentOverview() {
       id: "staff-checkin-status",
       component: StaffCheckInStatusCard,
       size: "small",
-      attemptLoad: () => selectedAssignment.role === "lecturer",
+      attemptLoad: () => (selectedAssignment.role === "lecturer" && selectedAssignment.state === "live"),
     },
     {
       id: "staff-delete-assignment",
