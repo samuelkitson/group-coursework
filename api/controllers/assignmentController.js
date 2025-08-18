@@ -96,9 +96,11 @@ exports.setState = async (req, res) => {
   const assignment = await assignmentModel.findById(req.params.assignment);
   const existingState = assignment.state;
   const newState = req.body.newState;
+  const forceMove = req.body.force ?? false; // Must be true to move backwards
   if (newState !== "pre-allocation" && assignment?.students?.length == 0)
     throw new AssignmentInvalidStateError("You need to add some students first.");
-  const forceMove = req.body.force ?? false; // Must be true to move backwards
+  if (newState === "allocation-questions" && assignment?.skills?.length == 0 && !forceMove)
+    throw new AssignmentInvalidStateError("Configure some required skills first.");
   if (
     ![
       "pre-allocation",
