@@ -360,7 +360,9 @@ exports.confirmAllocation = async (req, res) => {
   assignment.state = "live";
   await assignment.save();
   // Send emails to students
-  const studentEmails = assignment.students.map(s => s.email);
-  teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, })
+  if (req.body?.sendEmails) {
+    const studentEmails = assignment.students.map(s => s.email);
+    teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, })
+  }
   return res.json({"message": "Allocation confirmed and released to students. Your assignment is live!"});
 };
