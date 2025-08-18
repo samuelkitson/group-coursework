@@ -2,8 +2,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { useBoundStore } from "@/store/dataBoundStore";
-import { Container, Row, Col, Card, ListGroup, Button, Placeholder } from "react-bootstrap";
-import { ChevronRight, PersonBadgeFill } from "react-bootstrap-icons";
+import { Container, Row, Col, Card, ListGroup, Button, Placeholder, Collapse } from "react-bootstrap";
+import { ChevronDown, ChevronRight, ChevronUp, PersonBadgeFill } from "react-bootstrap-icons";
 
 import "./style/AssignmentOverview.css";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
@@ -62,6 +62,7 @@ function AssignmentOverview() {
   );
 
   const [loadedCards, setLoadedCards] = useState(null);
+  const [moduleTeamShown, setModuleTeamShown] = useState(false);
 
   const stateHelpText = () => {
     if (selectedAssignment.role === "student") {
@@ -264,12 +265,32 @@ function AssignmentOverview() {
         </Col>
         <Col xs={0} lg={1}></Col>
         <Col lg={3} sm={12}>
-          <h4 className="d-flex align-items-center"><PersonBadgeFill size={18} className="me-2" />Module team</h4>
-          {selectedAssignment.lecturers.map((lecturer, index) => (<>
-            <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
-              {lecturer.displayName}
-            </a><br />
-          </>))}
+          <h5
+            className="d-flex align-items-center justify-content-start"
+            onClick={() => setModuleTeamShown(!moduleTeamShown)}
+            aria-controls="module-team-collapse"
+            aria-expanded={moduleTeamShown}
+            style={{ cursor: "pointer" }}
+          >
+            <div className="d-flex align-items-center me-2">
+              Module staff
+            </div>
+            { moduleTeamShown ? 
+              <ChevronUp size={18} />
+            :
+              <ChevronDown size={18} />
+            }
+          </h5>
+
+          <Collapse in={moduleTeamShown}>
+            <div id="module-team-collapse">
+              {selectedAssignment.lecturers.map((lecturer, index) => (
+                <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
+                  {lecturer.displayName}
+                </a>
+              ))}
+            </div>
+          </Collapse>
         </Col>
       </Row>
 
