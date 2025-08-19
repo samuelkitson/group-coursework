@@ -226,12 +226,12 @@
                               };
 
                               // Widths: -50% for full negative, +50% for full postive
-                              const netScore = netScores[member.displayName] ?? 0;
-                              const netScoreWidthL = Math.min(50, Math.max(0, netScore / checkinThresholds.min * 50));
-                              const netScoreWidthR = Math.min(50, Math.max(0, netScore / checkinThresholds.max * 50));
-                              const netScoreString = netScore > 0 ? "+"+netScore : netScore;
+                              const normScore = normScores[member.displayName] ?? 0;
+                              const normScoreWidthL = Math.min(50, Math.max(0, normScore / checkinThresholds.min * 50));
+                              const normScoreWidthR = Math.min(50, Math.max(0, normScore / checkinThresholds.max * 50));
+                              const normScoreString = normScore > 0 ? "+"+normScore : normScore;
                               
-                              const selfScore = selfNetScores[member.displayName] ?? 0;
+                              const selfScore = selfNormScores[member.displayName] ?? 0;
                               const selfScoreWidthL = Math.min(50, Math.max(0, selfScore / checkinThresholds.min * 50));
                               const selfScoreWidthR = Math.min(50, Math.max(0, selfScore / checkinThresholds.max * 50));
                               const selfScoreString = selfScore > 0 ? "+"+selfScore : selfScore;
@@ -252,11 +252,11 @@
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Peer-reviewed effort</span>
-                                <span class="small fw-medium"><%= netScoreString %> (<%= effortScoreToLabel(netScore) %>)</span>
+                                <span class="small fw-medium"><%= normScoreString %> (<%= effortScoreToLabel(normScore) %>)</span>
                               </div>
                               <div class="progress compact-progress progress-centred">
-                                <div class="progress-bar progress-left progress-red" style="width: <%= netScoreWidthL%>%"></div>
-                                <div class="progress-bar progress-right progress-green" style="width: <%= netScoreWidthR%>%"></div>
+                                <div class="progress-bar progress-left progress-red" style="width: <%= normScoreWidthL%>%"></div>
+                                <div class="progress-bar progress-right progress-green" style="width: <%= normScoreWidthR%>%"></div>
                                 <div class="progress-bar-middle"></div>
                               </div>
                             </div>

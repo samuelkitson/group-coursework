@@ -7,7 +7,7 @@ const peerReviewModel = require("../models/peerReview");
 const observationModel = require("../models/observation");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError, ConfigurationError } = require("../errors/errors");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
-const { daysBetween, peerReviewSkillsStatistics, calculateAverage } = require("../utility/maths");
+const { daysBetween, peerReviewSkillsStatistics, calculateAverage, averageObjectValues } = require("../utility/maths");
 const { summariseMeetingAttendance, summariseMeetingMinuteTakers, summariseMeetingActions } = require("./meetingController");
 const ejs = require("ejs");
 const archiver = require("archiver");
@@ -122,8 +122,8 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
   ]);
   if (allCheckins.length > 0) {
     const checkinsGrouped = {};
-    const netScoresEach = {};
-    const selfNetScoresEach = {};
+    const scoresEach = {};
+    const selfScoresEach = {};
     const checkinsSubmitted = {};
     allCheckins.forEach(checkin => {
       const reviewId = checkin?.peerReview?._id;
@@ -134,21 +134,30 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
         const pointsAdjusted = checkin.effortPoints[recipient] - 4;
         const recipientName = idsToNames[recipient] ?? "[Ex-team member]";
         checkinsGrouped[reviewId][recipientName] = (checkinsGrouped[reviewId][recipientName] || 0) + pointsAdjusted;
-        netScoresEach[recipientName] = (netScoresEach[recipientName] || 0) + pointsAdjusted;
+        if (scoresEach.hasOwnProperty(recipientName)) {
+          scoresEach[recipientName].push(pointsAdjusted)
+        } else {
+          scoresEach[recipientName] = [pointsAdjusted];
+        }
         if (checkin.reviewer == recipient) {
-          selfNetScoresEach[recipientName] = (selfNetScoresEach[recipientName] || 0) + pointsAdjusted;
+          if (selfScoresEach.hasOwnProperty(recipientName)) {
+            selfScoresEach[recipientName].push(pointsAdjusted)
+          } else {
+            selfScoresEach[recipientName] = [pointsAdjusted];
+          }
           checkinsSubmitted[recipientName] = (checkinsSubmitted[recipientName] || 0) + 1;
         }
       }
     });
-    renderObj.netScores = netScoresEach;
-    renderObj.selfNetScores = selfNetScoresEach;
+    // Normalise the scores to be within [-3, 3].
+    renderObj.normScores = averageObjectValues(scoresEach);
+    renderObj.selfNormScores = averageObjectValues(selfScoresEach);
     renderObj.checkinsSubmitted = checkinsSubmitted;
-    renderObj.checkinThresholds = { min: -3*allCheckins.length, low: -1*allCheckins.length, high: 1*allCheckins.length, max: 3*allCheckins.length };
+    renderObj.checkinThresholds = { min: -3, low: -1, high: 1, max: 3 };
     renderObj.peerReviewCount = peerReviewCount ?? 0;
   } else {
-    renderObj.netScores = {};
-    renderObj.selfNetScores = {};
+    renderObj.normScores = {};
+    renderObj.selfNormScores = {};
     renderObj.checkinsSubmitted = {};
     renderObj.checkinThresholds = { min: 0, low: 0, high: 0, max: 0, };
     renderObj.peerReviewCount = peerReviewCount ?? 0;

@@ -178,3 +178,13 @@ exports.setDifference = (set1, set2) => {
   }
   return result;
 }
+
+exports.averageObjectValues = (obj) => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      const sum = value.reduce((acc, curr) => acc + curr, 0);
+      const average = value.length > 0 ? sum / value.length : 0;
+      return [key, average];
+    })
+  );
+}
