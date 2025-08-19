@@ -231,8 +231,6 @@ generateDataForTeams = async ({ assignmentId, teamId, peerReviewId, periodStart,
     if (!matchedReview)
       throw new GenericNotFoundError("That peer review could not be found for this assignment.");
     peerReviewDetails = matchedReview;
-  } else {
-    peerReviewDetails = allPeerReviews.find(p => p.type == "full");
   }
   // Now generate the reports for each team
   for (const team of teams) {

@@ -115,7 +115,7 @@ function ReportGenerator() {
           const label = p?.name ? `${p?.name} (${dateString})` : dateString;
           return { value: p._id, label }
         });
-        setFullPeerReviews(fullReviews);
+        setFullPeerReviews([{ value: null, label: "Don't focus on a peer review"}].concat(fullReviews));
         return fullReviews;
     });
     Promise.all([teamPromise, peerReviewPromise]).then(([teamData, fullReviews]) => {
