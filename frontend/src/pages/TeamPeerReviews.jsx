@@ -139,7 +139,7 @@ function TeamPeerReviews() {
           <h1>Peer reviews (Team {selectedTeam?.teamNumber})</h1>
           <p className="text-muted">
             Monitor and moderate Team {selectedTeam?.teamNumber}'s peer
-            reviews and check-ins. You can also add private notes.
+            reviews and check-ins. Add private notes on the Observations page.
           </p>
         </Col>
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
