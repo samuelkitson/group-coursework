@@ -121,10 +121,10 @@ exports.enrolStudentsOnAssignment = async (req, res) => {
           await teamModel.updateOne({ _id: existingTeams[0]._id }, { $addToSet: { members: new Types.ObjectId(newStudent), }});
           existingTeams[0].members.push(newStudent);
         }
-        return res.json({ message: `${studentIds.length} students added to existing teams.` });
+        return res.json({ message: `${studentIds.length} students added to existing teams.`, students: studentIds });
       }
     } else {
-      return res.json({ message: `${studentIds.length} students added successfully.` });
+      return res.json({ message: `${studentIds.length} students added successfully.`, students: studentIds });
     }
   } finally {
     fs.unlink(req.file.path, (err) => {

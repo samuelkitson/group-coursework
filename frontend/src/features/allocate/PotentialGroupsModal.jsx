@@ -191,7 +191,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
               </p>
             </div>
             
-            { isPending ? Array.from({ length: Math.min(allocation?.allocation?.length, 5) }, (_, index) => (
+            { isPending ? Array.from({ length: 5 }, (_, index) => (
               <Card className="placeholder-glow my-3">
                 <Card.Body>
                   <Row>

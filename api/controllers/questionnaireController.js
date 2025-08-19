@@ -2,7 +2,7 @@ const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError } = require("../errors/errors");
+const { InvalidParametersError, AssignmentInvalidStateError } = require("../errors/errors");
 const { setDifference } = require("../utility/maths");
 const { questionnaireAvailableEmail } = require("../utility/emails");
 
@@ -33,9 +33,22 @@ exports.getAllocationQuestionnaire = async (req, res) => {
 };
 
 exports.updateUserSkills = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "student");
+  const assignment = await assignmentModel.findById(req.body.assignment).select("state skills").lean();
+  if (assignment.state !== "allocation-questions")
+    throw new AssignmentInvalidStateError();
   const updatedSkills = req.body.skills;
   if (!updatedSkills || typeof updatedSkills !== "object")
     throw new InvalidParametersError("Invalid skills update. Please try again.")
+  // Check that only this assignment's skills are being updated.
+  const requestedSkills = new Set(assignment?.skills.map(s => s.name) ?? []);
+  const providedSkills = new Set(Object.keys(req.body.skills));
+  if (requestedSkills.size !== providedSkills.size)
+    throw new InvalidParametersError("Invalid skills update. Please try again.");
+  console.log(requestedSkills);
+  console.log(providedSkills);
+  if (Object.keys(req.body.skills).some(s => !requestedSkills.has(s)))
+    throw new InvalidParametersError("Invalid skills update. Please try again.");
   // Get the user's object from the DB
   const user = await userModel.findById(req.session.userId);
   if (!user.skills) user.skills = {};

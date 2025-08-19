@@ -10,6 +10,7 @@ import {
   ListGroup,
   Dropdown,
   Placeholder,
+  Form,
 } from "react-bootstrap";
 import {
   ArrowsCollapseVertical,
@@ -49,6 +50,7 @@ function AllocationControls() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [sendEmails, setSendEmails] = useState(false);
 
   // Stores the different criteria/dealbreaker blocks the user can select
   const [criteriaOptions, setCriteriaOptions] = useState([]);
@@ -278,6 +280,7 @@ function AllocationControls() {
     setIsPending(true);
     const updateObj = {
       allocation: groupsList,
+      sendEmails,
     };
     api
       .post(`/api/allocation/${selectedAssignment._id}`, updateObj, {
@@ -527,16 +530,21 @@ function AllocationControls() {
         </Modal.Header>
         <Modal.Body>
           <p>
-            Are you sure you want to confirm this allocation and release it to
-            students on "
+            Are you sure you want to confirm this team allocation for "
             {selectedAssignment?.name}"?
-            Students will immediately be able to access their team details and
-            start working.
+            Students will be able to see their teams and start recording
+            meetings. You can't go back and run allocation again.
           </p>
           <p>
-            Once confirmed, you'll be able to notify students by email from the
-            assignment overview page.
+            If selected below, the system can notify students by email that
+            teams have been allocated. This option won't be available later.
           </p>
+          <Form.Check
+            label="Send email notifcations now"
+            checked={sendEmails}
+            onChange={(e) => setSendEmails(e.target.checked)}
+            className="mt-3"
+          />
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <Button

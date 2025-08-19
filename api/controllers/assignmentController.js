@@ -2,7 +2,7 @@ const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { checkAssignmentRole } = require("../utility/auth");
-const { InvalidParametersError, IncorrectRoleError } = require("../errors/errors");
+const { InvalidParametersError, IncorrectRoleError, AssignmentInvalidStateError } = require("../errors/errors");
 const { questionnaireAvailableEmail, newLecturerExistingEmail } = require("../utility/emails");
 const { setDifference } = require("../utility/maths");
 
@@ -97,6 +97,10 @@ exports.setState = async (req, res) => {
   const existingState = assignment.state;
   const newState = req.body.newState;
   const forceMove = req.body.force ?? false; // Must be true to move backwards
+  if (newState !== "pre-allocation" && assignment?.students?.length == 0)
+    throw new AssignmentInvalidStateError("You need to add some students first.");
+  if (newState === "allocation-questions" && assignment?.skills?.length == 0 && !forceMove)
+    throw new AssignmentInvalidStateError("Configure some required skills first.");
   if (
     ![
       "pre-allocation",
