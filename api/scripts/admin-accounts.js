@@ -5,6 +5,7 @@ const readlineSync = require("readline-sync");
 
 
 console.log("=== ADMIN ACCOUNTS UTILITY ===");
+console.log("This script is used to configure which accounts have admin status.")
 
 async function mainMenu() {
   while (true) {
@@ -67,7 +68,7 @@ async function removeAdmin() {
   try {
     await mainMenu();
   } catch (err) {
-    console.error("\n❌ An error occurred:", err.message);
+    console.error(`\n❌ An error occurred: ${err.message}.`);
   } finally {
     mongoose.connection.close();
   }
