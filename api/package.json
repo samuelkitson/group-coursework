@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node app.js",
-    "test": "jest"
+    "test": "jest",
+    "admin-accounts": "node scripts/admin-accounts.js",
+    "account-editor": "node scripts/account-editor.js",
+    "create-account": "node scripts/create-account.js",
+    "database-reset": "node scripts/database-reset.js"
   },
   "author": "",
   "license": "ISC",
