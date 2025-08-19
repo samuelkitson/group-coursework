@@ -283,13 +283,15 @@ function AssignmentOverview() {
           </h5>
 
           <Collapse in={moduleTeamShown}>
-            <div id="module-team-collapse">
+            <ul id="module-team-collapse" className="list-unstyled">
               {selectedAssignment.lecturers.map((lecturer, index) => (
-                <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
-                  {lecturer.displayName}
-                </a>
+                <li>
+                  <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
+                    {lecturer.displayName}
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           </Collapse>
         </Col>
       </Row>
