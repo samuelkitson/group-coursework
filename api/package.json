@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node app.js",
     "dev": "node app.js",
-    "test": "jest"
+    "test": "jest",
+    "enable-password-login": "node scripts/enable-password-login.js",
+    "disable-password-login": "node scripts/disable-password-login.js",
+    "admin-accounts": "node scripts/admin-accounts.js"
   },
   "author": "",
   "license": "ISC",
