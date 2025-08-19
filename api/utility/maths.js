@@ -179,12 +179,13 @@ exports.setDifference = (set1, set2) => {
   return result;
 }
 
-exports.averageObjectValues = (obj) => {
+exports.averageObjectValues = (obj, round2DP=true) => {
   return Object.fromEntries(
     Object.entries(obj).map(([key, value]) => {
       const sum = value.reduce((acc, curr) => acc + curr, 0);
       const average = value.length > 0 ? sum / value.length : 0;
-      return [key, average];
+      const rounded = round2DP ? Math.round(average * 100) / 100 : average;
+      return [key, rounded];
     })
   );
 }
