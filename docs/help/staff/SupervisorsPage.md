@@ -1,8 +1,25 @@
 # Supervisors page
 
-The supevisors page is used to manage the team supervisors on an assignment.
+The supervisors page is used to manage the team supervisors on an assignment.
 This is an optional feature; if you don't need supervisors, just ignore this
 page and the feature will remain disabled.
+
+## What are supervisors?
+
+If appropriate to your assignment, you can assign supervisors to teams. They may
+commonly be PhD demonstrators or students from older year groups. Supervisors
+can help you monitor groups, provide support to them and record observations to
+help you with marking.
+
+Supervisors have permissions similar to module staff, but limited to the teams
+they supervise. For these teams, they can:
+
+* View team & student insights.
+* See and edit meeting history.
+* View and resolve meeting disputes.
+* View and moderate check-ins/peer reviews.
+* View and record observations.
+* Download progress reports.
 
 ## Adding supervisors
 
