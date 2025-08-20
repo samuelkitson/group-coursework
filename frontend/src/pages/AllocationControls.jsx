@@ -80,6 +80,8 @@ function AllocationControls() {
   const [activeModal, setActiveModal] = useState(null);
 
   const [generatedAllocation, setGeneratedAllocation] = useState(null);
+  const [storedAllocations, setStoredAllocations] = useState([]);
+  const [selectedAllocation, setSelectedAllocation] = useState(null); // null means use the generated allocation.
 
   const addNewCriterion = (newCriterion) => {
     newCriterion.expanded = false;
@@ -271,12 +273,15 @@ function AllocationControls() {
     setActiveModal(null);
   };
 
-  const handleAcceptAllocation = () => {
+  const handleAcceptAllocation = (selectedIndex) => {
+    setSelectedAllocation(selectedIndex);
     setActiveModal("release-allocation");
   };
 
   const handleReleaseAllocation = () => {
-    const groupsList = generatedAllocation.allocation.map(group => group.members.map(student => student._id));
+    const confirmedAllocation = selectedAllocation === null ? generatedAllocation : storedAllocations?.[selectedAllocation];
+    if (!confirmedAllocation) return;
+    const groupsList = confirmedAllocation.allocation.map(group => group.members.map(student => student._id));
     setIsPending(true);
     const updateObj = {
       allocation: groupsList,
@@ -522,6 +527,8 @@ function AllocationControls() {
         regnerateAllocation={startAllocation}
         requiredAttributes={requiredColumns}
         isPending={isLoading || isPending}
+        storedAllocations={storedAllocations}
+        setStoredAllocations={setStoredAllocations}
       />
 
       <Modal show={activeModal === "release-allocation"} centered>

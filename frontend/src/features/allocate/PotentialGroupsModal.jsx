@@ -25,14 +25,30 @@ import {
   BarChartFill,
   InfoCircleFill,
   InfoCircle,
+  Bookmarks,
+  BookmarkPlus,
+  BookmarkCheckFill,
 } from "react-bootstrap-icons";
 
-const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, isPending}) => {
+const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConfirm, regnerateAllocation, requiredAttributes, isPending, storedAllocations, setStoredAllocations}) => {
   const [spotlightAttribute, setSpotlightAttribute] = useState(null);
+  const [selectedAllocation, setSelectedAllocation] = useState(null); // null means show generated.
+  const [storedCurrent, setStoredCurrent] = useState(false);
+  const displayedAllocation = selectedAllocation !== null ? storedAllocations[selectedAllocation] : allocation;
 
   const spotlightOptions = requiredAttributes?.map(a => [a, false]) ?? [];
-  const skillsList = allocation?.criteria?.find(c => c.name === "Skill coverage")?.skills?.map(s => [s, true]);
+  const skillsList = displayedAllocation?.criteria?.find(c => c.name === "Skill coverage")?.skills?.map(s => [s, true]);
   if (skillsList) spotlightOptions.push(...skillsList);
+  if (spotlightAttribute && !spotlightOptions.some(([name]) => name === spotlightAttribute[0])) {
+    setSpotlightAttribute(null);
+  }
+
+  const storeAllocation = () => {
+    if (!allocation) return;
+    setSelectedAllocation(storedAllocations.length);
+    setStoredAllocations(prevAllocations => [...prevAllocations, allocation]);
+    setStoredCurrent(true);
+  }
 
   const criterionIcon = (quality) => {
     if (quality < 0.4) {
@@ -68,7 +84,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
   };
 
   const getCriterionName = (criterionIndex) => {
-    const criterion = allocation?.criteria[criterionIndex];
+    const criterion = displayedAllocation?.criteria[criterionIndex];
     if (!criterion) return "Unknown criterion";
     const name = criterion.name.startsWith("Custom") ? toTitleCase(criterion.attribute) : criterion.name;
     if (criterion?.goal) {
@@ -114,6 +130,15 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
     ); 
   };
 
+  const confirmButtonHandler = () => {
+    handleConfirm(selectedAllocation);
+  };
+
+  useEffect(() => {
+    setStoredCurrent(false);
+    setSelectedAllocation(null);
+  }, [allocation]);
+
   return (
     <Modal
       show={activeModal}
@@ -145,8 +170,8 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
             md={4}
             className="h-100 sticky-md-top pt-3"
           >
-            <h5 className="fw-semibold">
-              <Search className="me-1" /> Data spotlight
+            <h5 className="fw-semibold d-flex align-items-center">
+              <Search className="me-2" /> Data spotlight
             </h5>
             <p className="text-muted small mb-2">
               Select an attribute to display its value for each student.
@@ -180,14 +205,68 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
                 ))}
               </Dropdown.Menu>
             </Dropdown>
+
+            <h5 className="fw-semibold mt-5 d-flex align-items-center">
+              <Bookmarks className="me-2" /> Stored allocations
+            </h5>
+            <p className="text-muted small mb-2 pe-5">
+              Store and compare allocations to see the effect of adjusting
+              options or regenerating.
+            </p>
+
+            { storedCurrent ? 
+              <Button
+                disabled={true}
+                className="d-flex align-items-center mb-2"
+                size="sm"
+              >
+                <BookmarkCheckFill className="me-2" /> Stored current allocation
+              </Button>
+            :
+              <Button
+                disabled={isPending}
+                className="d-flex align-items-center mb-2"
+                size="sm"
+                onClick={storeAllocation}
+              >
+                <BookmarkPlus className="me-2" /> Store current allocation
+              </Button>
+            }
+
+            <Dropdown>
+              <Dropdown.Toggle variant="light" size="sm" className="border" disabled={isPending}>
+                <span className="pe-1">
+                  { selectedAllocation === null ? "Generated allocation" : `Stored allocation ${selectedAllocation + 1}`}
+                </span>
+              </Dropdown.Toggle>
+              <Dropdown.Menu size="sm" style={{ maxHeight: "calc(100vh - 500px)", overflowY: "auto" }}>
+                { !storedCurrent &&
+                <Dropdown.Item
+                  onClick={() => setSelectedAllocation(null)}
+                  className="text-muted"
+                >
+                  Generated allocation ({Math.round(allocation?.fitness * 100)}%)
+                </Dropdown.Item>
+                }
+                {storedAllocations.map((allocation, index) => (
+                  <Dropdown.Item
+                    key={`attribute-selector-${index}`}
+                    onClick={() => setSelectedAllocation(index)}
+                    active={index === selectedAllocation}
+                  >
+                    { `Stored allocation ${index + 1} (${Math.round(storedAllocations[index].fitness * 100)}%)`}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
           </Col>
           <Col xs={12} md={8} className="h-100 overflow-auto pt-3">
             <div className="d-flex justify-content-between">
               <p className="mb-0">
-                { isPending ? "Generating groups..." : `${allocation?.allocation?.length ?? 0} groups generated` }
+                { isPending ? "Generating groups..." : `${displayedAllocation?.allocation?.length ?? 0} groups generated` }
               </p>
               <p className="mb-0">
-                { !isPending && `Overall allocation quality: ${((allocation?.fitness ?? 0) * 100).toFixed(1)}%`}
+                { !isPending && `Overall allocation quality: ${((displayedAllocation?.fitness ?? 0) * 100).toFixed(1)}%`}
               </p>
             </div>
             
@@ -215,7 +294,7 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
                   
                 </Card.Body>
               </Card>
-            )) : allocation?.allocation?.map((group, index) => (
+            )) : displayedAllocation?.allocation?.map((group, index) => (
               <Card
                 key={index}
                 className="my-3"
@@ -280,9 +359,9 @@ const PotentialGroupsModal = ({activeModal, allocation, handleCancel, handleConf
         </Button>
         <Button
           variant="success"
-          disabled={isPending || !allocation}
+          disabled={isPending || !displayedAllocation}
           className="d-flex align-items-center"
-          onClick={handleConfirm}
+          onClick={confirmButtonHandler}
         >
           <CheckCircleFill className="me-2" /> Confirm
         </Button>
