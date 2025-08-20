@@ -250,7 +250,8 @@ function CheckIn() {
           <h4>
             Peer review
             <OverlayTrigger overlay={<Tooltip>
-              Shared anonymously with your team.
+              Comments shared anonymously with your team. Skill ratings only
+              shared with staff.
             </Tooltip>}>
               <Eye className="ms-2" size={18} />
             </OverlayTrigger>
