@@ -22,7 +22,6 @@ function ResumeLogin() {
       })
       .catch((error) => {
         navigate("/login");
-        console.log(error);
       });
   };
 

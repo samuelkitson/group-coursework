@@ -45,8 +45,6 @@ exports.updateUserSkills = async (req, res) => {
   const providedSkills = new Set(Object.keys(req.body.skills));
   if (requestedSkills.size !== providedSkills.size)
     throw new InvalidParametersError("Invalid skills update. Please try again.");
-  console.log(requestedSkills);
-  console.log(providedSkills);
   if (Object.keys(req.body.skills).some(s => !requestedSkills.has(s)))
     throw new InvalidParametersError("Invalid skills update. Please try again.");
   // Get the user's object from the DB

@@ -155,8 +155,6 @@ exports.deleteMeeting = async (req, res) => {
       comment: `[Automated] This user deleted a meeting record for ${format(meeting?.dateTime, "dd/MM/yyyy")} that had outstanding disputes from: ${complainants}.`,
     };
     await observationModel.create(observation);
-  } else {
-    console.log("test case 1");
   }
   return res.json({ message: "The meeting has been deleted successfully." });
 };
