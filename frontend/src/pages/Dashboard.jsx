@@ -77,9 +77,11 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    // Force update assignment states.
-    fetchAssignments(true);
-    fetchTeams(true);
+    // Force update assignment states. This is done using a 500 millisecond
+    // max age to stop duplicate refreshes if the Dashboard is the first page to
+    // load.
+    fetchAssignments(false, 500);
+    fetchTeams(false, 500);
   }, []);
 
   return (

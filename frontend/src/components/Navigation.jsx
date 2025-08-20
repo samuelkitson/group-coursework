@@ -62,13 +62,6 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
   const assignmentsActive = assignments.filter(a => a.state !== "closed" || a._id === selectedAssignment?._id);
   const resetDataStores = useBoundStore((state) => state.resetAll);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchAssignments();
-      fetchTeams();
-    }
-  }, []);
-
   const logoutAndHide = () => {
     hideOffcanvas();
     api.post(

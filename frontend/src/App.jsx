@@ -32,6 +32,9 @@ import TeamPeerReviews from "./pages/TeamPeerReviews";
 import ScrollToTop from "./utility/ScrollToTop";
 import ReportGenerator from "./pages/ReportGenerator";
 import TeamObservations from "./pages/TeamObservations";
+import { useAuthStore } from "./store/authStore";
+import { useEffect } from "react";
+import { useBoundStore } from "./store/dataBoundStore";
 
 function WithNavigation() {
   return (
@@ -46,6 +49,17 @@ function WithNavigation() {
 }
 
 function App() {
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
+  const fetchTeams = useBoundStore((state) => state.fetchTeams);
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAssignments(true);
+      fetchTeams(true);
+    }
+  }, []);
+
   return (
     <Router>
       <ScrollToTop />

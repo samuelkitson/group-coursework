@@ -1,6 +1,6 @@
 import api from "@/services/apiMiddleware";
 
-const defaultMaxAge = 60 * 60 * 1000; // 1 hour
+const defaultMaxAge = 30 * 60 * 1000; // 30 minutes
 
 const initialState = {
   teams: [],
