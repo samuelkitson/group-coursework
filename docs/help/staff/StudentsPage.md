@@ -16,6 +16,9 @@ they first log in with Microsoft and their profile can be synced.
 If it's easier, you can upload multiple CSVs one at a time. Any duplicates will
 be ignored.
 
+> [!TIP]
+> You can download a template CSV by clicking the "Templates" button.
+
 ### After teams have been allocated
 
 Sometimes you may need to add extra students after you've already allocated
@@ -27,6 +30,11 @@ existing teams, filling up the smallest groups first. Useful for replacing
 students who were removed from teams.
 * **Add to a single new team**: add all of the new students to a single new
 team. This is useful if you want to manually move them around.
+
+## Searching for students
+
+You can use the search bar at the top of the list to find students in the list.
+You can search by name or email address.
 
 ## Setting pairing exclusions
 
