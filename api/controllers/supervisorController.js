@@ -4,7 +4,7 @@ const teamModel = require("../models/team");
 const { Types } = require("mongoose");
 const { checkAssignmentRole, isValidEmail } = require("../utility/auth");
 const { InvalidParametersError, InvalidObjectIdError, GenericNotFoundError } = require("../errors/errors");
-const { newSupervisorPlaceholderEmail, newSupervisorExistingEmail } = require("../utility/emails");
+const { newSupervisorPlaceholderEmail, newSupervisorExistingEmail, newSupervisorsBulkEmail } = require("../utility/emails");
 
 exports.getSupervisors = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
@@ -87,25 +87,28 @@ exports.bulkAddSupervisors = async (req, res) => {
     throw new InvalidObjectIdError("Please provide a list of supervisor emails.");
   if (!req.body.supervisors.every(isValidEmail))
     throw new InvalidParametersError("Some of the email addresses provided were invalid.");
-  const supervisorIDs = await userModel.findOrPlaceholderBulk(req.body.supervisors.map(u => ({email: u, displayName: u})));
-  // Check that none of these people are already registered as staff/students
-  const assignment = await assignmentModel.findById(req.body.assignment);
+  const supervisorAccounts = await userModel.findOrPlaceholderBulk(req.body.supervisors.map(u => ({email: u, displayName: u})));
+  // Check that none of these people are already registered as staff/students.
+  const assignment = await assignmentModel.findById(req.body.assignment).select("name lecturers students supervisors");
   const staffList = assignment.lecturers.map(s => s.toString());
   const studentsList = assignment.students.map(s => s.toString());
   const staffStudentsList = new Set(staffList.concat(studentsList));
-  const crossovers = supervisorIDs.map(s => s.toString()).filter(e => staffStudentsList.has(e));
+  const crossovers = supervisorAccounts.map(s => s._id.toString()).filter(e => staffStudentsList.has(e));
   if (crossovers.length > 0)
-    throw new InvalidParametersError("Some of the users provided are either staff or students on this assignment, and can't become supervisors.");
-  // No crossovers, so safe to add
+    throw new InvalidParametersError("Some of those users are staff/students on the assignment already.");
+  // Ignore anyone who is already a supervisor on this assignment.
+  const existingSupervisors = new Set(assignment.supervisors.map(s => s.toString()));
+  const newSupervisors = supervisorAccounts.filter(s => !existingSupervisors.has(s._id.toString()));
+  if (newSupervisors.length == 0)
+    throw new InvalidParametersError("No new supervisors to add from that list.");
+  // No crossovers, so safe to add new supervisors.
   await assignmentModel.updateOne(
     { _id: req.body.assignment, },
-    { $addToSet: { supervisors: { $each: supervisorIDs } }},
+    { $addToSet: { supervisors: { $each: newSupervisors.map(s => s._id) } }},
   );
   // Send emails to each
-  for (const supervisor of req.body.supervisors) {
-    newSupervisorPlaceholderEmail({ supervisorEmail: supervisor, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
-  }
-  return res.json({ message: `${supervisorIDs.length} supervisors have been added.` });
+  newSupervisorsBulkEmail({ recipients: newSupervisors.map(s => s.email), staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
+  return res.json({ message: `${newSupervisors.length} supervisors have been added and notified by email.` });
 };
 
 exports.changeSupervisorTeams = async (req, res) => {

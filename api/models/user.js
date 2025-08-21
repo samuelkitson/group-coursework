@@ -73,11 +73,13 @@ userSchema.statics.createPlaceholder = async function (emailAddress, displayName
 // ID returned.
 userSchema.statics.findOrPlaceholderBulk = async function (users) {
   const emails = users.map(u => u.email);
-  const existing = await this.find({ email: { $in: emails }}).select("_id email").lean();
+  // Find any of those users who already exist.
+  const existing = await this.find({ email: { $in: emails }}).select("_id email role").lean();
   const existingEmails = existing.map(u => u.email);
+  // Create users for everyone else.
   const toCreate = users.filter(u => !existingEmails.includes(u.email));
-  const created = (await this.create(toCreate)).map(u => u._id);
-  return created.concat(existing.map(u => u._id));
+  const created = (await this.create(toCreate)).map(u => ({ _id: u._id, email: u?.email, role: "placeholder" }));
+  return created.concat(existing);
 };
 
 module.exports = model("user", userSchema);

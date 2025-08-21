@@ -138,6 +138,16 @@ const newLecturerExistingEmail = ({ newStaffEmail, newStaffName, staffUserEmail,
     .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
 };
 
+const newSupervisorsBulkEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId }) => {
+  const templateId = "2-05";
+  if (!recipients || !staffUserEmail || !assignmentName)
+    throw new InvalidParametersError("Missing required parameters to send email.");
+  const bodyText = `You've been added as a supervisor on ${assignmentName}.<br />This group coursework is managed using a web-based system at ${homePageLink}. Once the module team have finalised the allocation, you'll be able to view your teams there.`;
+  sendGenericEmail({ recipientEmail: recipients, replyToEmail: staffUserEmail, subject: "You've been added as a supervisor", headerText: "You've been added as a supervisor", bodyText, templateId, bccMode: true, })
+    .then(async () => await recordInDatabase({ sender: staffUserEmail, recipients: recipients, assignment: assignmentId, templateId, }))
+    .catch(err => {console.error(`Failed to send email ${templateId}: ${err}`)});
+};
+
 const teamsReleasedStudentEmail = ({ recipients, staffUserEmail, assignmentName, assignmentId, }) => {
   const templateId = "3-01";
   if (!recipients || !staffUserEmail || !assignmentName)
@@ -179,6 +189,7 @@ module.exports = {
   questionnaireAvailableEmail,
   newLecturerExistingEmail,
   checkInReminderEmails,
+  newSupervisorsBulkEmail,
   teamsReleasedStudentEmail,
   teamsAllocatedToSupervisorsEmail,
 };
