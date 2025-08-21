@@ -52,6 +52,12 @@ class ConfigurationError extends CustomError {
   }
 }
 
+class DuplicateEmailError extends CustomError {
+  constructor(message = "This email has been sent previously. Please confirm that you want to resend it.") {
+    super(message, 409, "DUPLICATE-EMAIL");
+  }
+}
+
 class GenericNotAllowedError extends CustomError {
   constructor(message = "Sorry, you're not allowed to perform that action.") {
     super(message, 403);
@@ -107,6 +113,7 @@ module.exports = {
   AssignmentNotFoundError,
   AssignmentInvalidStateError,
   ConfigurationError,
+  DuplicateEmailError,
   GenericNotAllowedError,
   GenericNotFoundError,
   IncorrectRoleError,

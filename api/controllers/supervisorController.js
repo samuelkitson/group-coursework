@@ -1,10 +1,11 @@
 const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const teamModel = require("../models/team");
+const emailModel = require("../models/email");
 const { Types } = require("mongoose");
 const { checkAssignmentRole, isValidEmail } = require("../utility/auth");
-const { InvalidParametersError, InvalidObjectIdError, GenericNotFoundError } = require("../errors/errors");
-const { newSupervisorPlaceholderEmail, newSupervisorExistingEmail, newSupervisorsBulkEmail } = require("../utility/emails");
+const { InvalidParametersError, InvalidObjectIdError, GenericNotFoundError, DuplicateEmailError } = require("../errors/errors");
+const { newSupervisorPlaceholderEmail, newSupervisorExistingEmail, newSupervisorsBulkEmail, teamsAllocatedToSupervisorsEmail } = require("../utility/emails");
 
 exports.getSupervisors = async (req, res) => {
   await checkAssignmentRole(req.query.assignment, req.session.userId, "lecturer");
@@ -182,4 +183,30 @@ exports.autoAllocateSupervisors = async (req, res) => {
     await team.save();
   }
   return res.json({ message: "Supervisors allocated successfully. "});
+};
+
+exports.sendAllocatedNotificationEmail = async (req, res) => {
+  await checkAssignmentRole(req.body.assignment, req.session.userId, "lecturer");
+  const assignment = await assignmentModel.findById(req.body.assignment).select("name supervisors").populate("supervisors", "email").lean();
+  // Only send email if all teams have a supervisor.
+  const teamsWithoutSupervisors = await teamModel.find({
+    assignment: req.body.assignment,
+    supervisors: [],
+    members: { $ne: [] },
+  }).sort({ "teamNumber": 1 });
+  if (teamsWithoutSupervisors.length > 0)
+    throw new InvalidParametersError("Assign a supervisor to each team first.");
+  // Check whether this email has already been sent.
+  if (!req.body.force) {
+    const previousEmail = await emailModel.findOne({
+      templateId: "3-02",
+      assignment: req.body.assignment,
+    });
+    if (previousEmail)
+      throw new DuplicateEmailError();
+  }
+  // Send the email.
+  const supervisorEmails = assignment.supervisors.map(s => s.email);
+  teamsAllocatedToSupervisorsEmail({ recipients: supervisorEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
+  return res.json({ message: `${supervisorEmails.length} supervisors notified by email. `});
 };

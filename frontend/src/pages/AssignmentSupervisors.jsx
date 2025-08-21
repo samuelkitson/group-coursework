@@ -4,7 +4,7 @@ import { Row, Col, Card, OverlayTrigger, Tooltip, Spinner, ListGroup, Modal, But
 import Select from 'react-select';
 
 import "./style/AssignmentOverview.css";
-import { Envelope, HourglassSplit, People, Shuffle, XCircle } from "react-bootstrap-icons";
+import { Envelope, EnvelopeFill, HourglassSplit, People, Shuffle, XCircle } from "react-bootstrap-icons";
 import api from "@/services/apiMiddleware";
 import PaginatedListGroup from "@/components/PaginatedListGroup";
 import { Controller, useForm, useFormState } from "react-hook-form";
@@ -29,6 +29,7 @@ function AssignmentSupervisors() {
   const fileUploadRef = useRef(null);
   const [uploadedFileContent, setUploadedFileContent] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
+  const [confirmResendNotification, setConfirmResendNotification] = useState(null); // null=not needed, false=not confirmed, true=confirmed
 
   const defaultValues = { newSupervisor: "", supervisorEditTeams: [], };
   const { control, register, reset, getValues, } = useForm({
@@ -161,6 +162,28 @@ function AssignmentSupervisors() {
       });
   };
 
+  const showBulkEmailModal = () => {
+    setConfirmResendNotification(null);
+    setActiveModal("notification-emails");
+  };
+
+  const confirmSendBulkEmail = () => {
+    setIsPending(true);
+    api
+      .post("/api/supervisor/notification-emails", { assignment: selectedAssignment._id, force: confirmResendNotification }, { successToasts: true })
+      .then((resp) => {
+        setActiveModal(false);
+      })
+      .catch((err) => {
+        if (err?.response?.data?.code === "DUPLICATE-EMAIL") {
+          setConfirmResendNotification(false);
+        }
+      })
+      .finally(() => {
+        setIsPending(false);
+      });
+  };
+
   const refreshData = () => {
     setSupervisorsList([]);
     setIsLoading(true);
@@ -181,6 +204,9 @@ function AssignmentSupervisors() {
         setIsLoading(false);
       });
   };
+
+  const teamsHaveSupervisors = teamsList.map(t => supervisorsList.some(s => s?.teams?.some(st => st._id === t.value)));
+  const allTeamsHaveSupervisors = teamsHaveSupervisors.every(Boolean);
 
   useEffect(refreshData, [selectedAssignment]);
 
@@ -312,7 +338,7 @@ function AssignmentSupervisors() {
             </Button>
           </InputGroup>
           
-          { (selectedAssignment.state === "live" && supervisorsList.length > 0) && <>
+          { (selectedAssignment.state === "live" && supervisorsList.length > 0 && !allTeamsHaveSupervisors) && <>
             <h3 className="mt-4">Allocate to teams</h3>
             <p>
               After you've added all supervisors, click the button below to
@@ -326,6 +352,22 @@ function AssignmentSupervisors() {
             >
               <Shuffle className="me-2" />
               Assign supervisors
+            </Button>
+          </>}
+
+          { (selectedAssignment.state === "live" && supervisorsList.length > 0 && allTeamsHaveSupervisors) && <>
+            <h3 className="mt-4">Notify supervisors</h3>
+            <p>
+              Send an automated email to supervisors notifiying them that
+              they've been assigned to teams.
+            </p>
+            <Button
+              disabled={isPending}
+              className="d-flex align-items-center"
+              onClick={showBulkEmailModal}
+            >
+              <EnvelopeFill className="me-2" />
+              Send emails
             </Button>
           </>}
         </Col>
@@ -399,6 +441,42 @@ function AssignmentSupervisors() {
           </Button>
           <Button variant="primary" onClick={saveSupervisorTeams} disabled={isPending}>
             Save
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={activeModal === "notification-emails"} onHide={() => setActiveModal(null)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Send notification emails</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          This will send an email to all {supervisorsList?.length} supervisors to
+          notify them that they've been assigned to their teams. You should do
+          this shortly after you've assigned supervisors.
+
+          { confirmResendNotification !== null && <>
+            <Form.Label className="text-danger mb-0 mt-3">
+              This notification email has already been sent to supervisors on
+              this assignment.
+            </Form.Label>
+            <Form.Check
+              label="I want to send this email again."
+              checked={confirmResendNotification}
+              onChange={(e) => setConfirmResendNotification(e.target.checked)}
+              className="mt-1"
+            />
+          </>}
+        </Modal.Body>
+        <Modal.Footer className="d-flex justify-content-between">
+          <Button
+            variant="secondary"
+            onClick={() => setActiveModal(null)}
+            disabled={isPending}
+          >
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={confirmSendBulkEmail} disabled={isPending}>
+            Confirm
           </Button>
         </Modal.Footer>
       </Modal>
