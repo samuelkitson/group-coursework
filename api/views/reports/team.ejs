@@ -301,7 +301,7 @@
                         <div class="section-title">Peer review comments</div>
                         <% if ((member?.reviewComments ?? []).length > 0) { %>
                           <% member?.reviewComments.forEach(function(comment, index) { %>
-                          <div class="comment-item" onclick="commentClickedHandler(this)" data-reviewer-name="<%= comment.by %>" data-moderated="<%= comment.moderated %>"">
+                          <div class="comment-item" onclick="commentClickedHandler(this)" data-reviewer-name="<%= comment.by %>" data-moderated="<%= comment.moderated %>">
                             <div class="small comment-text"><%= comment.comment || "[Comment removed]" %></div>
                             <div class="text-muted small">
                               — <%= comment.by %>
@@ -326,7 +326,7 @@
                         <div class="mt-3">
                           <div class="section-title">Supervisor/staff observations</div>
                           <% studentObservations.forEach(function(observation, index) { %>
-                          <div class="comment-item">
+                          <div class="comment-item" onclick="indvObservationClickedHandler(this)" data-observer-name="<%= observation?.observer?.displayName %>">
                             <div class="small comment-text"><%= observation?.comment %></div>
                             <div class="text-muted small">
                               — <%= observation?.observer?.displayName %>, <%= observation?.createdAt %>
@@ -385,7 +385,7 @@
 
           <div class="card-body p-2">
             <% teamObservations.forEach(function(observation, index) { %>
-            <div class="comment-item">
+            <div class="comment-item" onclick="teamObservationClickedHandler(this)" data-observer-name="<%= observation?.observer?.displayName %>">
               <div class="small comment-text"><%= observation?.comment %></div>
               <div class="text-muted small">
                 — <%= observation?.observer?.displayName %>, <%= observation?.createdAt %>
@@ -401,16 +401,8 @@
   </div>
 
   <script>
-    const sendCommentMessage = ({commentType, commentText, recipientName, recipientEmail, reviewerName, moderated=false}) => {
-      var message = {
-        type: commentType,
-        comment: commentText,
-        recipientName,
-        recipientEmail,
-        reviewerName,
-        moderated: moderated,
-      };
-      window.parent.postMessage(message, "*");
+    const sendCommentMessage = (commentDetails) => {
+      window.parent.postMessage(commentDetails, "*");
     }
 
     const commentClickedHandler = (commentElement) => {
@@ -419,10 +411,32 @@
       const recipientEmail = studentSection.dataset.studentEmail;
       const commentText = commentElement.querySelector(".comment-text").innerText;
       const moderated = commentElement.dataset.moderated;
-      const reviewerName = commentElement.dataset.reviewerName;
+      const recordedBy = commentElement.dataset.reviewerName;
       sendCommentMessage({
         commentType: "peer-review",
-        commentText, recipientName, recipientEmail, reviewerName, moderated,
+        commentText, recipientName, recipientEmail, recordedBy, moderated,
+      });
+    };
+
+    const indvObservationClickedHandler = (observationElement) => {
+      const studentSection = observationElement.closest(".student-item");
+      const recipientName = studentSection.dataset.studentName;
+      const recipientEmail = studentSection.dataset.studentEmail;
+      const commentText = observationElement.querySelector(".comment-text").innerText;
+      const recordedBy = observationElement.dataset.observerName;
+      sendCommentMessage({
+        commentType: "student-observation",
+        commentText, recipientName, recipientEmail, recordedBy,
+      });
+    };
+
+    const teamObservationClickedHandler = (observationElement) => {
+      const commentText = observationElement.querySelector(".comment-text").innerText;
+      const moderated = observationElement.dataset.moderated;
+      const recordedBy = observationElement.dataset.observerName;
+      sendCommentMessage({
+        commentType: "team-observation",
+        commentText, recordedBy,
       });
     };
   </script>
