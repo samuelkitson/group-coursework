@@ -42,10 +42,10 @@
 
           <div class="card-body p-0">
             <div class="accordion accordion-flush" id="studentAccordion">
-              <% teamMembers.forEach(function(member, index) { %>
+              <% Object.entries(members).forEach(function([memberId, member]) { %>
                 <div class="accordion-item">
-                  <div class="accordion-header" id="heading<%= index %>">
-                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= index %>">
+                  <div class="accordion-header" id="heading<%= memberId %>">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= memberId %>">
                       <div>
                         <span class="fw-medium"><%= member.displayName %></span>
                         <small class="text-muted ms-3"><%= member.email %></small>
@@ -53,12 +53,12 @@
                     </button>
                   </div>
 
-                  <div id="collapse<%= index %>" class="accordion-collapse collapse print-show" data-bs-parent="#studentAccordion">
+                  <div id="collapse<%= memberId %>" class="accordion-collapse collapse print-show" data-bs-parent="#studentAccordion">
                     <div class="accordion-body px-3 py-1">
                       <div class="row d-flex gx-3 gy-2">
                         <!-- Meeting Summary -->
                         <%
-                          const attendanceRate = attendance[member.displayName]?.rate ?? 0;
+                          const attendanceRate = member?.attendance?.rate ?? 0;
                           let attendanceBarColour = "";
                           if (attendanceRate <= 50) {
                             attendanceBarColour = "progress-red";
@@ -68,10 +68,10 @@
                             attendanceBarColour = "progress-green";
                           }
 
-                          const minutesRecorded = minuteTakers[member.displayName] ?? 0;
+                          const minutesRecorded = member?.minutesRecorded ?? 0;
 
-                          const actionRate = actionOwners[member.displayName]?.rate ?? 0;
-                          const actionsCount = actionOwners[member.displayName]?.total ?? 0; 
+                          const actionRate = member?.meetingActions?.rate ?? 0;
+                          const actionsCount = member?.meetingActions?.total ?? 0; 
                           let actionBarColour = "";
                           if (actionRate <= 40) {
                             actionBarColour = "progress-red";
@@ -99,7 +99,7 @@
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Actions completed</span>
-                                <span class="small fw-medium"><%= actionOwners[member.displayName]?.complete ?? 0 %>/<%= actionOwners[member.displayName]?.total ?? 0%></span>
+                                <span class="small fw-medium"><%= member?.meetingActions?.complete ?? 0 %>/<%= member?.meetingActions?.total ?? 0%></span>
                               </div>
                               <div class="progress compact-progress">
                                 <div class="progress-bar <%= actionBarColour %>" style="width: <%= actionRate %>%"></div>
@@ -120,15 +120,15 @@
                         </div>
 
                         <!-- Skills Summary -->
-                        <% if (typeof skillRatings !== "undefined") { %>
+                        <% if (typeof member?.skillRatings !== "undefined") { %>
                         <div class="col-12 col-sm-6 col-xl-3 d-flex">
                           <div class="metric-card flex-fill">
                             <div class="section-title">Skills (rated by peers)</div>
 
                             
-                            <% if (Object.keys(skillRatings).length > 0) {
+                            <% if (Object.keys(member?.skillRatings).length > 0) {
 
-                              Object.entries(skillRatings[member.displayName] ?? {}).forEach(([skill, value]) => {
+                              Object.entries(member?.skillRatings ?? {}).forEach(([skill, value]) => {
                               const rating = parseFloat(value);
                               const skillWidth = ((rating - 0.75) / 4.25) * 100;
                               let skillBarColour = "";
@@ -163,7 +163,7 @@
                           <div class="metric-card flex-fill">
                             <div class="section-title">Engagement</div>
                             <%
-                              const checkinsCompleted = checkinsSubmitted[member.displayName] ?? 0;
+                              const checkinsCompleted = member?.checkinsSubmitted ?? 0;
                               const checkinsTotal = peerReviewCount ?? 0;
                               const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
                               let checkinBarColour = "";
@@ -175,7 +175,7 @@
                                 checkinBarColour = "progress-green";
                               }
                               
-                              const avgLength = commentLengths[member.displayName];
+                              const avgLength = member?.commentLength;
                               const lengthPercent = avgLength ? Math.min(avgLength / 175 * 100, 100) : 0;
                               let lengthBarColour = "";
                               let lengthLabel = "N/A";
@@ -226,17 +226,16 @@
                               };
 
                               // Widths: -50% for full negative, +50% for full postive
-                              const normScore = normScores[member.displayName] ?? 0;
+                              const normScore = member?.checkinScorePeers ?? 0;
                               const normScoreWidthL = Math.min(50, Math.max(0, normScore / checkinThresholds.min * 50));
                               const normScoreWidthR = Math.min(50, Math.max(0, normScore / checkinThresholds.max * 50));
                               const normScoreString = normScore > 0 ? "+"+normScore : normScore;
                               
-                              const selfScore = selfNormScores[member.displayName] ?? 0;
+                              const selfScore = member?.checkinScoreSelf ?? 0;
                               const selfScoreWidthL = Math.min(50, Math.max(0, selfScore / checkinThresholds.min * 50));
                               const selfScoreWidthR = Math.min(50, Math.max(0, selfScore / checkinThresholds.max * 50));
                               const selfScoreString = selfScore > 0 ? "+"+selfScore : selfScore;
                             %>
-                            <% if (Object.keys(checkinsSubmitted ?? {}).length > 0) { %>
                             <div class="metric-row">
                               <div class="d-flex justify-content-between align-items-center">
                                 <span class="small text-muted">Self-perceived effort</span>
@@ -260,20 +259,17 @@
                                 <div class="progress-bar-middle"></div>
                               </div>
                             </div>
-                            <% } else { %>
-                            <div class="text-muted small mb-2"><i class="bi bi-exclamation-triangle"></i> Nobody submitted a check-in during this period.</div>
-                            <% } %>
                           </div>
                         </div>
                       </div>
 
                       <!-- Peer review comments -->
-                      <% if (typeof reviewComments !== "undefined") { %>
+                      <% if (typeof member?.reviewComments !== "undefined") { %>
                       <div class="mt-3">
                         <div class="section-title">Peer review comments</div>
-                        <% if ((reviewComments[member.displayName] ?? []).length > 0) { %>
-                          <% reviewComments[member.displayName].forEach(function(comment, index) { %>
-                          <div class="comment-item">
+                        <% if ((member?.reviewComments ?? []).length > 0) { %>
+                          <% member?.reviewComments.forEach(function(comment, index) { %>
+                          <div class="comment-item" data-comment>
                             <div class="small comment-text"><%= comment.comment || "[Comment removed]" %></div>
                             <div class="text-muted small">
                               — <%= comment.by %>
@@ -292,7 +288,7 @@
                       <!-- Individual observation comments -->
                       <% if (typeof individualObservations !== "undefined") {
                         const studentObservations = (individualObservations ?? []).filter(o => {
-                          return (o?.students ?? []).some(s => member._id.equals(s));
+                          return (o?.students ?? []).some(s => memberId == s);
                         });
                         if (studentObservations.length > 0) { %>
                         <div class="mt-3">
@@ -371,5 +367,26 @@
     <% } %>
 
   </div>
+
+  <script>
+    const sendCommentMessage = ({commentType, commentText, recipientName, reviewerName, moderated=false}) => {
+      var message = {
+        type: commentType,
+        comment: commentText,
+        recipient: recipientName,
+        reviewerName: reviewerName,
+        moderated: moderated,
+      };
+      window.parent.postMessage(message, "*");
+    }
+
+    const commentClickedHandler = (e) => {
+      sendCommentMessage({
+        commentType: "peerReview",
+        commentText: "Hello! This is a peer review comment.",
+        recipientName: "Bob Smith",
+      });
+    };
+  </script>
 </body>
 </html>

@@ -7,7 +7,7 @@ const peerReviewModel = require("../models/peerReview");
 const observationModel = require("../models/observation");
 const { InvalidObjectIdError, InvalidParametersError, GenericNotFoundError, ConfigurationError } = require("../errors/errors");
 const { checkTeamRole, checkAssignmentRole } = require("../utility/auth");
-const { daysBetween, peerReviewSkillsStatistics, calculateAverage, averageObjectValues } = require("../utility/maths");
+const { daysBetween, peerReviewSkillsStatistics, calculateAverage, averageObjectValues, objectArrayToObject } = require("../utility/maths");
 const { summariseMeetingAttendance, summariseMeetingMinuteTakers, summariseMeetingActions } = require("./meetingController");
 const ejs = require("ejs");
 const archiver = require("archiver");
@@ -44,10 +44,11 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     return acc;
   }, {});
   renderObj.teamNumber = team.teamNumber;
-  renderObj.teamMembers = team.members;
+  const teamMemberMap = objectArrayToObject(team.members, "_id");
+  renderObj.members = teamMemberMap;
+  const studentDataToMerge = {};
   // Pull out meetings data
   const teamMeetings = await meetingModel.find({ team: team._id, dateTime: { $lte: periodEnd, $gte: periodStart, } })
-    .populate("attendance.attended attendance.apologies attendance.absent minuteTaker", "displayName")
     .sort({ "dateTime": 1 }).lean();
   const meetingData = { count: teamMeetings.length };
   if (teamMeetings.length >= 2) {
@@ -57,15 +58,10 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
   };
   meetingData.actionsCount = teamMeetings.flatMap(m => m?.newActions ?? []).length;
   renderObj.meetings = meetingData;
-  renderObj.attendance = summariseMeetingAttendance(teamMeetings, "displayName");
-  renderObj.minuteTakers = summariseMeetingMinuteTakers(teamMeetings, "displayName");
-  const actionOwnerStats = summariseMeetingActions(teamMeetings);
-  renderObj.actionOwners = Object.keys(actionOwnerStats).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: actionOwnerStats[id] }), {});
-  // Pull out the check-in/peer review data
-  // const checkins = await checkinModel.find({
-  //   team: new Types.ObjectId(team._id),
-  // }).select("reviewer peerReview effortPoints").lean();
-  // If fetching details of a specific peer review, pull out skills & comments
+  studentDataToMerge.attendance = summariseMeetingAttendance(teamMeetings);
+  studentDataToMerge.minutesRecorded = summariseMeetingMinuteTakers(teamMeetings);
+  studentDataToMerge.meetingActions = summariseMeetingActions(teamMeetings);
+  // If fetching details of a specific peer review, pull out skills & comments.
   if (peerReview) {
     renderObj.peerReview = {};
     renderObj.peerReview.periodStart = format(peerReview.periodStart, "dd/MM/yyyy");
@@ -83,17 +79,17 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
         const recipientName = idsToNames[forId] ?? "[Ex-team member]";
         const commentObj = {"comment": review.reviews[forId].comment, "by": reviewerName, "moderated": false};
         if (review.reviews[forId].originalComment) commentObj.moderated = true;
-        if (!commentsByRecipient.hasOwnProperty(recipientName)) {
-          commentsByRecipient[recipientName] = [commentObj];
+        if (!commentsByRecipient.hasOwnProperty(forId)) {
+          commentsByRecipient[forId] = [commentObj];
         } else {
-          commentsByRecipient[recipientName].push(commentObj);
+          commentsByRecipient[forId].push(commentObj);
         }
         // Keep track of the comment lengths by each reviewer.
         const wordCount = (commentObj?.originalComment ?? commentObj?.comment)?.length ?? 0;
-        if (!commentLengthByReviewer.hasOwnProperty(reviewerName)) {
-          commentLengthByReviewer[reviewerName] = wordCount;
+        if (!commentLengthByReviewer.hasOwnProperty(review.reviewer)) {
+          commentLengthByReviewer[review.reviewer] = wordCount;
         } else {
-          commentLengthByReviewer[reviewerName] += wordCount;
+          commentLengthByReviewer[review.reviewer] += wordCount;
         }
       });
     }
@@ -102,15 +98,10 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
       const normalised = commentLengthByReviewer[key] / team.members.length ?? 0;
       commentLengthByReviewer[key] = Math.round(normalised);
     });
-    renderObj.reviewComments = commentsByRecipient;
-    renderObj.commentLengths = commentLengthByReviewer;
-    // Add in skill ratings
-    const skillsRatingsSummary = peerReviewSkillsStatistics(fullReviews, averages=true);
-    renderObj.skillRatings = Object.keys(skillsRatingsSummary).reduce((acc, id) => ({ ...acc, [idsToNames[id] || id]: skillsRatingsSummary[id] }), {}) ?? {};
-  } else {
-    renderObj.reviewComments = {};
-    renderObj.skillRatings = {};
-    renderObj.commentLengths = {};
+    studentDataToMerge.reviewComments = commentsByRecipient;
+    studentDataToMerge.commentLength = commentLengthByReviewer;
+    // Add in skill ratings.
+    studentDataToMerge.skillRatings = peerReviewSkillsStatistics(fullReviews, averages=true);
   }
   // Add in workload balance scores from check-ins
   const allCheckins = await checkinModel.aggregate([
@@ -133,32 +124,29 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
       for (const recipient in checkin.effortPoints) {
         const pointsAdjusted = checkin.effortPoints[recipient] - 4;
         const recipientName = idsToNames[recipient] ?? "[Ex-team member]";
-        checkinsGrouped[reviewId][recipientName] = (checkinsGrouped[reviewId][recipientName] || 0) + pointsAdjusted;
-        if (scoresEach.hasOwnProperty(recipientName)) {
-          scoresEach[recipientName].push(pointsAdjusted)
+        checkinsGrouped[reviewId][recipient] = (checkinsGrouped[reviewId][recipient] || 0) + pointsAdjusted;
+        if (scoresEach.hasOwnProperty(recipient)) {
+          scoresEach[recipient].push(pointsAdjusted)
         } else {
-          scoresEach[recipientName] = [pointsAdjusted];
+          scoresEach[recipient] = [pointsAdjusted];
         }
         if (checkin.reviewer == recipient) {
-          if (selfScoresEach.hasOwnProperty(recipientName)) {
-            selfScoresEach[recipientName].push(pointsAdjusted)
+          if (selfScoresEach.hasOwnProperty(recipient)) {
+            selfScoresEach[recipient].push(pointsAdjusted)
           } else {
-            selfScoresEach[recipientName] = [pointsAdjusted];
+            selfScoresEach[recipient] = [pointsAdjusted];
           }
-          checkinsSubmitted[recipientName] = (checkinsSubmitted[recipientName] || 0) + 1;
+          checkinsSubmitted[recipient] = (checkinsSubmitted[recipient] || 0) + 1;
         }
       }
     });
     // Normalise the scores to be within [-3, 3].
-    renderObj.normScores = averageObjectValues(scoresEach);
-    renderObj.selfNormScores = averageObjectValues(selfScoresEach);
-    renderObj.checkinsSubmitted = checkinsSubmitted;
+    studentDataToMerge.checkinScorePeers = averageObjectValues(scoresEach);
+    studentDataToMerge.checkinScoreSelf = averageObjectValues(selfScoresEach);
+    studentDataToMerge.checkinsSubmitted = checkinsSubmitted;
     renderObj.checkinThresholds = { min: -3, low: -1, high: 1, max: 3 };
     renderObj.peerReviewCount = peerReviewCount ?? 0;
   } else {
-    renderObj.normScores = {};
-    renderObj.selfNormScores = {};
-    renderObj.checkinsSubmitted = {};
     renderObj.checkinThresholds = { min: 0, low: 0, high: 0, max: 0, };
     renderObj.peerReviewCount = peerReviewCount ?? 0;
   }
@@ -172,6 +160,17 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     const formattedObservations = observations.map(o => ({...o, createdAt: format(o.createdAt, "dd/MM/yyyy")}));
     renderObj.teamObservations = formattedObservations.filter(o => !o.students || o.students?.length === 0);
     renderObj.individualObservations = formattedObservations.filter(o => o.students && o.students.length > 0);
+  }
+  // Merge the student data into the main object.
+  for (const memberId in renderObj.members) {
+    delete renderObj.members[memberId]._id;
+    // Iterate through each data type in studentDataToMerge.
+    for (const dataType in studentDataToMerge) {
+      // If this member has data for this type, add it.
+      if (studentDataToMerge[dataType][memberId]) {
+        renderObj.members[memberId][dataType] = studentDataToMerge[dataType][memberId];
+      }
+    }
   }
   return renderObj;
 };
@@ -257,10 +256,13 @@ exports.generateTeamReports = async (req, res) => {
   if (req.query.peerReview && !Types.ObjectId.isValid(req.query.peerReview))
     throw new InvalidObjectIdError("The provided peer review ID is invalid."); 
   const { reports, metadata } = await generateDataForTeams({ teamId: req.params.team, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
+  if (req.query.format === "json") {
+    return res.json({ ...reports[0], teamNumber: metadata.teamNumbers[0], assignmentName: metadata.assignmentName, });
+  }
   if (req.query.attachment) {
     res.attachment(`Progress Report - ${metadata.assignmentName}, Team ${metadata.teamNumbers[0]}.html`);
   }
-    return res.render("reports/team", reports[0]);
+  return res.render("reports/team", reports[0]);
 };
 
 /**
@@ -273,6 +275,10 @@ exports.generateTeamReportsBulk = async (req, res) => {
     throw new InvalidObjectIdError("The provided peer review ID is invalid.");
   // Generate data about teams
   const { reports, metadata } = await generateDataForTeams({ assignmentId: req.params.assignment, peerReviewId: req.query.peerReview, periodStart: req.query.periodStart, periodEnd: req.query.periodEnd, });
+  if (req.query.format === "json") {
+    const reportsCombined = reports.map((report, index) => ({ ...report, teamNumber: metadata.teamNumbers[index]}));
+    return res.json({ teams: reportsCombined, });
+  }
   // Setup zip response
   res.setHeader("Content-Type", "application/zip");
   res.setHeader("Content-Disposition", `attachment; filename="Progress Reports - ${metadata.assignmentName}.zip"`);
