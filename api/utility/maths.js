@@ -189,3 +189,10 @@ exports.averageObjectValues = (obj, round2DP=true) => {
     })
   );
 }
+
+exports.objectArrayToObject = (arr, key) => {
+  return arr.reduce((acc, curr) => {
+    acc[curr[key].toString()] = curr;
+    return acc;
+  }, {});
+};
