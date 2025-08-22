@@ -113,7 +113,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
   ]);
   if (allCheckins.length > 0) {
     const checkinsGrouped = {};
-    const scoresEach = {};
+    const peerScoresEach = {};
     const selfScoresEach = {};
     const checkinsSubmitted = {};
     allCheckins.forEach(checkin => {
@@ -123,13 +123,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
         checkinsGrouped[reviewId] = {};
       for (const recipient in checkin.effortPoints) {
         const pointsAdjusted = checkin.effortPoints[recipient] - 4;
-        const recipientName = idsToNames[recipient] ?? "[Ex-team member]";
         checkinsGrouped[reviewId][recipient] = (checkinsGrouped[reviewId][recipient] || 0) + pointsAdjusted;
-        if (scoresEach.hasOwnProperty(recipient)) {
-          scoresEach[recipient].push(pointsAdjusted)
-        } else {
-          scoresEach[recipient] = [pointsAdjusted];
-        }
         if (checkin.reviewer == recipient) {
           if (selfScoresEach.hasOwnProperty(recipient)) {
             selfScoresEach[recipient].push(pointsAdjusted)
@@ -137,11 +131,17 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
             selfScoresEach[recipient] = [pointsAdjusted];
           }
           checkinsSubmitted[recipient] = (checkinsSubmitted[recipient] || 0) + 1;
+        } else {
+          if (peerScoresEach.hasOwnProperty(recipient)) {
+            peerScoresEach[recipient].push(pointsAdjusted)
+          } else {
+            peerScoresEach[recipient] = [pointsAdjusted];
+          }
         }
       }
     });
     // Normalise the scores to be within [-3, 3].
-    studentDataToMerge.checkinScorePeers = averageObjectValues(scoresEach);
+    studentDataToMerge.checkinScorePeers = averageObjectValues(peerScoresEach);
     studentDataToMerge.checkinScoreSelf = averageObjectValues(selfScoresEach);
     studentDataToMerge.checkinsSubmitted = checkinsSubmitted;
     renderObj.checkinThresholds = { min: -3, low: -1, high: 1, max: 3 };
@@ -167,7 +167,7 @@ summariseTeamData = async ({ team, assignment, peerReview, peerReviewCount, peri
     // Iterate through each data type in studentDataToMerge.
     for (const dataType in studentDataToMerge) {
       // If this member has data for this type, add it.
-      if (studentDataToMerge[dataType][memberId]) {
+      if (typeof studentDataToMerge[dataType][memberId] !== "undefined") {
         renderObj.members[memberId][dataType] = studentDataToMerge[dataType][memberId];
       }
     }
