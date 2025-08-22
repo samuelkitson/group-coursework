@@ -89,6 +89,11 @@ async function setChangePassword(user) {
   const confirmPassword = readlineSync.question("Confirm password: ", { hideEchoBack: true });
   if (password != confirmPassword) return console.error("❌ Passwords did not match.");
   if (password.length < 8) return console.error("❌ Password must be at least 9 characters in length.");
+  if (user.role === "placeholder") {
+    const newRole = readlineSync.question("Which role should this user have? [staff/student]: ");
+    if (!["staff", "student"].includes(newRole)) return console.error("❌ Invalid role provided.");
+    user.role = newRole;
+  }
   const hashed = await generateHash(password);
   user.passwordHash = hashed;
   await user.save();
