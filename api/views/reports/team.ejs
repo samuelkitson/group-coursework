@@ -43,7 +43,7 @@
           <div class="card-body p-0">
             <div class="accordion accordion-flush" id="studentAccordion">
               <% Object.entries(members).forEach(function([memberId, member]) { %>
-                <div class="accordion-item">
+                <div class="accordion-item student-item" data-student-name="<%= member.displayName %>" data-student-email="<%= member.email %>">
                   <div class="accordion-header" id="heading<%= memberId %>">
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse<%= memberId %>">
                       <div>
@@ -298,7 +298,7 @@
                         <div class="section-title">Peer review comments</div>
                         <% if ((member?.reviewComments ?? []).length > 0) { %>
                           <% member?.reviewComments.forEach(function(comment, index) { %>
-                          <div class="comment-item" data-comment>
+                          <div class="comment-item" onclick="commentClickedHandler(this)" data-reviewer-name="<%= comment.by %>" data-moderated="<%= comment.moderated %>"">
                             <div class="small comment-text"><%= comment.comment || "[Comment removed]" %></div>
                             <div class="text-muted small">
                               — <%= comment.by %>
@@ -398,22 +398,28 @@
   </div>
 
   <script>
-    const sendCommentMessage = ({commentType, commentText, recipientName, reviewerName, moderated=false}) => {
+    const sendCommentMessage = ({commentType, commentText, recipientName, recipientEmail, reviewerName, moderated=false}) => {
       var message = {
         type: commentType,
         comment: commentText,
-        recipient: recipientName,
-        reviewerName: reviewerName,
+        recipientName,
+        recipientEmail,
+        reviewerName,
         moderated: moderated,
       };
       window.parent.postMessage(message, "*");
     }
 
-    const commentClickedHandler = (e) => {
+    const commentClickedHandler = (commentElement) => {
+      const studentSection = commentElement.closest(".student-item");
+      const recipientName = studentSection.dataset.studentName;
+      const recipientEmail = studentSection.dataset.studentEmail;
+      const commentText = commentElement.querySelector(".comment-text").innerText;
+      const moderated = commentElement.dataset.moderated;
+      const reviewerName = commentElement.dataset.reviewerName;
       sendCommentMessage({
-        commentType: "peerReview",
-        commentText: "Hello! This is a peer review comment.",
-        recipientName: "Bob Smith",
+        commentType: "peer-review",
+        commentText, recipientName, recipientEmail, reviewerName, moderated,
       });
     };
   </script>
