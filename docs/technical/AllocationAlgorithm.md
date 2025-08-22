@@ -1,5 +1,9 @@
 # Allocation algorithm
 
+> [!IMPORTANT]
+> This technical guide is intended for developers and users looking for more
+> information about the algorithm.
+
 This file documents how the allocation algorithm works and is adapted from the
 dissertation report upon which this project is based. This is fairly technical
 and is intended for people maintaining, fixing or extending the codebase.
