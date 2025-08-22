@@ -11,13 +11,13 @@ Used to get the list of criteria and dealbreakers available to the lecturer when
 they're configuring allocation. These are pulled from `allocationOptions.js`.
 
 * **Handler**: `allocationController.getAllocationOptions`
-* **Access control**: lecturer on provided assignment
+* **Access control**: lecturer on specified assignment
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
 * **Response object**:
-  * `criteria`: the available allocation criteria.
-  * `dealbreakers`: the available allocation dealbreakers.
-  * `skills`: the required skills configured for the skills questionnaire.
+  * `criteria`: the available allocation criteria
+  * `dealbreakers`: the available allocation dealbreakers
+  * `skills`: the required skills configured for the skills questionnaire
 
 
 ## GET /api/allocation/:assignment/setup
@@ -25,7 +25,7 @@ they're configuring allocation. These are pulled from `allocationOptions.js`.
 Retrieves the current allocation configuration for the given assignment. 
 
 * **Handler**: `allocationController.getAllocationSetup`
-* **Access control**: lecturer on provided assignment
+* **Access control**: lecturer on specified assignment
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
 * **Response object**:
@@ -42,7 +42,7 @@ are made to ensure that all of the provided criteria and dealbreakers are valid
 options from `allocationOptions.js`.
 
 * **Handler**: `allocationController.setAllocationSetup`
-* **Access control**: lecturer on provided assignment
+* **Access control**: lecturer on specified assignment
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
   * `groupSize` (body): the new target group size
@@ -59,7 +59,7 @@ only kept in memory for the duration of the algorithm execution. This endpoint
 can take a while to respond.
 
 * **Handler**: `allocationController.runAllocation`
-* **Access control**: lecturer on provided assignment
+* **Access control**: lecturer on specified assignment
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
   * `dataset` (file): the optional additional dataset about students
@@ -78,7 +78,7 @@ but simply checked for cases such as one student in two teams) before being
 released to students.
 
 * **Handler**: `allocationController.confirmAllocation`
-* **Access control**: lecturer on provided assignment
+* **Access control**: lecturer on specified assignment
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
   * `allocation` (body): the chosen allocation of teams
