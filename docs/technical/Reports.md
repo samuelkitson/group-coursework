@@ -12,6 +12,18 @@ systems.
 The form at `/assignment/reports` really just constructs the correct URL
 required to view/download a report.
 
+For individual team reports, the format is `/api/report/team/:team` and to
+generate a bulk pack of reports for all teams, the format is
+`/api/report/assignment/:assignment`. There are a number of query parameters:
+
+* `peerReview`: if a peer review ID is provided, the skills and review comments
+from the relevant check-ins will be included.
+* `periodStart` and `periodEnd`: defines the date range of data to fetch.
+* `attachment`: (individual reports only) if true, download as an HTML document.
+If false, preview in browser.
+* `format`: if set to `json`, returns a JSON object containing the data
+otherwise used to generate reports.
+
 Reports themselves are static HTML documents generated entirely by the backend
 API. They are not part of the frontend and do not use React, though use similar
 styling as they load in Bootstrap from a CDN. The rationale for this is that
