@@ -59,6 +59,7 @@
                         <!-- Meeting Summary -->
                         <%
                           const attendanceRate = member?.attendance?.rate ?? 0;
+                          const attendanceWidth = attendanceRate < 3 ? 3 : attendanceRate;
                           let attendanceBarColour = "";
                           if (attendanceRate <= 50) {
                             attendanceBarColour = "progress-red";
@@ -72,6 +73,7 @@
 
                           const actionRate = member?.meetingActions?.rate ?? 0;
                           const actionsCount = member?.meetingActions?.total ?? 0; 
+                          const actionWidth = actionRate < 3 ? 3 : actionRate;
                           let actionBarColour = "";
                           if (actionRate <= 40) {
                             actionBarColour = "progress-red";
@@ -92,7 +94,7 @@
                                 <span class="small fw-medium"><%= attendanceRate %>%</span>
                               </div>
                               <div class="progress compact-progress">
-                                <div class="progress-bar <%= attendanceBarColour %>" style="width: <%= attendanceRate %>%"></div>
+                                <div class="progress-bar <%= attendanceBarColour %>" style="width: <%= attendanceWidth %>%"></div>
                               </div>
                             </div>
 
@@ -102,7 +104,7 @@
                                 <span class="small fw-medium"><%= member?.meetingActions?.complete ?? 0 %>/<%= member?.meetingActions?.total ?? 0%></span>
                               </div>
                               <div class="progress compact-progress">
-                                <div class="progress-bar <%= actionBarColour %>" style="width: <%= actionRate %>%"></div>
+                                <div class="progress-bar <%= actionBarColour %>" style="width: <%= actionWidth %>%"></div>
                               </div>
                             </div>
 
@@ -171,6 +173,7 @@
                               const checkinsCompleted = member?.checkinsSubmitted ?? 0;
                               const checkinsTotal = peerReviewCount ?? 0;
                               const checkinRate = Math.round(checkinsCompleted / checkinsTotal * 100) ?? 0;
+                              const checkinWidth = checkinRate < 3 ? 3 : checkinRate;
                               let checkinBarColour = "";
                               if (checkinRate <= 50) {
                                 checkinBarColour = "progress-red";
@@ -183,7 +186,7 @@
                               const avgLength = member?.commentLength;
                               const lengthPercent = avgLength ? Math.min(avgLength / 175 * 100, 100) : 0;
                               let lengthBarColour = "";
-                              let lengthLabel = "N/A";
+                              let lengthLabel = "No data";
                               if (avgLength <= 60) {
                                 lengthBarColour = "progress-red";
                                 lengthLabel = "Short";
@@ -204,7 +207,7 @@
                                 <span class="small fw-medium"><%= checkinsCompleted %>/<%= checkinsTotal %></span>
                               </div>
                               <div class="progress compact-progress">
-                                <div class="progress-bar <%= checkinBarColour %>" style="width: <%= checkinRate %>%"></div>
+                                <div class="progress-bar <%= checkinBarColour %>" style="width: <%= checkinWidth %>%"></div>
                               </div>
                             </div>
 
@@ -245,7 +248,7 @@
                                 selfScoreWidthR = Math.min(50, Math.max(0, selfScore / checkinThresholds.max * 50));
                                 selfScoreString = `${selfScore > 0 ? "+"+selfScore : selfScore} (${effortScoreToLabel(selfScore)})`;
                               } else {
-                                selfScoreString = "None submitted";
+                                selfScoreString = "No data";
                               }
 
                               const peerScore = member?.checkinScorePeers;
@@ -257,7 +260,7 @@
                                 peerScoreWidthR = Math.min(50, Math.max(0, peerScore / checkinThresholds.max * 50));
                                 peerScoreString = `${peerScore > 0 ? "+"+peerScore : peerScore} (${effortScoreToLabel(peerScore)})`;
                               } else {
-                                peerScoreString = "None submitted";
+                                peerScoreString = "No data";
                               }
                             %>
                             <% if (peerReviewCount > 0) { %>
