@@ -15,11 +15,4 @@ router.patch("/:assignment/skills", requireLoggedIn(), asyncHandler(assignmentC.
 router.patch("/:assignment/state", requireLoggedIn(), asyncHandler(assignmentC.setState));
 router.put("/:assignment/staff", requireLoggedIn(), asyncHandler(assignmentC.setStaff));
 
-router.get("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.getSupervisors));
-router.put("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.setSupervisors));
-router.post("/:assignment/supervisor", requireLoggedIn(), asyncHandler(assignmentC.addSupervisor));
-router.post("/:assignment/supervisor/bulk", requireLoggedIn(), asyncHandler(assignmentC.bulkAddSupervisors));
-router.patch("/:assignment/supervisor/:supervisor", requireLoggedIn(), asyncHandler(assignmentC.changeSupervisorTeams));
-router.delete("/:assignment/supervisor/:supervisor", requireLoggedIn(), asyncHandler(assignmentC.removeSupervisor));
-
 module.exports = router;

@@ -5,25 +5,7 @@ const { requireLoggedIn } = require("../utility/auth");
 
 const router = express.Router();
 
-router.get(
-  "/randomise-skill-ratings",
-  requireLoggedIn("admin"),
-  asyncHandler(testDataC.randomiseSkillRatings),
-);
-router.get(
-  "/add-random-checkins",
-  requireLoggedIn("admin"),
-  asyncHandler(testDataC.addRandomCheckins),
-);
-router.get(
-  "/add-random-meetings",
-  requireLoggedIn("admin"),
-  asyncHandler(testDataC.addRandomMeetings),
-);
-router.get(
-  "/send-test-email",
-  requireLoggedIn("admin"),
-  asyncHandler(testDataC.sendTestEmail),
-)
+router.get("/randomise-skill-ratings", requireLoggedIn("admin"), asyncHandler(testDataC.randomiseSkillRatings));
+router.get("/send-test-email", requireLoggedIn("admin"), asyncHandler(testDataC.sendTestEmail));
 
 module.exports = router;
