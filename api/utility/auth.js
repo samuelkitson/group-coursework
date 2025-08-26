@@ -13,7 +13,7 @@ const allowedDomains = ALLOWED_EMAIL_DOMAINS?.split(",") ?? [];
 // If the permitted role is "staff" it will also allow admins access
 exports.requireLoggedIn = (permittedRole = null) => {
   return (req, res, next) => {
-    if (!req.session.userId) {
+    if (!req.session.userId || !req.session.role) {
       throw new SessionInvalidError();
     } else if (permittedRole === "staff" && req.session.role === "admin") {
       next();
