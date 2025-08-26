@@ -15,7 +15,7 @@ completed it or not.
 * **Handler**: `checkinController.getCheckinStateStudent`
 * **Access control**: student member of specified team
 * **Parameters**:
-  * `team` (query): the ObjectId of team
+  * `team` (query): the ObjectId of the team
 * **Response object**:
   * `type`: the configured check-in type this week (disabled/none/simple/full)
   * `open`: if true, the user has an outstanding check-in to complete
@@ -35,7 +35,7 @@ Submits a check-in for the specified team.
 * **Handler**: `checkinController.submitCheckIn`
 * **Access control**: student member of specified team
 * **Parameters**:
-  * `team` (body): the ObjectId of team
+  * `team` (body): the ObjectId of the team
   * `effortPoints` (body): effort points allocated to each team member
   * `review` (body): detailed peer reviews for each team member (full check-ins)
 
@@ -47,7 +47,7 @@ the workload balance chart.
 * **Handler**: `checkinController.getCheckInHistory`
 * **Access control**: supervisor or lecturer of specified team
 * **Parameters**:
-  * `team` (query): the ObjectId of team
+  * `team` (query): the ObjectId of the team
 * **Response object**:
   * `checkins`: the weekly workload balance data
   * `thresholds`: boundaries for the red, yellow and green regions on the chart
@@ -60,7 +60,7 @@ point.
 * **Handler**: `checkinController.getCheckInResponse`
 * **Access control**: supervisor or lecturer of specified team
 * **Parameters**:
-  * `team` (query): the ObjectId of team
+  * `team` (query): the ObjectId of the team
   * `peerReview` (query): the ObjectId of the specific peer review point
 * **Response object**:
   * `checkIns`: the workload balance scores submitted by each member
@@ -77,7 +77,7 @@ Used to moderate (edit or delete) a review comment.
 * **Handler**: `checkinController.moderateResponse`
 * **Access control**: supervisor or lecturer of specified team
 * **Parameters**:
-  * `team` (body): the ObjectId of team
+  * `team` (body): the ObjectId of the team
   * `peerReview` (body): the ObjectId of the specific peer review point
   * `reviewer` (body): the ObjectId of the user who left the peer review
   * `recipient` (body): the ObjectId of the subject of the peer review
