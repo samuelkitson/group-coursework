@@ -104,6 +104,7 @@ function Login() {
                       placeholder="Email address"
                       required
                       size="lg"
+                      autoComplete="username"
                     />
                   </Form.Group>
 
@@ -115,6 +116,7 @@ function Login() {
                       placeholder="Password"
                       required
                       size="lg"
+                      autoComplete="current-password"
                     />
                   </Form.Group>
 
