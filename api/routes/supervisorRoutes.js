@@ -6,7 +6,6 @@ const { requireLoggedIn } = require("../utility/auth");
 const router = express.Router();
 
 router.get("/", requireLoggedIn("staff"), asyncHandler(supervisorC.getSupervisors));
-router.put("/", requireLoggedIn("staff"), asyncHandler(supervisorC.setSupervisors));
 router.post("/", requireLoggedIn("staff"), asyncHandler(supervisorC.addSupervisor));
 router.post("/bulk", requireLoggedIn("staff"), asyncHandler(supervisorC.bulkAddSupervisors));
 router.patch("/:supervisor", requireLoggedIn("staff"), asyncHandler(supervisorC.changeSupervisorTeams));
