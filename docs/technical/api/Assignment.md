@@ -21,8 +21,8 @@ Creates a new assignment.
 
 Retrieves a list of all assignments visible to the current user.
 
-* **Handler**: `assignmentController.createAssignment`
-* **Access control**: staff, or admin only if ASSIGNMENTS_ADMIN_LOCK is set
+* **Handler**: `assignmentController.getAllVisible`
+* **Access control**: logged in
 * **Response object**: list of assignment details
 
 ## DELETE /api/assignment/:assignment
@@ -30,7 +30,7 @@ Retrieves a list of all assignments visible to the current user.
 Deletes the specified assignment. The `force` parameter must be set unless the
 assignment is in the `pre-allocation` state.
 
-* **Handler**: `assignmentController.createAssignment`
+* **Handler**: `assignmentController.deleteAssignment`
 * **Access control**: lecturer on specified assignment 
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
