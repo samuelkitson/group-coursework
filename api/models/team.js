@@ -11,6 +11,8 @@ const teamSchema = new Schema(
 );
 
 teamSchema.index({ assignment: 1 });
+teamSchema.index({ members: 1 });
+teamSchema.index({ supervisors: 1 });
 
 teamSchema.statics.isUserOnTeam = async function (
   teamId,
