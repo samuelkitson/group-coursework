@@ -99,8 +99,8 @@ function Help() {
         <Col md={6} lg={4}>
           <Card className="h-100 shadow-sm">
             <Card.Body className="d-flex flex-column">
-              <Card.Title className={`d-flex align-items-center mb-3 text-${isSupervising ? "primary" : "secondary"}`}>
-                <Eyeglasses className="me-2" />
+              <Card.Title className={`d-flex align-items-center mb-3 text-${isSupervising ? "dark" : "secondary"}`}>
+                <Eyeglasses className={`me-2 text-${isSupervising ? "primary" : "secondary"}`} />
                 Supervisor help
               </Card.Title>
               <Card.Text className="flex-grow-1 text-muted">
