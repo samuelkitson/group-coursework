@@ -109,6 +109,8 @@ exports.sendReminderEmails = async (req, res) => {
   // Check if reminder emails have already been sent
   if (peerReview?.reminderSent && !req.body?.force)
     throw new GenericNotAllowedError("You've already sent reminder emails for this peer review point.");
+  if (peerReview.type === "none")
+    throw new GenericNotAllowedError("Peer reviews are disabled for this week.");
   const deadlineDate = format(peerReview.periodEnd, "EEEE do MMMM yyyy, HH:mm");
   const { totalStudents, unsubmittedCount, unsubmittedStudents } = await findStudentsNotSubmitted(peerReview._id);
   const assignment = await assignmentModel.findById(peerReview.assignment).select("name").lean();
