@@ -22,7 +22,7 @@ exports.getMeetingsForTeam = async (req, res) => {
 exports.recordNewMeeting = async (req, res) => {
   await checkTeamRole(req.body.team, req.session.userId, "member");
   // Get the team details
-  const teamInfo = await teamModel.findById(req.body.team).select("members").populate("assignment", "state").lean();
+  const teamInfo = await teamModel.findById(req.body.team).select("members supervisors").populate("assignment", "state").lean();
   if (teamInfo?.assignment?.state === "closed")
     throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
@@ -51,6 +51,8 @@ exports.recordNewMeeting = async (req, res) => {
   if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
     return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
   }
+  if (membersAccountedFor.length > (teamMembers.length + teamInfo?.supervisors?.length))
+    throw new InvalidParametersError("Some team members have been recorded twice in the attendance logs.");
   // Build new meeting object
   const meetingObj = {
     team: req.body.team,
@@ -88,7 +90,7 @@ exports.updateMeeting = async (req, res) => {
   }
   // Safe to edit the meeting
   // Get the team details
-  const teamInfo = await teamModel.findById(meeting.team).select("members").populate("assignment", "state").lean();
+  const teamInfo = await teamModel.findById(meeting.team).select("members supervisors").populate("assignment", "state").lean();
   if (teamInfo?.assignment?.state === "closed")
     throw new AssignmentInvalidStateError("This assignment is closed.");
   const teamMembers = teamInfo.members.map(id => id.toString());
@@ -111,6 +113,8 @@ exports.updateMeeting = async (req, res) => {
   if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
     return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
   }
+  if (membersAccountedFor.length > (teamMembers.length + teamInfo?.supervisors?.length))
+    throw new InvalidParametersError("Some team members have been recorded twice in the attendance logs.");
   // Process the meeting edit
   meeting.discussion = discussion;
   meeting.dateTime = dateTime;
