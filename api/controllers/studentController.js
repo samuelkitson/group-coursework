@@ -205,6 +205,7 @@ exports.getProfile = async (req, res) => {
 }; 
 
 exports.updateOwnProfile = async (req, res) => {
+  if (req.body?.bio?.length > 200) throw new InvalidParametersError("Your bio is too long.");
   await userModel.findOneAndUpdate(
     { _id: new Types.ObjectId(req.session.userId), },
     { meetingPref: req.body?.meetingPref, bio: req.body?.bio },

@@ -10,7 +10,7 @@ router.post("/enrol", requireLoggedIn("staff"), fileUpload.single("students"), a
 router.patch("/unenrol", requireLoggedIn("staff"), asyncHandler(studentC.removeFromAssignment));
 router.post("/unenrol-all", requireLoggedIn("staff"), asyncHandler(studentC.removeAllFromAssignment));
 router.put("/exclusions", requireLoggedIn("staff"), asyncHandler(studentC.setPairingExclusions));
-router.get("/profile", requireLoggedIn("student"), asyncHandler(studentC.getProfile));
-router.patch("/profile", requireLoggedIn("student"), asyncHandler(studentC.updateOwnProfile));
+router.get("/profile", requireLoggedIn(), asyncHandler(studentC.getProfile));
+router.patch("/profile", requireLoggedIn(), asyncHandler(studentC.updateOwnProfile));
 
 module.exports = router;

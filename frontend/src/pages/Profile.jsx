@@ -6,10 +6,14 @@ import React, { useEffect, useState } from "react";
 import { useForm, useFormState } from "react-hook-form";
 import { Col, Form, Row } from "react-bootstrap";
 import { MortarboardFill, PersonBadge, PersonBadgeFill, QuestionCircleFill, ShieldCheck, ShieldFillCheck } from "react-bootstrap-icons";
+import { useBoundStore } from "@/store/dataBoundStore";
 
 function Profile() {
   const { user } = useAuthStore();
   const [isPending, setIsPending] = useState(false);
+  const selectedAssignment = useBoundStore((state) =>
+    state.getSelectedAssignment(),
+  );
 
   const { control, register, reset, getValues, } = useForm({
     defaultValues: {
@@ -79,8 +83,6 @@ function Profile() {
   };
 
   const refreshData = () => {
-    if (user.role !== "student") return;
-
     api
       .get(`/api/student/profile`)
       .then((resp) => resp.data)
@@ -103,25 +105,22 @@ function Profile() {
             My profile <UnsavedChanges unsaved={isDirty} />
           </h1>
           <p className="text-muted">
-            {user.role === "student"
-              ? "Use this page to edit your personal details that are visible to other students and staff. Some are synced with your University account and can't be edited here."
-              : "Here you can see your personal details that are visible to students and other staff. These details come from your University account."}
+            All of these details may be shown to other users. Greyed out details
+            are synced with your University account.
           </p>
         </Col>
-        { user.role === "student" && 
-          <Col
-            xs={12}
-            md={3}
-            className="d-flex flex-column align-items-end mt-md-2"
-          >
-            <SaveButton
-              isPending={isPending}
-              unsaved={isDirty}
-              saveChanges={submitProfileUpdates}
-              doNotHide={true}
-            />
-          </Col>
-        }
+        <Col
+          xs={12}
+          md={3}
+          className="d-flex flex-column align-items-end mt-md-2"
+        >
+          <SaveButton
+            isPending={isPending}
+            unsaved={isDirty}
+            saveChanges={submitProfileUpdates}
+            doNotHide={true}
+          />
+        </Col>
       </Row>
 
       <Row className="mb-2 mb-md-3">
@@ -143,33 +142,39 @@ function Profile() {
         </Col>
       </Form.Group>
 
-      {user.role === "student" && (
-        <>
-          <Form.Group as={Row} className="mb-4">
-            <Form.Label column sm="2">Bio</Form.Label>
-            <Col sm="10">
-              <Form.Control
-                as="textarea"
-                rows={3}
-                placeholder="Add a short intro for other students"
-                disabled={isPending}
-                {...register("bio")}
-              />
-            </Col>
-          </Form.Group>
+      <p className="text-muted mt-5">
+        The options below are shown to other people in your teams or any teams
+        that you supervise.
+      </p>
 
-          <Form.Group as={Row} className="mb-2 mb-md-3">
-            <Form.Label column sm="2">Meeting preference</Form.Label>
-            <Col sm="10">
-              <Form.Select disabled={isPending} {...register("meetingPref")}>
-                <option value="either">No preference</option>
-                <option value="in-person">Prefer in-person</option>
-                <option value="online">Prefer online</option>
-              </Form.Select>
-            </Col>
-          </Form.Group>
-        </>
-      )}
+      <Form.Group as={Row} className="mb-4">
+        <Form.Label column sm="2">Bio</Form.Label>
+        <Col sm="10">
+          <Form.Control
+            as="textarea"
+            rows={3}
+            maxLength={200}
+            placeholder="A short intro for other students. You could mention things that might make meetings tricky, e.g. I'm always busy on Tuesdays."
+            {...register("bio")}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+              }
+            }}
+          />
+        </Col>
+      </Form.Group>
+
+        <Form.Group as={Row} className="mb-2 mb-md-3">
+          <Form.Label column sm="2">Meeting preference</Form.Label>
+          <Col sm="10">
+            <Form.Select {...register("meetingPref")}>
+              <option value="either">No preference</option>
+              <option value="in-person">Prefer in-person</option>
+              <option value="online">Prefer online</option>
+            </Form.Select>
+          </Col>
+        </Form.Group>
     </>
   );
 }

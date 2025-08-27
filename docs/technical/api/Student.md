@@ -58,7 +58,7 @@ of these other students should still be provided here.
 Retrieves the student profile for the current student.
 
 * **Handler**: `studentController.getProfile`
-* **Access control**: student
+* **Access control**: logged in
 * **Response object**:
   * `profile`: the current profile details for the student
 
@@ -67,7 +67,7 @@ Retrieves the student profile for the current student.
 Updates the student profile for the current student.
 
 * **Handler**: `studentController.updateOwnProfile`
-* **Access control**: student
+* **Access control**: logged in
 * **Parameters**:
   * `meetingPref` (body): the student's new meeting preference (`online`,
   `in-person` or `either`)
