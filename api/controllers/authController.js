@@ -116,6 +116,9 @@ exports.azureLoginCallback = async (req, res) => {
   // Check the state token is valid
   const { code, state } = req.body;
   const oAuthState = req.session.oauthState ?? undefined;
+  delete req.session.userId;
+  delete req.session.role;
+  delete req.session.email;
   delete req.session.oauthState;
   if (!state || state !== oAuthState)
     throw new AuthenticationError("Invalid OAuth state parameter. Please try again.");
