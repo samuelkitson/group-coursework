@@ -26,8 +26,8 @@ exports.calculateAverage = (numbers) => {
 }
 
 exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
-  if (skills.length === 0) return "Skills not rated";
-  const result =  Object.entries(skills).reduce(([prevSkill, prevRating], [skill, rating]) => {
+  if (skills.length === 0) return null;
+  const result = Object.entries(skills).reduce(([prevSkill, prevRating], [skill, rating]) => {
     if (!requiredSkills.includes(skill)) {
       if (prevSkill) return [prevSkill, prevRating];
       return [null, null];
@@ -38,7 +38,7 @@ exports.bestWorstSkill = (skills, best = true, requiredSkills = []) => {
       return (prevRating && prevRating <= rating) ? [prevSkill, prevRating] : [skill, rating];
     }
   }, [])[0];
-  return result || "Skills not rated";
+  return result || null;
 };
 
 exports.checkinStatisticsOld = (effortPoints) => {

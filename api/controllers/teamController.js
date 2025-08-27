@@ -289,6 +289,12 @@ exports.getMyTeam = async (req, res) => {
         student.skills = { strongest: bestSkill, weakest: worstSkill };
       });
     });
+  } else {
+    userTeams.forEach(team => {
+      team.members.forEach(student => {
+        delete student.skills;
+      });
+    });
   }
   return res.json({ teams: userTeams });
 };

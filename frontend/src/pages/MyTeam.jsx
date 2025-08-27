@@ -3,17 +3,21 @@ import { useAuthStore } from "@/store/authStore";
 import { useBoundStore } from "@/store/dataBoundStore";
 import React, { useEffect, useState } from "react";
 import { Button, Card, Col, ListGroup, OverlayTrigger, ProgressBar, Row, Tooltip } from "react-bootstrap";
-import { PersonVideo3, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill } from "react-bootstrap-icons";
+import { PersonVideo3, EmojiFrown, EmojiSmile, Envelope, EnvelopeFill, HandThumbsDownFill, HandThumbsUp, HandThumbsUpFill, QuestionCircle, TrophyFill, Star } from "react-bootstrap-icons";
 
 function MyTeam() {
   const selectedAssignment = useBoundStore((state) =>
     state.getSelectedAssignment(),
   );
+  const selectedTeam = useBoundStore((state) =>
+    state.getSelectedTeam(),
+  );
   const { user } = useAuthStore();
 
-  const [teamNumber, setTeamNumber] = useState(null);
-  const [teamMembers, setTeamMembers] = useState([]);
-  const [teamSupervisors, setTeamSupervisors] = useState([]);
+  const [teamNumber, setTeamNumber] = useState(selectedTeam?.teamNumber);
+  const [teamMembers, setTeamMembers] = useState(selectedTeam?.members ?? []);
+  const [teamSupervisors, setTeamSupervisors] = useState(selectedTeam?.supervisors ?? []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const teamEmailLink = () => {
     const otherEmails = teamMembers.map(s => s.email).filter(e => e && e != user.email).join(";");
@@ -30,6 +34,7 @@ function MyTeam() {
   };
 
   const refreshData = () => {
+    setIsLoading(true);
     // Get the current required skills
     api
       .get(`/api/team/mine?assignment=${selectedAssignment._id}`)
@@ -44,6 +49,9 @@ function MyTeam() {
         teamMembersTemp.sort((a, b) => (a.email === user.email ? -1 : b.email === user.email ? 1 : 0));
         setTeamMembers(teamMembersTemp ?? []);
         setTeamSupervisors(teamData?.supervisors ?? []);
+      })
+      .then(() => {
+        setIsLoading(false);
       });
   };
 
@@ -55,7 +63,10 @@ function MyTeam() {
       <Row className="mb-3 mb-md-0">
         <Col md={9}>
           <h1>Team {teamNumber}</h1>
-          <p className="text-muted">Get to know your team for {selectedAssignment.name}!</p>
+          <p className="text-muted">Get to know your team for {selectedAssignment.name}!<br/>
+          { selectedAssignment?.skills?.length > 0 &&
+          "The stars show what each team member is most confident doing."}
+          </p>
         </Col>
         <Col xs={12} md={3} className="d-flex flex-column align-items-end mt-md-2">
           <Button
@@ -89,10 +100,17 @@ function MyTeam() {
                 :
                   <Card.Text className="text-muted">{teamMember.bio || "Hi! I haven't added a bio yet."}</Card.Text>
                 }
+                { selectedAssignment?.skills?.length > 0 && (teamMember.skills?.strongest ?
                 <div className="d-flex align-items-center text-success mb-1">
-                  <HandThumbsUpFill className="me-2"/>
-                  {teamMember.skills.strongest}
+                  <Star className="me-2"/>
+                  {teamMember.skills?.strongest}
                 </div>
+                :
+                <div className="d-flex align-items-center text-muted mb-1">
+                  <QuestionCircle className="me-2"/>
+                  Didn't rate skills
+                </div>
+                )}
                 <div className="d-flex align-items-center text-muted">
                   <PersonVideo3 className="me-2"/>
                   { meetingPreferenceString(teamMember.meetingPref) }
