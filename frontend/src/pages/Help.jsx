@@ -13,31 +13,19 @@ function Help() {
     <div>
       <h1>Help & support</h1>
       <p>
-        This is a tool to support staff and students in managing group
-        coursework assignments at university.
+        {user?.role === "student" ? (
+          <span>
+            Your lecturers should give you an introduction to the system.
+            Please contact them if you run into problems you can't solve
+            with these guides.
+          </span>
+        ) : (
+          <span>
+            Please take time to read through the help guides linked below.
+            These explain how to use the more advanced features.
+          </span>
+        )}
       </p>
-
-      <Row className="mb-2">
-        <Col>
-          <Alert variant="primary" className="d-flex align-items-start">
-            <InfoCircleFill className="me-2 mt-1 flex-shrink-0" />
-            <div>
-              {user?.role === "student" ? (
-                <span>
-                  Your lecturers should give you an introduction to the system.
-                  Please contact them if you run into problems you can't solve
-                  with these guides.
-                </span>
-              ) : (
-                <span>
-                  Please take time to read through the help guides linked below.
-                  These explain how to use the more advanced features.
-                </span>
-              )}
-            </div>
-          </Alert>
-        </Col>
-      </Row>
 
       <Row>
         <Col>
