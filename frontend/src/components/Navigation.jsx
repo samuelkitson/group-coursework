@@ -146,7 +146,7 @@ function NavigationItems({ isSidebar = false, hideOffcanvas, collapsed = false }
               }
             </div>
         )) }
-      { (selectedAssignment || !collapsed ) &&
+      { (assignmentsActive?.length > 0) &&
         <div className="border-top my-2" />
       }
 
