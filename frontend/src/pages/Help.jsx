@@ -11,7 +11,7 @@ function Help() {
 
   return (
     <div>
-      <h1>Help & Support</h1>
+      <h1>Help & support</h1>
       <p>
         This is a tool to support staff and students in managing group
         coursework assignments at university.
