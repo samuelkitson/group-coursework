@@ -2,39 +2,39 @@ import {
   BrowserRouter as Router,
   Route,
   Routes,
-  Link,
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { Navbar, Container, Nav, Button } from "react-bootstrap";
+import { Container } from "react-bootstrap";
+import { useAuthStore } from "./store/authStore";
+import { lazy, useEffect } from "react";
+import { useBoundStore } from "./store/dataBoundStore";
 
-import Help from "./pages/Help";
 import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import Navigation from "./components/Navigation";
-
 import AssignmentRoute from "./components/AssignmentRoute";
 import PrivateRoute from "./components/PrivateRoute";
-import CheckIn from "./pages/CheckIn";
-import ConfigureAssignment from "./pages/ConfigureAssignment";
-import AssignmentOverview from "./pages/AssignmentOverview";
-import AssignmentStudents from "./pages/AssignmentStudents";
-import Questionnaire from "./pages/Questionnaire";
-import AllocationControls from "./pages/AllocationControls";
-import MyTeam from "./pages/MyTeam";
-import TeamMeetings from "./pages/TeamMeetings";
-import AssignmentTeams from "./pages/AssignmentTeams";
-import Profile from "./pages/Profile";
-import ResumeLogin from "./pages/ResumeLogin";
-import AssignmentSupervisors from "./pages/AssignmentSupervisors";
-import AuthCallback from "./pages/AuthCallback";
-import TeamPeerReviews from "./pages/TeamPeerReviews";
 import ScrollToTop from "./utility/ScrollToTop";
-import ReportGenerator from "./pages/ReportGenerator";
-import TeamObservations from "./pages/TeamObservations";
-import { useAuthStore } from "./store/authStore";
-import { useEffect } from "react";
-import { useBoundStore } from "./store/dataBoundStore";
+
+// Lazy-loaded pages
+const Help = lazy(() => import("./pages/Help"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const CheckIn = lazy(() => import("./pages/CheckIn"));
+const ConfigureAssignment = lazy(() => import("./pages/ConfigureAssignment"));
+const AssignmentOverview = lazy(() => import("./pages/AssignmentOverview"));
+const AssignmentStudents = lazy(() => import("./pages/AssignmentStudents"));
+const Questionnaire = lazy(() => import("./pages/Questionnaire"));
+const AllocationControls = lazy(() => import("./pages/AllocationControls"));
+const MyTeam = lazy(() => import("./pages/MyTeam"));
+const TeamMeetings = lazy(() => import("./pages/TeamMeetings"));
+const AssignmentTeams = lazy(() => import("./pages/AssignmentTeams"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ResumeLogin = lazy(() => import("./pages/ResumeLogin"));
+const AssignmentSupervisors = lazy(() => import("./pages/AssignmentSupervisors"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const TeamPeerReviews = lazy(() => import("./pages/TeamPeerReviews"));
+const ReportGenerator = lazy(() => import("./pages/ReportGenerator"));
+const TeamObservations = lazy(() => import("./pages/TeamObservations"));
 
 function WithNavigation() {
   return (
