@@ -36,7 +36,7 @@ const createAssignmentsStore = (set, get) => ({
     const promise = (async () => {
       try {
         const response = await api.get("/api/assignment/all");
-        const assignments = response.data;
+        const assignments = response.data.assignments;
         assignments.sort((a, b) => a.name.localeCompare(b.name));
         set({
           assignments,

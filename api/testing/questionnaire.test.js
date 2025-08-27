@@ -36,7 +36,7 @@ describe("/questionnaire endpoints", () => {
     const res = await request(api)
       .get("/api/questionnaire/existing-skills").set("Cookie", cookies);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject([{name: "Writing"}, {name: "Sound Design", description: "Including Audacity"}]);
+    expect(res.body.skills).toMatchObject([{name: "Writing"}, {name: "Sound Design", description: "Including Audacity"}]);
   });
 
   it("skills questionnaire can be fetched", async () => {

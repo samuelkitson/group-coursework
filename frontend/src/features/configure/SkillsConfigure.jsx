@@ -45,7 +45,7 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
         const existingSkillsData = existingSkillsReps.data;
 
         setSkills(skillsData.skills ?? []);
-        setExistingSkills(existingSkillsData ?? []);
+        setExistingSkills(existingSkillsData.skills ?? []);
         setIsLoaded(true);
       });
   };

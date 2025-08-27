@@ -51,9 +51,7 @@ exports.randomiseSkillRatings = async (req, res) => {
     student.marks.set("overall", averageMark);
     await student.save();
   });
-  return res.json({
-    message: `Skills ratings updated for ${assignment.students.length} students.`,
-  });
+  return res.json({ message: `Skills ratings updated for ${assignment.students.length} students.` });
 };
 
 /**

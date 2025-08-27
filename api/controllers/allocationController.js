@@ -363,5 +363,5 @@ exports.confirmAllocation = async (req, res) => {
     const studentEmails = assignment.students.map(s => s.email);
     teamsReleasedStudentEmail({ recipients: studentEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, })
   }
-  return res.json({"message": "Allocation confirmed and released to students. Your assignment is live!"});
+  return res.json({ "message": "Allocation released! Your assignment is live." });
 };

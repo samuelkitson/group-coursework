@@ -189,7 +189,7 @@ function AssignmentStudents() {
         return resp.data;
       })
       .then((data) => {
-        setStudentsList(data);
+        setStudentsList(data?.students);
       })
       .finally(() => {
         setIsLoading(false);

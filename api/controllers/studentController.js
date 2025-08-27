@@ -191,7 +191,7 @@ exports.setPairingExclusions = async (req, res) => {
     );
   });
   await student.save();
-  return res.json({message: "Updated pairing exclusions."});
+  return res.json({ message: "Updated pairing exclusions." });
 };
 
 exports.getProfile = async (req, res) => {

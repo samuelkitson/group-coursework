@@ -54,7 +54,7 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
   await peerReviewModel.deleteMany(deleteQuery);
   // If no peer review data passed, just assume the user wanted to delete them all
   if (!req.body.peerReviews || req.body.peerReviews.length === 0)
-    return res.json({message: "All peer review points have been removed for this assignment."});
+    return res.json({ message: "All peer review points have been removed for this assignment." });
   // Insert the new peer reviews into the database
   const peerReviewsToInsert = [];
   for (const peerReview of req.body.peerReviews) {
@@ -87,7 +87,7 @@ exports.updatePeerReviewsByAssignment = async (req, res) => {
   try {
     const insertResult = await peerReviewModel.insertMany(peerReviewsToInsert);
     if (insertResult.length === peerReviewsToInsert.length) {
-      return res.json({message: "Peer review points updated successfully."});
+      return res.json({ message: "Peer review points updated successfully." });
     } else {
       throw new InvalidParametersError("Something went wrong updating the peer reviews. Please try again.");
     }

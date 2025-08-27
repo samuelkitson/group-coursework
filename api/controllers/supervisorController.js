@@ -34,7 +34,7 @@ exports.setSupervisors = async (req, res) => {
   if (users.length !== userIds.length)
     throw new InvalidParametersError("Some of the supervisors selected aren't valid.");
   await assignmentModel.updateOne({_id: req.body.assignment}, { supervisors: req.body.supervisors });
-  return res.json({message: "Supervisors list updated successfully."});
+  return res.json({ message: "Supervisors list updated successfully." });
 };
 
 /**

@@ -23,7 +23,8 @@ Retrieves a list of all assignments visible to the current user.
 
 * **Handler**: `assignmentController.getAllVisible`
 * **Access control**: logged in
-* **Response object**: list of assignment details
+* **Response object**:
+  * `assignments`: list of assignment details
 
 ## DELETE /api/assignment/:assignment
 
@@ -55,7 +56,8 @@ Retrieves the details of all students on the specified assignment.
 * **Access control**: lecturer on specified assignment 
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
-* **Response object**: list of students
+* **Response object**:
+  * `students`: list of students
 
 ## GET /api/assignment/:assignment/skills
 
@@ -67,7 +69,8 @@ questionnaire.
 * **Access control**: lecturer on specified assignment 
 * **Parameters**:
   * `assignment` (path): the ObjectId of the assignment
-* **Response object**: list of skills
+* **Response object**:
+  * `skills`: list of skills
 
 ## PATCH /api/assignment/:assignment/skills
 

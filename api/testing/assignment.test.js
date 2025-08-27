@@ -56,7 +56,7 @@ describe("/assignment endpoints", () => {
     const res = await request(api)
       .get(`/api/assignment/all`).set("Cookie", cookies);
     expect(res.statusCode).toBe(200);
-    expect(res.body[0].name).toBe("Group Project");
+    expect(res.body.assignments[0].name).toBe("Group Project");
   });
 
   it("assignment can be deleted", async () => {

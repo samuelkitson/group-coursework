@@ -238,7 +238,7 @@ exports.getAllForAssignment = async (req, res) => {
       if (flags.length > 0) member.flags = flags;
     });
   });
-  return res.json({teams: teamsWithLastMeeting});
+  return res.json({ teams: teamsWithLastMeeting });
 };
 
 exports.downloadTeamsCsv = async (req, res) => {
@@ -290,7 +290,7 @@ exports.getMyTeam = async (req, res) => {
       });
     });
   }
-  return res.json({teams: userTeams});
+  return res.json({ teams: userTeams });
 };
 
 exports.addMember = async (req, res) => {
@@ -310,7 +310,7 @@ exports.addMember = async (req, res) => {
     throw new GenericNotFoundError("Student not found. Please try again.");
   team.members.push(req.body.student);
   await team.save();
-  return res.json({message: "Student moved successfully. Please let them know!"});
+  return res.json({ message: "Student moved successfully. Please let them know!" });
 };
 
 exports.newTeam = async (req, res) => {
@@ -333,8 +333,5 @@ exports.newTeam = async (req, res) => {
     teamNumber: existingTeamsCount + 1,
     members: [req.body.student],
   });
-  return res.json({
-    message: "Student moved to new tema. Please let them know!",
-    team: newTeam,
-  }); 
+  return res.json({ message: "Student moved to new tema. Please let them know!", team: newTeam }); 
 };

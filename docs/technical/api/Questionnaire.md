@@ -35,6 +35,8 @@ page.
 
 * **Handler**: `questionnaireController.allExistingSkills`
 * **Access control**: staff
+* **Response object**:
+  * `skills`: list of existing configured skills and their descriptions
 
 ## POST /api/questionnaire/reminders
 

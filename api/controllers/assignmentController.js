@@ -23,7 +23,7 @@ exports.createAssignment = async (req, res) => {
     state: "pre-allocation",
   });
 
-  return res.json({message: "New assignment created successfully. ", assignmentId: newAssignment._id});
+  return res.json({ message: "New assignment created. ", assignmentId: newAssignment._id });
 };
 
 // Only allowed in pre-allocation state
@@ -34,7 +34,7 @@ exports.deleteAssignment = async (req, res) => {
     throw new InvalidParametersError("Please confirm your intentions first.");
   }
   await assignmentModel.findByIdAndDelete(req.params.assignment);
-  return res.json({message: "Assignment deleted."});
+  return res.json({ message: "Assignment deleted." });
 };
 
 exports.updateAssignmentInfo = async (req, res) => {
@@ -52,18 +52,18 @@ exports.updateAssignmentInfo = async (req, res) => {
       description: req.body.description,
     },
   );
-  return res.json({message: "Assignment updated successfully."});
+  return res.json({ message: "Assignment updated successfully." });
 };
 
 exports.getAllVisible = async (req, res) => {
   const dbAssignments = await assignmentModel.getAssignmentsByUser(req.session.userId);
-  return res.json(dbAssignments);
+  return res.json({ assignments: dbAssignments });
 };
 
 exports.getEnrolledStudents = async (req, res) => {
   await checkAssignmentRole(req.params.assignment, req.session.userId, "lecturer");
   const studentsList = await assignmentModel.getStudents(req.params.assignment);
-  return res.json(studentsList?.students);
+  return res.json({ students: studentsList?.students });
 };
 
 exports.getSkills = async (req, res) => {
@@ -158,9 +158,7 @@ exports.setState = async (req, res) => {
   }
   assignment.state = newState;
   await assignment.save();
-  return res.json({
-    message: message ?? "Assignment state updated successfully.",
-  });
+  return res.json({ message: message ?? "Assignment state updated successfully." });
 };
 
 exports.setStaff = async (req, res) => {

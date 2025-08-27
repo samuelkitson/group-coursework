@@ -62,7 +62,7 @@ exports.updateUserSkills = async (req, res) => {
 
 exports.allExistingSkills = async (req, res) => {
   const skills = await assignmentModel.allExistingSkills();
-  return res.json(skills);
+  return res.json({ skills: skills });
 };
 
 exports.sendReminders = async (req, res) => {
