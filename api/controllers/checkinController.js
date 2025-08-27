@@ -157,8 +157,8 @@ exports.submitCheckIn = async (req, res) => {
 
 exports.getCheckInHistory = async (req, res) => {
   await checkTeamRole(req.query.team, req.session.userId, "supervisor/lecturer");
-  const checkins = await this.checkInHistoryHelper(req.query.team);
-  return res.json({ checkins, thresholds: CHECKIN_THRESHOLDS, });
+  const checkIns = await this.checkInHistoryHelper(req.query.team);
+  return res.json({ checkIns, thresholds: CHECKIN_THRESHOLDS, });
 };
 
 // Fetch by peer review point and team.

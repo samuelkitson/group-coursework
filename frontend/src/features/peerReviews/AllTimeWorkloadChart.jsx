@@ -20,7 +20,7 @@ const AllTimeWorkloadChart = ({activeModal, onHide}) => {
       .then((data) => {
         let someData = false;
         const students = new Set();
-        const checkinData = data.checkins.map(c => {
+        const checkinData = data.checkIns.map(c => {
           const endDate = new Date(c.periodEnd);
           const niceEndDate = endDate.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
           if (Object.keys(c?.normScores ?? {}).length > 0) someData = true;

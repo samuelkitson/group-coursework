@@ -49,7 +49,7 @@ the workload balance chart.
 * **Parameters**:
   * `team` (query): the ObjectId of the team
 * **Response object**:
-  * `checkins`: the weekly workload balance data
+  * `checkIns`: the weekly workload balance data
   * `thresholds`: boundaries for the red, yellow and green regions on the chart
 
 ## GET /api/checkin/response
