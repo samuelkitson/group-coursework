@@ -205,7 +205,7 @@ function AllocationControls() {
       })
       .catch(() => {
         setGeneratedAllocation(null);
-        // setActiveModal(null);
+        setActiveModal(null);
       })
       .finally(() => {
         setIsPending(false);
