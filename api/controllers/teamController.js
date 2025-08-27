@@ -310,7 +310,7 @@ exports.addMember = async (req, res) => {
     throw new GenericNotFoundError("Student not found. Please try again.");
   team.members.push(req.body.student);
   await team.save();
-  return res.json({message: "Student moved to new team successfully. Please contact the student to let them know."});
+  return res.json({message: "Student moved successfully. Please let them know!"});
 };
 
 exports.newTeam = async (req, res) => {
@@ -334,7 +334,7 @@ exports.newTeam = async (req, res) => {
     members: [req.body.student],
   });
   return res.json({
-    message: "Student moved to new team successfully. Please contact the student to let them know.",
+    message: "Student moved to new tema. Please let them know!",
     team: newTeam,
   }); 
 };

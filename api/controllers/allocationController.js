@@ -193,15 +193,14 @@ exports.setAllocationSetup = async (req, res) => {
     throw new InvalidParametersError("One or more of the deal-breakers are not recognised.");
   // Check that assignment is in a valid state
   const assignment = await assignmentModel.findById(req.params.assignment);
-  if (assignment.state !== "allocation") {
-    throw new AssignmentInvalidStateError("The assignment must be in the 'allocation' state to adjust the allocation setup.");
-  }
+  if (assignment.state !== "allocation")
+    throw new AssignmentInvalidStateError("The assignment must be in the \"allocation\" state.");
   assignment.groupSize = updatedGroupSize;
   assignment.surplusLargerGroups = updatedSurplusLarger;
   assignment.allocationCriteria = updatedCriteria;
   assignment.allocationDealbreakers = updatedDealbreakers;
   await assignment.save();
-  return res.json({ message: "Your allocation settings have been saved." });
+  return res.json({ message: "Allocation settings updated." });
 };
 
 exports.runAllocation = async (req, res) => {
@@ -228,7 +227,7 @@ exports.runAllocation = async (req, res) => {
     if (dataType && c?.attribute) {
       if (attributeTypes.has(c.attribute)) {
         if (attributeTypes.get(c.attribute) !== dataType) {
-          throw new InvalidParametersError(`There are conflicting data types for the attribute "${c.attribute}". Please adjust your criteria and deal-breakers and try again.`);
+          throw new InvalidParametersError(`"${c.attribute}" has conflicting data types. Please adjust your criteria/deal-breakers.`);
         }
       } else {
         attributeTypes.set(c.attribute, dataType);
@@ -249,7 +248,7 @@ exports.runAllocation = async (req, res) => {
     if (dataType && d?.attribute) {
       if (attributeTypes.has(d.attribute)) {
         if (attributeTypes.get(d.attribute) !== dataType) {
-          throw new InvalidParametersError(`There are conflicting data types for the attribute "${d.attribute}". Please adjust your criteria and deal-breakers and try again.`);
+          throw new InvalidParametersError(`"${d.attribute}" has conflicting data types. Please adjust your criteria/deal-breakers.`);
         }
       } else {
         attributeTypes.set(d.attribute, dataType);
@@ -281,17 +280,17 @@ exports.runAllocation = async (req, res) => {
       const { datasetHeaders, parsedData } = await parsePromise;
       const missingCols = Array.from(setDifference(requiredAttributes, new Set(datasetHeaders)));
       if (missingCols.length > 0)
-        throw new InvalidFileError(`The dataset provided is missing one or more required columns: ${missingCols.join(", ")}.`);
+        throw new InvalidFileError(`Dataset missing one or more required columns: ${missingCols.join(", ")}.`);
       // Check that all students are accounted for in the dataset.
       if (parsedData.length < assignment.students.length)
-        throw new InvalidFileError(`The dataset is missing data for some students. Please make sure you've included data for all ${assignment.students.length} students.`);
+        throw new InvalidFileError(`Dataset is incomplete. Please check you've included all ${assignment.students.length} students.`);
       const datasetMap = new Map(parsedData.map(s => [s?.email, s]));
       // Combine fields from the dataset with those from the database. Database
       // takes precedence to avoid accidentally overwiting displayNames etc.
       studentData = assignment.students.map(s => {
         const email = s.email;
         if (!datasetMap.has(email))
-          throw new InvalidFileError(`The dataset is missing data for ${email}. Please check that you've included a row for each student.`);
+          throw new InvalidFileError(`Dataset is missing ${email}. Please check you've included all ${assignment.students.length} students.`);
         const mergedRecord = {...datasetMap.get(email), ...s, _id: s._id.toString(), };
         // Cast attribute types as appropriate.
         attributeTypes.forEach((type, attribute) => {
@@ -311,7 +310,7 @@ exports.runAllocation = async (req, res) => {
     }
   } else if (requiredAttributes.length > 1) {
     // Needs attributes but no dataset provided
-    throw new InvalidFileError(`A dataset upload is required for the options selected. Please provide these columns: ${Array.from(requiredAttributes).join(", ")}.`);
+    throw new InvalidFileError(`Dataset required for the options selected. Please provide these columns: ${Array.from(requiredAttributes).join(", ")}.`);
   } else {
     // Dataset not provided and not required, so just use the data from the DB.
     studentData = assignment.students.map(s => ({ ...s, _id: s._id.toString(), }));

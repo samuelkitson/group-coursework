@@ -262,5 +262,5 @@ exports.moderateResponse = async (req, res) => {
     throw new GenericNotFoundError("The review comment for that user couldn't be found.");
   checkIn.markModified("reviews");
   await checkIn.save();
-  return res.json({ message: "Review comment moderated successfully. "});
+  return res.json({ message: "Review comment moderated successfully."});
 };

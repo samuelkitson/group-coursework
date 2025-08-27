@@ -87,7 +87,7 @@ exports.updateMeeting = async (req, res) => {
     const minuteTakerMatch = meeting.minuteTaker._id.equals(req.session.userId);
     const withinHour = hoursSince(meeting?.createdAt) < 1;
     if (!(minuteTakerMatch && withinHour))
-      throw new GenericNotAllowedError("You're not able to delete this meeting. Please ask your supervisor or lecturer for help.");
+      throw new GenericNotAllowedError("You can't edit this meeting. Please ask your supervisor or lecturer for help.");
   }
   // Safe to edit the meeting
   // Get the team details
@@ -147,7 +147,7 @@ exports.deleteMeeting = async (req, res) => {
     const minuteTakerMatch = meeting.minuteTaker._id.equals(req.session.userId);
     const withinHour = hoursSince(meeting?.createdAt) < 1;
     if (!(minuteTakerMatch && withinHour))
-      throw new GenericNotAllowedError("You're not able to delete this meeting. Please ask your supervisor or lecturer for help.");
+      throw new GenericNotAllowedError("You can't delete this meeting. Please ask your supervisor or lecturer for help.");
   }
   // Safe to delete the meeting
   await meeting.deleteOne();
@@ -185,7 +185,7 @@ exports.addMeetingDispute = async (req, res) => {
   };
   meeting.disputes.push(dispute);
   await meeting.save();
-  return res.json({ message: "Your dispute has been logged and will be read by your supervisor or the module team." });
+  return res.json({ message: "Dispute logged successfully." });
 };
 
 exports.updateMeetingDispute = async (req, res) => {

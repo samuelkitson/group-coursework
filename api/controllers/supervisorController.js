@@ -56,7 +56,7 @@ exports.addSupervisor = async (req, res) => {
     // Create a placeholder account for them
     existingUser = false;
     user = await userModel.createPlaceholder(req.body.supervisor);
-    successMessage = "A placeholder account has been created. Please ask the supervisor to log into the app.";
+    successMessage = "Placeholder account added. Please ask the supervisor to log in.";
   }
   // throw new InvalidParametersError("A user with that email address could not be found. Please make sure they've previously logged into the app.");
   // Check that the user isn't a staff member or student on the module already
@@ -182,7 +182,7 @@ exports.autoAllocateSupervisors = async (req, res) => {
     supervisorTeamCounts[nextSupervisor] += 1;
     await team.save();
   }
-  return res.json({ message: "Supervisors allocated successfully. "});
+  return res.json({ message: "Supervisors allocated successfully." });
 };
 
 exports.sendAllocatedNotificationEmail = async (req, res) => {
@@ -208,5 +208,5 @@ exports.sendAllocatedNotificationEmail = async (req, res) => {
   // Send the email.
   const supervisorEmails = assignment.supervisors.map(s => s.email);
   teamsAllocatedToSupervisorsEmail({ recipients: supervisorEmails, staffUserEmail: req.session.email, assignmentName: assignment.name, assignmentId: assignment._id, });
-  return res.json({ message: `${supervisorEmails.length} supervisors notified by email. `});
+  return res.json({ message: `${supervisorEmails.length} supervisors notified by email.` });
 };
