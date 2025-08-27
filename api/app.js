@@ -35,7 +35,7 @@ app.use(
   session({
     secret: SESSION_SECRET,
     resave: true,
-    saveUninitialized: true,
+    saveUninitialized: false,
     name: COOKIE_NAME,
     cookie: {
       httpOnly: true,
