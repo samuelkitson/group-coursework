@@ -26,7 +26,6 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
   const [isPending, setIsPending] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const [existingSkills, setExistingSkills] = useState([]);
   const [skills, setSkills] = useState([]);
   const [newSkillName, setNewSkillName] = useState("");
   const [skillSuggestions, setSkillSuggestions] = useState([]);
@@ -35,17 +34,13 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
 
   const refreshData = () => {
     if (!isExpanded || isLoaded) return;
-    setExistingSkills([]);
     Promise.all([
       api.get(`/api/assignment/${selectedAssignment._id}/skills`),
-      api.get(`/api/questionnaire/existing-skills`),
     ])
-      .then(([skillsResp, existingSkillsReps]) => {
+      .then(([skillsResp]) => {
         const skillsData = skillsResp.data;
-        const existingSkillsData = existingSkillsReps.data;
 
         setSkills(skillsData.skills ?? []);
-        setExistingSkills(existingSkillsData.skills ?? []);
         setIsLoaded(true);
       });
   };
@@ -60,29 +55,9 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
       name: name,
       description: description ?? "",
     });
-    setNewSkillName("");
     setSkillSuggestions([]);
+    setNewSkillName("");
     markUnsaved();
-  };
-
-  // Handler for when the new skill name is edited, used to update the suggestions
-  const handleSkillChange = (e) => {
-    const value = e.target.value;
-    setNewSkillName(value);
-    const selectedSkillnames = skills.map((s) => s.name);
-    setSkillSuggestions(
-      value
-        ? existingSkills
-            .filter(
-              (skill) =>
-                skill.name
-                  .toLowerCase()
-                  .includes(value.toLowerCase()) &&
-                !selectedSkillnames.includes(skill.name),
-            )
-            .slice(0, 5)
-        : [],
-    );
   };
 
   // Remove a specific skill from the list
@@ -98,14 +73,6 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
     updatedSkills[index].description = value;
     setSkills(updatedSkills);
     markUnsaved();
-  };
-
-  // Select a suggestion and add it to the skills list
-  const useSuggestion = (suggestionname) => {
-    if (isPending) return;
-    const suggestion = existingSkills.find((s) => s.name === suggestionname);
-    if (suggestion == undefined) return;
-    addSkill(suggestion.name, suggestion.description, suggestion.name);
   };
 
   const saveChanges = async () => {
@@ -143,7 +110,7 @@ function SkillsConfigure({ eventKey, unsaved, markUnsaved, markSaved }) {
         <Form.Control
           placeholder="Enter skill name"
           value={newSkillName}
-          onChange={handleSkillChange}
+          onChange={(e) => {setNewSkillName(e.target.value)}}
           onKeyDown={(e) => {
             if (e.key === "Enter") addSkill(newSkillName);
           }}
