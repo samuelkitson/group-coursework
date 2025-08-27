@@ -86,17 +86,19 @@ exports.getAzureLoginLink = async (req, res) => {
     throw new ConfigurationError("Missing Azure OAuth environment variables", "Login with Microsoft is currently unavailable. Please try again later.");
   }
   const state = crypto.randomUUID();
-  req.session.oauthState = state;
-  const urlParams = new URLSearchParams({
-    client_id: AZURE_CLIENT_ID,
-    response_type: "code",
-    redirect_uri: OAUTH_REDIRECT_URI,
-    response_mode: "query",
-    scope: "openid profile email",
-    state,
+  req.session.regenerate(() => {
+    req.session.oauthState = state;
+    const urlParams = new URLSearchParams({
+      client_id: AZURE_CLIENT_ID,
+      response_type: "code",
+      redirect_uri: OAUTH_REDIRECT_URI,
+      response_mode: "query",
+      scope: "openid profile email",
+      state,
+    });
+    const authUrl = `https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize?${urlParams.toString()}`;
+    res.json({ authUrl });
   });
-  const authUrl = `https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/authorize?${urlParams.toString()}`;
-  res.json({ authUrl });
 };
 
 /**

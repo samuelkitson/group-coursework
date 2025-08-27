@@ -5,8 +5,6 @@ import { useBoundStore } from "@/store/dataBoundStore";
 
 function PrivateRoute({ children }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  if (!isAuthenticated) return <Navigate to="/login" />;
-
   const location = useLocation();
   const fetchAssignments = useBoundStore((state) => state.fetchAssignments);
   const fetchTeams = useBoundStore((state) => state.fetchTeams);
@@ -17,6 +15,8 @@ function PrivateRoute({ children }) {
       fetchTeams();
     }
   }, [location]);
+
+  if (!isAuthenticated) return <Navigate to="/login" />;
 
   return <Outlet />;
 }
