@@ -333,5 +333,5 @@ exports.newTeam = async (req, res) => {
     teamNumber: existingTeamsCount + 1,
     members: [req.body.student],
   });
-  return res.json({ message: "Student moved to new tema. Please let them know!", team: newTeam }); 
+  return res.json({ message: "Student moved to new team. Please let them know!", team: newTeam }); 
 };
