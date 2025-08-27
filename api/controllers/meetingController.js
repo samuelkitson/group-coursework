@@ -40,7 +40,7 @@ exports.recordNewMeeting = async (req, res) => {
   if (!discussion)
     throw new InvalidParametersError("You must provide a summary of the meeting discussion.");
   // Check that this new meeting's date is after the previous meeting
-  const lastMeeting = await meetingModel.findOne({ team: req.body.team }).select("dateTime").sort({date: -1});
+  const lastMeeting = await meetingModel.findOne({ team: req.body.team }).select("dateTime newActions").sort({dateTime: -1});
   if (lastMeeting) {
     if (dateTime <= lastMeeting?.dateTime)
       throw new InvalidParametersError("Meeting date must be after the previous meeting.");
@@ -54,6 +54,13 @@ exports.recordNewMeeting = async (req, res) => {
     throw new InvalidParametersError("Provide the meeting attendance for each team member");
   if (membersAccountedFor.length > (teamMembers.length + teamInfo?.supervisors?.length))
     throw new InvalidParametersError("Some team members have been recorded twice in the attendance logs.");
+  // Check that all previous actions are accounted for
+  if (req.body.previousActions?.length !== lastMeeting?.newActions?.length)
+    throw new InvalidParametersError("Previous actions don't match the last meeting.");
+  for (const action of lastMeeting?.newActions) {
+    const matchingAction = req.body.previousActions.find(a => a.action === action.action);
+    if (!matchingAction) throw new InvalidParametersError("Previous actions don't match the last meeting.");
+  }
   // Build new meeting object
   const meetingObj = {
     team: req.body.team,
