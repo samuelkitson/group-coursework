@@ -17,9 +17,9 @@ exports.login = async (req, res) => {
     "_id email passwordHash displayName role",
   );
   if (dbRecord === null)
-    return res.status(401).json({ message: "Your username and password weren't recognised. Please try again." });
+    throw new AuthenticationError("Email address not found. Please try again.");
   if (!dbRecord.passwordHash)
-    throw new AuthenticationError("This account isn't set up for password access. Please sign in with Microsoft instead.");
+    throw new AuthenticationError("Account not set up for password access. Please sign in with Microsoft instead.");
   // User found, so check their password
   pwCorrect = await bcrypt.compare(req.body.password, dbRecord.passwordHash);
   // If the user account status is "placeholder", they need to log in via Entra
@@ -42,7 +42,7 @@ exports.login = async (req, res) => {
       },
     });
   } else {
-    res.status(401).json({ message: "Your username and password weren't recognised. Please try again." });
+    throw new AuthenticationError("Sorry, that password was wrong. Please try again.");
   }
 };
 
@@ -62,7 +62,7 @@ exports.refreshUserData = async (req, res) => {
       },
     });
   } else {
-    return res.status(401).json({ message: "Unknown sesssion ID." });
+    throw new SessionInvalidError();
   }
 };
 

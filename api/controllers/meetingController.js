@@ -29,14 +29,16 @@ exports.recordNewMeeting = async (req, res) => {
   // Validate incoming data
   const location = req.body.location;
   if (!location)
-    return res.status(400).json({ message: "You must provide a meeting location." });
+    throw new InvalidParametersError("You must provide a meeting location.");
   const dateTime = new Date(req.body.dateTime);
-  if (!dateTime) return res.status(400).json({ message: "You must provide a meeting date and time." });
+  if (!dateTime)
+    throw new InvalidParametersError("You must provide a meeting date and time.");
   const now = new Date();
-  if (dateTime > now) return res.status(400).json({ message: "The meeting date and time can't be in the future." });
+  if (dateTime > now)
+    throw new InvalidParametersError("The meeting date and time can't be in the future.");
   const discussion = req.body.discussion;
   if (!discussion)
-    return res.status(400).json({ message: "You must provide a summary of the meeting discussion." });
+    throw new InvalidParametersError("You must provide a summary of the meeting discussion.");
   // Check that this new meeting's date is after the previous meeting
   const lastMeeting = await meetingModel.findOne({ team: req.body.team }).select("dateTime").sort({date: -1});
   if (lastMeeting) {
@@ -48,9 +50,8 @@ exports.recordNewMeeting = async (req, res) => {
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
   const membersAbsent = (req.body.attendance?.["absent"] ?? []).flat().map(id => id.toString());
   const membersAccountedFor = membersInAttendance.concat(membersApologies, membersAbsent);
-  if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
-    return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
-  }
+  if (!teamMembers.every(id => membersAccountedFor.includes(id)))
+    throw new InvalidParametersError("Provide the meeting attendance for each team member");
   if (membersAccountedFor.length > (teamMembers.length + teamInfo?.supervisors?.length))
     throw new InvalidParametersError("Some team members have been recorded twice in the attendance logs.");
   // Build new meeting object
@@ -97,22 +98,23 @@ exports.updateMeeting = async (req, res) => {
   // Validate incoming data
   const location = req.body.location;
   if (!location)
-    return res.status(400).json({ message: "You must provide a meeting location." });
+    throw new InvalidParametersError("You must provide a meeting location.");
   const dateTime = new Date(req.body.dateTime);
-  if (!dateTime) return res.status(400).json({ message: "You must provide a meeting date and time." });
+  if (!dateTime)
+    throw new InvalidParametersError("You must provide a meeting date and time.");
   const now = new Date();
-  if (dateTime > now) return res.status(400).json({ message: "The meeting date and time can't be in the future." });
+  if (dateTime > now)
+    throw new InvalidParametersError("The meeting date and time can't be in the future.");
   const discussion = req.body.discussion;
   if (!discussion)
-    return res.status(400).json({ message: "You must provide a summary of the meeting discussion." });
+    throw new InvalidParametersError("You must provide a summary of the meeting discussion.");
   // Make sure that all team members are accounted for in the attendance logs 
   const membersInAttendance = (req.body.attendance?.["attended"] ?? []).flat().map(id => id.toString());
   const membersApologies = (req.body.attendance?.["apologies"] ?? []).flat().map(id => id.toString());
   const membersAbsent = (req.body.attendance?.["absent"] ?? []).flat().map(id => id.toString());
   const membersAccountedFor = membersInAttendance.concat(membersApologies, membersAbsent);
-  if (!teamMembers.every(id => membersAccountedFor.includes(id))) {
-    return res.status(400).json({ message: "You need to record the meeting attendance for each team member." });
-  }
+  if (!teamMembers.every(id => membersAccountedFor.includes(id)))
+    throw new InvalidParametersError("Provide the meeting attendance for each team member");
   if (membersAccountedFor.length > (teamMembers.length + teamInfo?.supervisors?.length))
     throw new InvalidParametersError("Some team members have been recorded twice in the attendance logs.");
   // Process the meeting edit

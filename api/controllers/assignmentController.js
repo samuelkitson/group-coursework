@@ -77,7 +77,7 @@ exports.setSkills = async (req, res) => {
   // Get and check the new skills provided
   const updatedSkills = req.body.skills;
   if (!updatedSkills || typeof updatedSkills !== "object")
-    return res.status(400).json({ message: "Invalid skills update." });
+    throw new InvalidParametersError("Invalid skills update.");
   // Update the assignment
   await assignmentModel.findOneAndUpdate(
     {

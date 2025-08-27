@@ -344,12 +344,12 @@ exports.confirmAllocation = async (req, res) => {
   const assignment = await assignmentModel.findById(req.params.assignment).populate("students", "email");
   const groups = req.body.allocation;
   if (!groups || !Array.isArray(groups))
-    return res.status(400).json({ message: "You must provide a valid list of groups." });
+    throw new InvalidParametersError("Please provide a valid list of groups.");
   // Check that all students on the module are accounted for
   const studentsOnAssignment = assignment.students.map(s => s._id.toString());
   const studentsInRequest = groups.flat().map(id => id.toString());
   if (studentsOnAssignment.length != studentsInRequest.length || !studentsOnAssignment.every(id => studentsInRequest.includes(id)))
-    return res.status(400).json({ message: "The list of students provided doesn't match the module enrollment list." });
+    throw new InvalidParametersError("Uploaded allocation doesn't match students list.");
   // Delete any existing teams for this assignment
   await teamModel.deleteMany({ assignment: req.params.assignment });
   // Create the teams

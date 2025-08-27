@@ -2,7 +2,7 @@ const assignmentModel = require("../models/assignment");
 const userModel = require("../models/user");
 const { Types } = require("mongoose");
 const { emailsReady, sendGenericEmail } = require("../utility/emails");
-const { ConfigurationError, InvalidParametersError, GenericNotFoundError } = require("../errors/errors");
+const { ConfigurationError, InvalidParametersError, GenericNotFoundError, InvalidObjectIdError, AuthenticationError } = require("../errors/errors");
 
 /*
   For the given assignment and skill tag, randomises the student skill ratings.
@@ -17,7 +17,7 @@ const { ConfigurationError, InvalidParametersError, GenericNotFoundError } = req
  */
 exports.randomiseSkillRatings = async (req, res) => {
   if (!Types.ObjectId.isValid(req.query.assignment))
-    return res.status(400).json({ message: "Invalid assignment ID." });
+    throw new InvalidObjectIdError("Unknown assignment ID.");
   if (
     !(await assignmentModel.isUserOnAssignment(
       req.query.assignment,
@@ -25,10 +25,7 @@ exports.randomiseSkillRatings = async (req, res) => {
       "lecturer",
     ))
   ) {
-    return res.status(404).json({
-      message:
-        "The assignment is unknown or you are not registered as a lecturer on it.",
-    });
+    return AuthenticationError("You must be registered as an admin on the assignment.");
   }
   // Randomise skills data for these students
   const assignment = await assignmentModel
