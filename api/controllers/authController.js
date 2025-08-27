@@ -52,6 +52,7 @@ exports.refreshUserData = async (req, res) => {
     "_id email passwordHash displayName role",
   );
   if (dbRecord) {
+    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? dbRecord.role === "admin" : ["staff", "admin"].includes(dbRecord.role); 
     return res.json({
       message: "Logged in successfully. Welcome back!",
       data: {
@@ -59,6 +60,7 @@ exports.refreshUserData = async (req, res) => {
         email: dbRecord.email,
         displayName: dbRecord.displayName,
         role: dbRecord.role,
+        canCreateAssignments,
       },
     });
   } else {

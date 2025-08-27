@@ -173,23 +173,25 @@ exports.setPairingExclusions = async (req, res) => {
   const studentId = new Types.ObjectId(req.body.student);
   const previousExclusions = student?.noPair ?? [];
   // Remove previous exclusions
-  previousExclusions.forEach(async (otherStudent) => {
-    const updated = await userModel.findOneAndUpdate(
+  const updatePromises = previousExclusions.map((otherStudent) => {
+    return userModel.findOneAndUpdate(
       { _id: otherStudent },
       { $pull: { noPair: studentId } },
     );
-    if (!updated) {
-      throw new InvalidObjectIdError("One or more of the students in the exclusion list couldn't be found. Please reload and try again.");
-    }
   });
+  const results = await Promise.all(updatePromises);
+  const updated = results.every(doc => doc !== null);
+  if (!updated)
+    throw new InvalidObjectIdError("One or more of the students in the exclusion list couldn't be found. Please reload and try again.");
   // Add new exclusions
   student.noPair = req.body.others;
-  req.body.others.forEach(async (otherStudent) => {
-    await userModel.findOneAndUpdate(
-      { _id: new Types.ObjectId(otherStudent), },
+  const othersPromises = req.body.others.map((otherStudent) => {
+    return userModel.findOneAndUpdate(
+      { _id: new Types.ObjectId(otherStudent) },
       { $addToSet: { noPair: studentId } },
     );
   });
+  await Promise.all(othersPromises);
   await student.save();
   return res.json({ message: "Updated pairing exclusions." });
 };

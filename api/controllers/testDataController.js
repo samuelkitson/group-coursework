@@ -32,10 +32,12 @@ exports.randomiseSkillRatings = async (req, res) => {
     .findById(req.query.assignment)
     .select("students skills");
   const skillNames = assignment?.skills?.map((skill) => skill.name) ?? [];
-  assignment.students.forEach(async (studentId) => {
+  const updatePromises = assignment.students.map(async (studentId) => {
     const student = await userModel.findById(new Types.ObjectId(studentId));
     const baseSkill = Math.floor(Math.random() * 7) + 1;
-    if (student["skills"] == undefined) student["skills"] = {};
+    if (student["skills"] == undefined) {
+      student["skills"] = {};
+    }
     skillNames.forEach(skill => {
       if (Math.random() < 0.1) {
         // Completely random skill rating
@@ -47,10 +49,13 @@ exports.randomiseSkillRatings = async (req, res) => {
     });
     let averageMark = Math.floor(Math.random() * 35) + 35;
     averageMark = averageMark + baseSkill * 3;
-    if (student.marks == undefined) student.marks = new Map();
+    if (student.marks == undefined) {
+      student.marks = new Map();
+    }
     student.marks.set("overall", averageMark);
-    await student.save();
+    return student.save();
   });
+  await Promise.all(updatePromises);
   return res.json({ message: `Skills ratings updated for ${assignment.students.length} students.` });
 };
 
