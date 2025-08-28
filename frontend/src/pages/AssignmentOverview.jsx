@@ -285,8 +285,8 @@ function AssignmentOverview() {
           <Collapse in={moduleTeamShown}>
             <ul id="module-team-collapse" className="list-unstyled">
               {selectedAssignment.lecturers.map((lecturer, index) => (
-                <li>
-                  <a key={index} href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
+                <li key={index}>
+                  <a href={`mailto:${lecturer.email}?subject=${selectedAssignment.name}`}>
                     {lecturer.displayName}
                   </a>
                 </li>
