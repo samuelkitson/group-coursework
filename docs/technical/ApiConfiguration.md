@@ -89,8 +89,3 @@ Path to the private key file for the Microsoft Azure app registration.
 ## AZURE_THUMBPRINT
 
 The thumbprint of the Microsoft Azure certificate.
-
-## OAUTH_REDIRECT_URI
-
-The URL that Microsoft should redirect users to after login. This should be the
-`BASE_URL` followed by `login-callback`.
