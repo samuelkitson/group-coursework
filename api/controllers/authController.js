@@ -81,17 +81,18 @@ exports.logout = async (req, res) => {
 };
 
 exports.getAzureLoginLink = async (req, res) => {
-  const { OAUTH_REDIRECT_URI, AZURE_CLIENT_ID, AZURE_TENANT_ID, } = process.env;
-  if (!OAUTH_REDIRECT_URI || !AZURE_CLIENT_ID || !AZURE_TENANT_ID || !msalConfig) {
+  const { BASE_URL, AZURE_CLIENT_ID, AZURE_TENANT_ID, } = process.env;
+  if (!BASE_URL || !AZURE_CLIENT_ID || !AZURE_TENANT_ID || !msalConfig) {
     throw new ConfigurationError("Missing Azure OAuth environment variables", "Login with Microsoft is currently unavailable. Please try again later.");
   }
+  const redirectUri = new URL("login-callback", BASE_URL).href; 
   const state = crypto.randomUUID();
   req.session.regenerate(() => {
     req.session.oauthState = state;
     const urlParams = new URLSearchParams({
       client_id: AZURE_CLIENT_ID,
       response_type: "code",
-      redirect_uri: OAUTH_REDIRECT_URI,
+      redirect_uri: redirectUri,
       response_mode: "query",
       scope: "openid profile email",
       state,
@@ -109,10 +110,11 @@ exports.getAzureLoginLink = async (req, res) => {
  * or pjStudent for maths).
  */
 exports.azureLoginCallback = async (req, res) => {
-  const { OAUTH_REDIRECT_URI } = process.env;
-  if (!OAUTH_REDIRECT_URI || !msalConfig) {
+  const { BASE_URL } = process.env;
+  if (!BASE_URL || !msalConfig) {
     throw new ConfigurationError("Missing Azure OAuth environment variables", "Login with Microsoft is currently unavailable. Please try again later.");
   }
+  const redirectUri = new URL("login-callback", BASE_URL).href; 
   // Check the state token is valid
   const { code, state } = req.body;
   const oAuthState = req.session.oauthState ?? undefined;
@@ -126,7 +128,7 @@ exports.azureLoginCallback = async (req, res) => {
   const tokenRequest = {
     code,
     scopes: ["openid", "profile", "email"],
-    redirectUri: OAUTH_REDIRECT_URI,
+    redirectUri,
   };
   const tokenResponse = await msalConfig.acquireTokenByCode(tokenRequest);
   if (!tokenResponse)
