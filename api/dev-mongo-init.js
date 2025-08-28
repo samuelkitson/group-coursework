@@ -4,108 +4,54 @@ db.assignments.drop();
 // Insert test users
 db.users.insertMany([
   {
-    _id: ObjectId("6796bd91ae30ef147fe9496b"),
-    email: "test@samkitson.com",
-    displayName: "Test User",
+    _id: ObjectId("68b07832cd5f1a40ad35e41d"),
+    email: "admin-test@example.org",
+    displayName: "Alice Tester",
     passwordHash:
-      "$2a$12$RzGL1/0kKn4pA3rGhjXGcOI19PFBEN3cIrDOsxNARYhe9wItDItF2",
-    role: "student",
-    skills: {
-      "Java": 6,
-      "Python": 3,
-    },
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    __v: 0,
-  },
-  {
-    _id: ObjectId("6796bd91ae30ef147fe9496c"),
-    email: "bob-staff@samkitson.com",
-    displayName: "Bob Bobbington",
-    passwordHash:
-      "$2a$12$KYwAqXARCsO59hhsPn0kMuxtPsf9Osc3ToEXAH5BA5.eSrUcuDpOm",
+      "$2a$12$KztuM2tCf.higijkCo/VxuYALtnmXnZ5K22/z8QhdCpj.lR2R6klS",
     role: "admin",
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,
   },
   {
-    _id: ObjectId("6796bd91ae30ef147fe9496d"),
-    email: "charlie-staff@samkitson.com",
-    displayName: "Charlie Smith",
+    _id: ObjectId("68b0783c7bfea59a92fbdbb3"),
+    email: "staff-test@example.org",
+    displayName: "Bob Tester",
     passwordHash:
-      "$2a$12$BwkEfF/GOl4m2Uy.WVIS1ORubjGCdmYMl0u7TITScRrFoowN6ILhO",
+      "$2a$12$4rzxlrOGQ9ISsNOX9S6/uO2RMQ3zs.kB2zGSfvhF6t2CF9Jnadwsa",
     role: "staff",
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,
   },
   {
-    _id: ObjectId("6796bd91ae30ef147fe9496e"),
-    email: "dave-student@samkitson.com",
-    displayName: "Dave Green",
+    _id: ObjectId("68b0786744b856dc8c1ab270"),
+    email: "student-test@example.org",
+    displayName: "Charlie Tester",
     passwordHash:
-      "$2a$12$hW67Q0pSZlYcM33z.fWQ3uhrKj52Zcp5oC7MQ9bD9hF5mguQH1iLq",
+      "$2a$12$bl6nFzBbKKZPCxIH47Yup.uRiqIRlYsSk5eSgFK.AKJcG6M57KEMa",
     role: "student",
-    skills: {
-      "Java": 6,
-      "UI Design": 2,
-    },
     createdAt: new Date(),
     updatedAt: new Date(),
     __v: 0,
   },
 ]);
 
-// Insert test assignments
+// Insert test assignment
 db.assignments.insertMany([
   {
     _id: ObjectId("6797e401ded726b06ee9496a"),
-    name: "Interaction Design",
-    description: "COMP2213 24/25",
-    owner: "test@samkitson.com",
-    start_date: new Date("2025-02-01"),
-    end_date: new Date("2025-05-31"),
-    required_attributes: ["average_mark", "skills"],
-    state: "allocation-questions",
-    groups: [],
-    students: [],
-    staffs: [ObjectId("6796bd91ae30ef147fe9496c")],
-    groupSize: 5,
-    skills: [
-      { name: "Java programming" },
-      {
-        name: "UI design",
-        description: "UI design skills, including tools like Figma.",
-      },
-      {
-        name: "Research",
-        description:
-          "Research skills such as finding journal papers and using the library.",
-      },
+    name: "Example Module",
+    description: "This is an example module to help you explore the app.",
+    lecturers: [
+      ObjectId("68b07832cd5f1a40ad35e41d"),
+      ObjectId("68b0783c7bfea59a92fbdbb3"),
     ],
-    allocationCriteria: [
-      {
-        tag: "skill-coverage",
-        value: true,
-      },
+    students: [
+      ObjectId("68b0786744b856dc8c1ab270"),
     ],
-  },
-  {
-    _id: ObjectId("6797e401ded726b06ee9496b"),
-    name: "SEG",
-    description: "COMP2211 24/25",
-    owner: "test@samkitson.com",
-    start_date: new Date("2025-02-01"),
-    end_date: new Date("2025-05-31"),
-    required_attributes: ["average_mark", "skills"],
-    state: "live",
-    groups: [],
-    students: [ObjectId("6796bd91ae30ef147fe9496b")],
-    staffs: [
-      ObjectId("6796bd91ae30ef147fe9496c"),
-      ObjectId("6796bd91ae30ef147fe9496d"),
-    ],
+    state: "pre-allocation",
   },
 ]);
 
