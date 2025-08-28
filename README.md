@@ -5,12 +5,40 @@ guides and documentation for users and developers.
 
 > [!NOTE]
 > This software is provided "as is", without warranty of any kind. There is no
-> guarantee of future support or development work.
+> guarantee of future support or development work. Commercial re-use is not 
+> permitted. You must provide a link to the original code repository in any
+> derivative work.
 
 ## Background
 This was originally a Computer Science final year undergraduate project by Sam
 Kitson at the University of Southampton. It was later extended during a summer
 internship within ECS for use in undergraduate teaching.
+
+It has a number of key features that aim to improve the group coursework
+experience for staff, supervisors and students:
+
+* **Automated team allocation** using a genetic algorithm approach and data from
+a variety of sources.
+* **Skills self-assessment** for students to help staff identify class-wide
+strengths and weaknesses, create teams balanced in skillsets and help teams
+allocate work more effectively.
+* **Meeting tracking tools** that teach students best practice for recording
+accurate and helpful meeting minutes and ensure that all team members are kept
+up-to-date, no matter their meeting attendance.
+* **Regular check-ins** that provide longitudinal data about perceived workload
+balance within teams.
+* **Longer peer reviews** that give students a chance to rate each other's work
+and provide constructive review comments.
+* **Automated insights** for staff that identify teams and students who may be
+struggling to help provide targetted support early on.
+* **Supervisor tools** that allow older students or staff to monitor and guide a
+small number of teams, while making private observations about their progress to
+help inform marking decisions.
+* **De-escalation features** such as the ability to dispute meeting minutes, to
+mitigate the risk of group arguments and resolve potential issues before they
+arise.
+* **Detailed progress reports** that aggregate data about teams and individuals
+to help staff decide marks fairly.
 
 ## Found a bug?
 
