@@ -36,10 +36,14 @@ project on the dashboard and in the sidebar. Click this to select it.
 You might be asked to fill in a skills questionnaire. This only takes a minute
 and you just need to say how confident you are in some key skills.
 
+Lecturers can use this to help create teams with a range of skillsets. Your
+top-rated skill will also be shown to your team, so you get given tasks that
+suit you better.
+
 > [!IMPORTANT]
 > It's important to answer honestly, otherwise you may be placed in a team
 > that's missing key skills. Your responses will be visible to staff alongside
-> your historic marks, and your team will see your top-rated skill.
+> your historic marks.
 
 ## See your team
 
@@ -56,13 +60,13 @@ Taking accurate meeting minutes is an important skill to learn. To help you,
 you'll record all your meetings in the system. It helps you keep track of
 attendance, discussions and any actions agreed. Meeting minutes are visible to
 your whole team and the module staff. This means if anyone misses a meeting,
-they can easily catch up.
+they can easily catch up. Head to the "Meetings" page to get started.
 
 ## Complete check-ins
 
 Every week, you'll tell us how balanced the workload has been that week. It only
-takes a minute to answer the question and you just need to rebalance some points
-to show if anyone did more or less work than others.
+takes a minute to answer the question and show if anyone did more or less work
+than others.
 
 Each week is a fresh start, so don't worry if you're off sick for one - staff
 will be able to see how the balance has been over the entire coursework.
@@ -81,9 +85,10 @@ well, and how to improve.
 > Check-in scores and skill ratings are only visible to staff and supervisors.
 > Review comments will be moderated and, if your lecturer chooses to, may be
 > sent to the students they're about as formative feedback. Be polite, helpful
-> constructive!
+> and constructive!
 
 ## Learn more
 
 That's it for this quick introduction guide, but there's lots more to find out.
-Explore some of the other guides in this section to get the most out of the app.
+Explore some of the [other guides](../) in this section to get the most out of
+the app.
