@@ -34,7 +34,7 @@ var sessionStore = new MongoDBStore({
 app.use(
   session({
     secret: SESSION_SECRET,
-    resave: true,
+    resave: false,
     saveUninitialized: false,
     name: COOKIE_NAME,
     cookie: {
