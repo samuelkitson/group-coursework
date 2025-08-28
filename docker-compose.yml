@@ -16,14 +16,14 @@ services:
     image: mongo
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: bpY0zlso82YUQyyZcAdLhu
+      MONGO_INITDB_DATABASE: groupsappdb
     ports:
       - "27017:27017"
     volumes:
       - mongodb_data:/data/db
-      - ./api/usertesting-mongo-init.js:/docker-entrypoint-initdb.d/usertesting-mongo-init.js:ro
+      - ./api/dev-mongo-init.js:/docker-entrypoint-initdb.d/dev-mongo-init.js.js:ro
     networks:
       - app_network
   
@@ -44,23 +44,22 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      BASE_URL: ${BASE_URL}
-      API_PORT: ${API_PORT}
-      MONGO_URI: ${MONGO_URI}
-      SESSION_SECRET: ${SESSION_SECRET}
-      OAUTH_REDIRECT_URI: ${OAUTH_REDIRECT_URI}
-      ASSIGNMENTS_ADMIN_LOCK: ${ASSIGNMENTS_ADMIN_LOCK}
-      ALLOWED_EMAIL_DOMAINS: s.example.org,l.example.org,example.org,example.com,soton.ac.uk,southampton.ac.uk
+      BASE_URL: http://localhost/
+      API_PORT: 3000
+      MONGO_URI: mongodb://root:bpY0zlso82YUQyyZcAdLhu@mongo:27017/groupsappdb?authSource=admin
+      SESSION_SECRET: MrvaVLW6f5Yg8cY1lwgJ5f
+      ASSIGNMENTS_ADMIN_LOCK: TRUE
+      ALLOWED_EMAIL_DOMAINS: example.org,example.com
       ALLOW_EXAMPLE_ORG: true
-      SMTP_SERVER: ${SMTP_SERVER}
-      SMTP_PORT: ${SMTP_PORT}
-      SMTP_SECURE: ${SMTP_SECURE}
-      SMTP_FROM_ADDRESS: ${SMTP_FROM_ADDRESS}
+      SMTP_SERVER: mailhog
+      SMTP_PORT: 1025
+      SMTP_SECURE: false
+      SMTP_FROM_ADDRESS: Group Coursework <groups-admin@example.org>
     volumes:
       - ./api:/app
       - /app/node_modules
     expose:
-      - "${API_PORT}"
+      - 3000
     depends_on:
       mongo:
         condition: service_started
@@ -74,7 +73,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     expose:
-      - "${FRONTEND_PORT}"
+      - 5173
     environment:
       - NODE_ENV=development
       - VITE_API_URL=http://localhost/api
