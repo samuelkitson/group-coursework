@@ -36,6 +36,8 @@ const TeamPeerReviews = lazy(() => import("./pages/TeamPeerReviews"));
 const ReportGenerator = lazy(() => import("./pages/ReportGenerator"));
 const TeamObservations = lazy(() => import("./pages/TeamObservations"));
 
+import "./App.css";
+
 function WithNavigation() {
   return (
     <>
