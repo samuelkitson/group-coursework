@@ -60,5 +60,9 @@ To get a shell on the MongoDB container, run:
 
 ```docker compose exec mongo mongosh -u root -p bpY0zlso82YUQyyZcAdLhu --authenticationDatabase admin groupsappdb```
 
+To use a helper script, run:
+
+```docker-compose exec api npm run account-editor```
+
 If you need to test email sending, you can access the mailhog interface at
 http://localhost:8025/.
