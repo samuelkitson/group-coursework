@@ -163,7 +163,6 @@ const ReviewComments = ({peerReviewId, teamId, reviewComments, currentStudent, r
             {reviewToEdit?.originalComment ?? reviewToEdit?.comment}
           </p>
           Are you sure you want to delete this comment, rather than editing it?
-          You can't undo this action.
         </Modal.Body>
         <Modal.Footer className="d-flex justify-content-between">
           <Button
