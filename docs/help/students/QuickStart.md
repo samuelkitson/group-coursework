@@ -98,5 +98,4 @@ well, and how to improve.
 ## Learn more
 
 That's it for this quick introduction guide, but there's lots more to find out.
-Explore some of the [other guides](/) in this section to get the most out of
-the app.
+Explore some of the other guides in this section to get the most out of the app.
