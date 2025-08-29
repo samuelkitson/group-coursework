@@ -95,3 +95,49 @@ want to choose a stored allocation, simply select it from the dropdown and then
 click "Confirm".
 
 ![Screenshot of page showing generated allocation.](../../images/potential-groups-viewer.png)
+
+## Available options
+
+This section outlines the various criteria and deal-breakers that are available
+for you to choose.
+
+> [!TIP]
+> If you need to randomise team allocation, you should select only the meeting
+> preference criteria. This will generate random allocations that still obey
+> students' preferences.
+
+### Criteria
+
+* **Skill coverage**: uses the data from the skills questionnaire to create
+teams where someone is confident in every skill. Works best when most students
+completed the questionnaire.
+* **Past performance**: include a `marks` column in the CSV to allocate teams
+where the average mark matches the class average, where the marks are similar or
+where they're as varied as possible.
+* **Degree programme**: include a `degree` column to allocate teams where
+students are on the same degree programme or where they're different.
+* **Enrolment**: include an `enrolled` column to allocate teams where the
+proportion of unenrolled students matches that of the class. You can also
+explicitly group together or separate enrolled/unenrolled students.
+* **International**: similarly, you can include an `international` column and
+use the same options.
+* **Meeting preference**: where students have expressed a meeting preference in
+their profile, aim to create where everyone has compatible preferences.
+
+### Deal-breakers
+
+* **Lone gender**: include a `gender` column in the CSV to avoid teams with
+exactly one male, female or non-binary student.
+* **Lone female/non-binary**: include a `gender` column to avoid teams with
+one female or non-binary student. Teams with one male students are allowed.
+* **All international students**: include an `international` column to avoid
+teams where everyone is an international student.
+* **Assignment crossover**: when the system is being used for multiple group
+project simultaneously, this option will stop students being placed in teams
+with team-mates from the other projects.
+
+### Custom options
+
+You can also define custom criteria and deal-breakers, using your own data from
+the CSV. You'll need to choose whether the data is textual, numeric or boolean.
+More information can be found in the [technical guide for allocation](../../technical/AllocationAlgorithm.md).
