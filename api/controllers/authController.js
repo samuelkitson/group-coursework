@@ -203,7 +203,7 @@ exports.azureLoginCallback = async (req, res) => {
     req.session.userId = createdAccount._id;
     req.session.email = createdAccount.email;
     req.session.role = createdAccount.role;
-    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? dbRecord.role === "admin" : ["staff", "admin"].includes(dbRecord.role); 
+    const canCreateAssignments = process.env?.ASSIGNMENTS_ADMIN_LOCK === "true" ? createdAccount.role === "admin" : ["staff", "admin"].includes(createdAccount.role); 
     res.json({
       message: "Account created successfully. Welcome!",
       data: {
