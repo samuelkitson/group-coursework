@@ -10,3 +10,7 @@
 .blob.filled {
   background-color: var(--bs-primary);
 }
+
+.plus-minus-button {
+  cursor: pointer;
+}

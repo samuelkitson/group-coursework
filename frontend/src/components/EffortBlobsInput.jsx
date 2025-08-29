@@ -29,7 +29,7 @@ const EffortBlobsInput = ({ name, control, defaultValue=4, maxValue=7, }) => {
         >
           <div
             onClick={() => decrement(field)}
-            className={`icon-button d-flex align-items-center ${field.value <= 1 ? "opacity-25" : "text-danger"}`}
+            className={`icon-button plus-minus-button d-flex align-items-center ${field.value <= 1 ? "opacity-25" : "text-danger"}`}
             bg="bs-primary"
           >
             <DashCircle className="me-4"/>
@@ -41,7 +41,7 @@ const EffortBlobsInput = ({ name, control, defaultValue=4, maxValue=7, }) => {
 
           <div
             onClick={() => increment(field)}
-            className={`icon-button d-flex align-items-center ${field.value >= maxValue ? "opacity-25" : "text-success"}`}
+            className={`icon-button plus-minus-button d-flex align-items-center ${field.value >= maxValue ? "opacity-25" : "text-success"}`}
             bg="bs-primary"
           >
             <PlusCircle className="ms-4"/>
