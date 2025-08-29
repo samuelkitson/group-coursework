@@ -124,4 +124,15 @@ and high scores suggesting a student may be doing too much.
 * The student's skill ratings from their peers are shown in a chart.
 * A chart showing perceived workload over time can be viewed.
 
+You an also moderate the peer review comments. To do this, click the Edit button
+on the right-hand side of the review comment. You can then edit it and save your
+changes. You also have the option to delete the comment entirely if it isn't
+appropriate.
+
+> [!NOTE]
+> When you edit or delete review comments, the student's original comment is
+> saved. You can click the Edit button again at any time to view the original.
+> If included in a progress report, the moderated comment will be shown with a
+> marker to indicate it has been edited.
+
 ![A screenshot of the peer review dashboard.](../../images/peer-review-dashboard-annotated.png)
