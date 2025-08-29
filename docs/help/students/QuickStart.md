@@ -45,6 +45,8 @@ suit you better.
 > that's missing key skills. Your responses will be visible to staff alongside
 > your historic marks.
 
+[Learn more](./SkillsQuestionnaire.md) about the skills questionnaire.
+
 ## See your team
 
 Once allocated, you'll be able to see your team under the "My Team" tab. You'll
@@ -54,6 +56,8 @@ addresses. If you have a team supervisor, they'll show up here too.
 > [!TIP]
 > You can set your own meeting preference and bio on the "Profile" page.
 
+[Learn more](./TeamDetails.md) about the team details page.
+
 ## Record meetings
 
 Taking accurate meeting minutes is an important skill to learn. To help you,
@@ -61,6 +65,8 @@ you'll record all your meetings in the system. It helps you keep track of
 attendance, discussions and any actions agreed. Meeting minutes are visible to
 your whole team and the module staff. This means if anyone misses a meeting,
 they can easily catch up. Head to the "Meetings" page to get started.
+
+[Learn more](./Meetings.md) about recording your meetings.
 
 ## Complete check-ins
 
@@ -72,6 +78,8 @@ Each week is a fresh start, so don't worry if you're off sick for one - staff
 will be able to see how the balance has been over the entire coursework.
 Everyone's scores from the team are combined together so it's really important
 to fill in your check-ins and have your say.
+
+[Learn more](./CheckIns.md) about check-ins and peer reviews.
 
 ## Longer peer reviews
 
