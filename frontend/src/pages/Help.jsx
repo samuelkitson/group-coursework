@@ -96,7 +96,7 @@ function Help() {
                 through the guides below which will help you get started.
               </Card.Text>
               <Button
-                href={`https://github.com/samuelkitson/group-coursework/tree/main/docs/help/supervisors`}
+                href={`https://github.com/samuelkitson/group-coursework/tree/main/docs/help/supervisors/QuickStart.md`}
                 variant={isSupervising ? "primary" : "secondary"}
                 className="d-flex align-items-center justify-content-center mt-auto"
                 target="_blank"
