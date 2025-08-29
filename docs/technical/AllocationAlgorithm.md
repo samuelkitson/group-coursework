@@ -122,6 +122,10 @@ functionality with data uploaded from a CSV. It is therefore not anticipated
 that any further pre-defined criteria or deal-breakers will need to be added,
 but nonetheless the process for this is outlined below.
 
+Criteria and deal-breakers each operate on one of the supported data types:
+`numeric`, `textual` or `boolean`. If the user configures criteria or
+deal-breakers with conflicting types, an error will be thrown.
+
 ### Pre-defined criteria
 
 As configured in `allocationOptions.js`, some pre-defined criteria have
@@ -143,23 +147,39 @@ programme listed.
 `goal` is a string that determines which fitness function to use for a given
 attribute. The options are:
 
-- `similar` attempts to group students together who have matching attribute
-values. For discrete attributes, the function is the frequency of the most
-common value in the group divided by the number of values. For boolean values,
-the function is simplified but works similarly.
+* `similar` attempts to group students together who have matching attribute
+values. For textual attributes, the function is the frequency of the most common
+value in the group divided by the number of values. For boolean values, the
+function is simplified but works similarly. For numeric values, the function is
+1 - (group range / cohort range) with a logistic function then applied to
+amplify the effect of extreme values.
 
-- `diverse` attempts to split up students with matching values. For discrete
+* `diverse` attempts to split up students with matching values. For textual
 attributes, the function is (number of unique values - 1) / (dataset uniques - 
 1). For boolean values, the function aims to get the group's proportion of true
-values to be as close to the cohort average as possible.
+values to be as close to the cohort average as possible. For numeric values, the
+function maximises the standard deviation within the group compared to the
+cohort.
 
-- `separate-true` is for boolean attributes and attempts to spread out the
+* `average` works on numeric values and aims for the group's average value to
+closely match the cohort's average value. As this ignores the spread of values,
+a group with [5, 5, 5] would have the same score as a group with [4, 5, 6].
+
+* `separate-true` is for boolean attributes and attempts to spread out the
 students with a true value. This is different to `diverse` as it ignores the
 spread of students with a false value. It calculates the cohort-wide proportion
 of true values (c) and the proportion in the group (g). If g<=c, 1 is returned.
 Otherwise, the function is 1 - ((g - c) / (1 - c)).
 
-- `separate-false` works as above, but in reverse.
+* `separate-false` works as above, but in reverse.
+
+* `group-true` is for boolean attributes and aims to either have all false
+values in a group, or as many true values as possible.
+
+* `group-true` works as above, but in reverse.
+
+* `proportional` is for boolean attributes and aims for the group's split of
+true/false values to match that of the whole cohort.
 
 ### Adding new pre-defined options
 
