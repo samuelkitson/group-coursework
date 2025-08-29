@@ -39,12 +39,14 @@ Clicking this reveals a number of options and shortcuts:
 members' email addresses prefilled.
 * **Meetings**: view and edit the team's meeting minutes. If any team members
 have disputed the record of a meeting, you can view and respond to them here.
+[Learn more](./MeetingDisputes.md).
 * **Peer reviews**: if peer reviews are enabled, you can analyse and moderate
-the student responses here.
+the student responses here. [Learn more](./CheckIns.md).
 * **Observations**: used to view and record private notes about teams and team
 members. These are only visible to supervisors and staff, and are included in
-downloadable reports to aid marking.
+downloadable reports to aid marking. [Learn more](./Observations.md).
 * **Progress report**: a shortcut to download progress reports for this team.
+[Learn more](./Reports.md).
 
 ## Exporting a list of teams
 
