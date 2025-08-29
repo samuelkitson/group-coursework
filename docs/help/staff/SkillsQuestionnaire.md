@@ -42,6 +42,10 @@ overview page. You can also send reminder emails to students by clicking the
 Once students have started to answer it, you'll be able to see a class summary
 as a chart on the overview page.
 
+![A screenshot of the assignment overview page showing the assignment state
+controls, skills questionnaire statistics, email notifications button and the 
+class-wide skills overview.](../../images/staff-questionnaire-overview-annotated.jpg)
+
 ## Skipping the questionnaire
 
 Although it's recommended that you use the skills questionnaire, you can skip it
