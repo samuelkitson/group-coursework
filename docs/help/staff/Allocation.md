@@ -65,6 +65,8 @@ dataset" to upload it as a CSV. You can download a template and the popup will
 show you which data it needs.
 5. Remember to save your changes regularly by clicking "Save changes".
 
+![Screenshot of the page that allows staff to configure allocation.](../../images/allocation-options-annotated.jpg)
+
 ## Reviewing generated allocations
 
 Once you've configured the criteria and deal-breakers to use, and uploaded any
