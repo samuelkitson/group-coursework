@@ -109,6 +109,10 @@ exports.checkinStatistics = (reviews) => {
 exports.peerReviewSkillsStatistics = (checkins, averages=false) => {
   const reviewsByRecipients = {};
   // Iterate through each of the checkins (each submitted by a different person)
+  if(!checkins) {
+    checkins = [];
+  }
+
   checkins.forEach(checkin => {
     // For each checkin, iterate through the reviews they gave to others
     if (!checkin.reviews) return;
@@ -116,7 +120,7 @@ exports.peerReviewSkillsStatistics = (checkins, averages=false) => {
       if (!reviewsByRecipients.hasOwnProperty(recipient)) {
         reviewsByRecipients[recipient] = {};
       }
-      const givenSkills = checkin.reviews[recipient].skills
+      const givenSkills = checkin.reviews[recipient].skills || {}; // Edge case where skills might be undefined
       Object.keys(givenSkills).forEach(skill => {
         if (reviewsByRecipients[recipient].hasOwnProperty(skill)) {
           reviewsByRecipients[recipient][skill].push(givenSkills[skill]);
