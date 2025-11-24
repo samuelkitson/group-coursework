@@ -53,6 +53,7 @@ app.use("/api", routes);
 if (require.main === module) {
   app.listen(API_PORT, () => {
     console.log(`Group courseworks API started on port ${API_PORT}`);
+    console.log("NODE_ENV:", process.env.NODE_ENV);
   });
 }
 
