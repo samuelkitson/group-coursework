@@ -14,6 +14,13 @@ This was originally a Computer Science final year undergraduate project by Sam
 Kitson at the University of Southampton. It was later extended during a summer
 internship within ECS for use in undergraduate teaching.
 
+A paper covering the research, design, development and evaluation of the project
+was published in January 2026. This paper is available for free via Open Access,
+and can be found in the [ACM Digital Library](https://doi.org/10.1145/3772338.3772348).
+A PDF version is available from the University of Southampton website [here](https://eprints.soton.ac.uk/507283/1/cep2026_10.pdf).
+
+## Feature overview
+
 It has a number of key features that aim to improve the group coursework
 experience for staff, supervisors and students:
 
