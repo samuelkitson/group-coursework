@@ -6,6 +6,24 @@
 This project can be run locally using the provided `docker-compose.yml` file.
 This allows for easy local development and testing in a realistic environment.
 
+## Quick start
+
+To quickly get a local copy of the app running, follow these steps:
+
+1. Install Docker and pull the latest version of the GitHub repository.
+2. Use Docker Compose to start the local instace: `docker-compose up -d`.
+3. Navigate to http://localhost in your browser, where you should be presented
+   with the login page.
+4. Entra login isn't available locally, so click the "Admin Login" button to use
+   username & password login. By default, an administrator account with the
+   username `admin-test@example.org` and password `groupcoursework` will be
+   available.
+5. You will now be able to log into the app, and from there create assignments,
+   upload simulated student data, and more.
+
+Keep reading this guide, and the other guides within the `technical` section to
+learn more.
+
 ## Containers and services
 
 * `nginx` starts a simple nginx server, with reverse proxies to both the
@@ -14,13 +32,17 @@ and is set up to expose the app on port 80.
 * `mongo` is the MongoDB database server. The default credentials are defined in
 the `.env` file.
 * `api` is the ExpressJS API service. The nginx reverse proxy makes it available
-under `/api`.
+under `/api`. The environment variables are documented in
+[ApiConfiguration.md](./ApiConfiguration.md). The endpoints are documented under
+[docs/technical/api](./api/README.md).
 * `frontend` is the React app. Vite is used for hot-reloading so that if edits
 are made to the React source code, the app is updated in real-time to reflect
 these changes.
 * `mailhog` is a fake SMTP server used to test email sending.
 * `mongodb_data` is the volume that stores the MongoDB database. This uses a
 volume so that the data isn't lost if the `mongo` container crashes.
+
+The API service is configured using environment variables. 
 
 ## Initial database setup
 
@@ -60,7 +82,7 @@ To get a shell on the MongoDB container, run:
 
 ```docker compose exec mongo mongosh -u root -p bpY0zlso82YUQyyZcAdLhu --authenticationDatabase admin groupsappdb```
 
-To use a helper script, run:
+To use a [helper script](./HelperScripts.md), run:
 
 ```docker-compose exec api npm run account-editor```
 
