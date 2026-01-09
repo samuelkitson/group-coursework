@@ -47,6 +47,12 @@ arise.
 * **Detailed progress reports** that aggregate data about teams and individuals
 to help staff decide marks fairly.
 
+## Development and running locally
+
+Docker Compose can be used to easily run a local instance of this app. Please
+see the guides at [docs/technical](./docs/technical/LocalDevelopment.md) for
+more information.
+
 ## Found a bug?
 
 Please report it! Head to the Issues tab above and describe what you were doing,
